@@ -1,0 +1,2020 @@
+﻿@page
+@model TutoringCenterManagement.Pages.Admin.Users.CreateModel
+@{
+    ViewData["Title"] = "Tạo người dùng mới";
+}
+
+@section Styles {
+    <style>
+        /* ════════════════════════════════════
+                                       CREATE USER PAGE — đồng bộ design system
+                                    ════════════════════════════════════ */
+
+        /* ── Layout 2 cột: form chính + sidebar preview ── */
+        .create-layout {
+            display: grid;
+            grid-template-columns: 1fr 300px;
+            gap: 20px;
+            align-items: start;
+        }
+
+        /* ── Form card chung ── */
+        .form-card {
+            background: var(--bg-card);
+            border-radius: var(--r-lg);
+            border: 1px solid var(--border);
+            box-shadow: var(--sh-sm);
+            overflow: hidden;
+        }
+
+        .form-card-hd {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 14px 20px;
+            border-bottom: 1px solid var(--border);
+            background: linear-gradient(to right, #fafbff, #fff);
+        }
+
+        .form-card-icon {
+            width: 30px;
+            height: 30px;
+            border-radius: 8px;
+            background: rgba(232,89,12,.1);
+            color: var(--c-primary);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 13px;
+            flex-shrink: 0;
+        }
+
+        .form-card-title {
+            font-size: .92rem;
+            font-weight: 700;
+            color: var(--text-1);
+        }
+
+        .form-card-subtitle {
+            font-size: .75rem;
+            color: var(--text-3);
+            margin-top: 1px;
+        }
+
+        .form-card-body {
+            padding: 22px 24px;
+        }
+
+        /* ── Section separator ── */
+        .form-section {
+            margin-bottom: 28px;
+        }
+
+            .form-section:last-child {
+                margin-bottom: 0;
+            }
+
+        .section-label {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: .72rem;
+            font-weight: 800;
+            color: var(--text-3);
+            text-transform: uppercase;
+            letter-spacing: .8px;
+            margin-bottom: 16px;
+        }
+
+            .section-label::after {
+                content: '';
+                flex: 1;
+                height: 1px;
+                background: var(--border);
+            }
+
+            .section-label i {
+                width: 20px;
+                height: 20px;
+                border-radius: 5px;
+                background: rgba(232,89,12,.1);
+                color: var(--c-primary);
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                font-size: 9px;
+                flex-shrink: 0;
+            }
+
+        /* ── Form grid ── */
+        .form-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 16px;
+        }
+
+            .form-grid.cols-3 {
+                grid-template-columns: 1fr 1fr 1fr;
+            }
+
+            .form-grid.full {
+                grid-template-columns: 1fr;
+            }
+
+        .span-2 {
+            grid-column: span 2;
+        }
+
+        /* ── Form field ── */
+        .form-field {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+
+        .field-label {
+            font-size: .72rem;
+            font-weight: 700;
+            color: var(--text-2);
+            text-transform: uppercase;
+            letter-spacing: .5px;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+            .field-label .req {
+                color: #f43f5e;
+                font-size: 13px;
+                line-height: 1;
+            }
+
+            .field-label .badge-opt {
+                font-size: .6rem;
+                font-weight: 600;
+                padding: 1px 6px;
+                border-radius: 4px;
+                background: var(--bg-page);
+                border: 1px solid var(--border);
+                color: var(--text-3);
+                text-transform: none;
+                letter-spacing: 0;
+            }
+
+        /* ── Input / Select / Textarea ── */
+        .form-input,
+        .form-select,
+        .form-textarea {
+            height: 38px;
+            padding: 0 12px;
+            border: 1.5px solid var(--border);
+            border-radius: var(--r-sm);
+            background: #f8f9fc;
+            color: var(--text-1);
+            font-size: .85rem;
+            font-family: 'Plus Jakarta Sans', system-ui, sans-serif;
+            font-weight: 500;
+            outline: none;
+            width: 100%;
+            box-sizing: border-box;
+            transition: border-color .15s, background .15s, box-shadow .15s;
+        }
+
+            .form-input:focus,
+            .form-select:focus,
+            .form-textarea:focus {
+                border-color: var(--c-primary);
+                background: #fff;
+                box-shadow: 0 0 0 3px var(--c-glow);
+            }
+
+            .form-input::placeholder,
+            .form-textarea::placeholder {
+                color: var(--text-3);
+                font-size: .82rem;
+            }
+
+            .form-input:hover,
+            .form-select:hover {
+                border-color: #c4c9d8;
+            }
+
+        .form-textarea {
+            height: auto;
+            min-height: 80px;
+            padding: 10px 12px;
+            resize: vertical;
+            line-height: 1.5;
+        }
+
+        .form-select {
+            -webkit-appearance: none;
+            -moz-appearance: none;
+            appearance: none;
+            padding-right: 32px;
+            cursor: pointer;
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='10' viewBox='0 0 24 24' fill='none' stroke='%239aa0b4' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E");
+            background-repeat: no-repeat;
+            background-position: right 10px center;
+        }
+
+        /* Input với icon prefix */
+        .input-wrap {
+            position: relative;
+        }
+
+            .input-wrap .input-icon {
+                position: absolute;
+                left: 11px;
+                top: 0;
+                bottom: 0;
+                display: flex;
+                align-items: center;
+                color: var(--text-3);
+                font-size: 13px;
+                pointer-events: none;
+                transition: color .15s;
+            }
+
+            .input-wrap:focus-within .input-icon {
+                color: var(--c-primary);
+            }
+
+            .input-wrap .form-input {
+                padding-left: 34px;
+            }
+
+            /* Password toggle */
+            .input-wrap .pw-toggle {
+                position: absolute;
+                right: 10px;
+                top: 0;
+                bottom: 0;
+                display: flex;
+                align-items: center;
+                color: var(--text-3);
+                font-size: 13px;
+                cursor: pointer;
+                background: none;
+                border: none;
+                padding: 0;
+                transition: color .15s;
+            }
+
+                .input-wrap .pw-toggle:hover {
+                    color: var(--c-primary);
+                }
+
+            .input-wrap.has-toggle .form-input {
+                padding-right: 36px;
+            }
+
+        /* Validation message */
+        .field-error {
+            font-size: .73rem;
+            color: #e03131;
+            display: none;
+            align-items: center;
+            gap: 4px;
+            min-height: 0;
+        }
+            /* Chỉ hiện khi span có nội dung text thực */
+            .field-error:not(:empty) {
+                display: flex;
+            }
+
+            .field-error::before {
+                content: '\f06a'; /* fa-circle-exclamation */
+                font-family: 'Font Awesome 6 Free';
+                font-weight: 900;
+                font-size: 10px;
+                flex-shrink: 0;
+            }
+
+        /* ── Role selector cards ── */
+        .role-cards {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 10px;
+        }
+
+        .role-card-input {
+            display: none;
+        }
+
+        .role-card {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 7px;
+            padding: 14px 8px;
+            border: 1.5px solid var(--border);
+            border-radius: var(--r-md);
+            background: var(--bg-page);
+            cursor: pointer;
+            transition: all .15s;
+            user-select: none;
+        }
+
+            .role-card:hover {
+                border-color: #c4c9d8;
+                background: #fff;
+                transform: translateY(-1px);
+                box-shadow: var(--sh-xs);
+            }
+
+        .role-card-icon {
+            width: 40px;
+            height: 40px;
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 16px;
+            transition: all .15s;
+        }
+
+        .role-card-name {
+            font-size: .78rem;
+            font-weight: 700;
+            color: var(--text-2);
+            transition: color .15s;
+        }
+
+        .role-card-desc {
+            font-size: .68rem;
+            color: var(--text-3);
+            text-align: center;
+            line-height: 1.3;
+        }
+
+        /* Admin */
+        .role-card-input.admin:checked ~ label.role-card.admin {
+            border-color: #f43f5e;
+            background: #fff1f2;
+            box-shadow: 0 0 0 3px rgba(244,63,94,.12);
+        }
+
+            .role-card-input.admin:checked ~ label.role-card.admin .role-card-icon {
+                background: #fff1f2;
+                color: #e03131;
+            }
+
+            .role-card-input.admin:checked ~ label.role-card.admin .role-card-name {
+                color: #e03131;
+            }
+
+        .role-card.admin .role-card-icon {
+            background: rgba(244,63,94,.08);
+            color: #f43f5e;
+        }
+
+        /* Teacher */
+        .role-card-input.teacher:checked ~ label.role-card.teacher {
+            border-color: #3b82f6;
+            background: #eff6ff;
+            box-shadow: 0 0 0 3px rgba(59,130,246,.12);
+        }
+
+            .role-card-input.teacher:checked ~ label.role-card.teacher .role-card-icon {
+                background: #eff6ff;
+                color: #2563eb;
+            }
+
+            .role-card-input.teacher:checked ~ label.role-card.teacher .role-card-name {
+                color: #2563eb;
+            }
+
+        .role-card.teacher .role-card-icon {
+            background: rgba(59,130,246,.08);
+            color: #3b82f6;
+        }
+
+        /* Student */
+        .role-card-input.student:checked ~ label.role-card.student {
+            border-color: #10b981;
+            background: #ecfdf5;
+            box-shadow: 0 0 0 3px rgba(16,185,129,.12);
+        }
+
+            .role-card-input.student:checked ~ label.role-card.student .role-card-icon {
+                background: #ecfdf5;
+                color: #059669;
+            }
+
+            .role-card-input.student:checked ~ label.role-card.student .role-card-name {
+                color: #059669;
+            }
+
+        .role-card.student .role-card-icon {
+            background: rgba(16,185,129,.08);
+            color: #10b981;
+        }
+
+        /* Parent */
+        .role-card-input.parent:checked ~ label.role-card.parent {
+            border-color: #f59f00;
+            background: #fffbeb;
+            box-shadow: 0 0 0 3px rgba(245,159,0,.12);
+        }
+
+            .role-card-input.parent:checked ~ label.role-card.parent .role-card-icon {
+                background: #fffbeb;
+                color: #d97706;
+            }
+
+            .role-card-input.parent:checked ~ label.role-card.parent .role-card-name {
+                color: #d97706;
+            }
+
+        .role-card.parent .role-card-icon {
+            background: rgba(245,159,0,.08);
+            color: #f59f00;
+        }
+
+        /* ── Subject checkboxes ── */
+        .subject-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 8px;
+        }
+
+        .subject-item {
+            display: none;
+        }
+
+        .subject-label {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 9px 12px;
+            border: 1.5px solid var(--border);
+            border-radius: var(--r-sm);
+            background: var(--bg-page);
+            cursor: pointer;
+            font-size: .82rem;
+            font-weight: 600;
+            color: var(--text-2);
+            transition: all .15s;
+            user-select: none;
+        }
+
+            .subject-label:hover {
+                border-color: #c4c9d8;
+                background: #fff;
+            }
+
+            .subject-label .sub-icon {
+                width: 22px;
+                height: 22px;
+                border-radius: 5px;
+                background: rgba(59,130,246,.08);
+                color: #3b82f6;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                font-size: 10px;
+                flex-shrink: 0;
+            }
+
+        .subject-item:checked + .subject-label {
+            border-color: #3b82f6;
+            background: #eff6ff;
+            color: #2563eb;
+        }
+
+            .subject-item:checked + .subject-label .sub-icon {
+                background: #3b82f6;
+                color: #fff;
+            }
+
+        .subject-item:disabled + .subject-label {
+            opacity: .45;
+            cursor: not-allowed;
+        }
+
+        .subject-limit-note {
+            font-size: .75rem;
+            color: var(--text-3);
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            margin-top: 8px;
+        }
+
+            .subject-limit-note.warning {
+                color: #d97706;
+            }
+
+            .subject-limit-note.error {
+                color: #e03131;
+            }
+
+        /* ── Role-specific panels ── */
+        .role-panel {
+            display: none;
+            animation: panelIn .2s ease;
+        }
+
+            .role-panel.visible {
+                display: block;
+            }
+
+        @@keyframes panelIn {
+            from {
+                opacity: 0;
+                transform: translateY(6px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        /* ── Preview sidebar ── */
+        .preview-card {
+            background: var(--bg-card);
+            border-radius: var(--r-lg);
+            border: 1px solid var(--border);
+            box-shadow: var(--sh-sm);
+            overflow: hidden;
+            position: sticky;
+            top: 80px;
+        }
+
+        .preview-hd {
+            padding: 14px 18px;
+            border-bottom: 1px solid var(--border);
+            background: linear-gradient(to right, #fafbff, #fff);
+            font-size: .78rem;
+            font-weight: 700;
+            color: var(--text-2);
+            display: flex;
+            align-items: center;
+            gap: 7px;
+            text-transform: uppercase;
+            letter-spacing: .5px;
+        }
+
+            .preview-hd i {
+                color: var(--c-primary);
+            }
+
+        .preview-body {
+            padding: 20px 18px;
+        }
+
+        /* Avatar preview */
+        .pv-avatar-wrap {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 18px;
+        }
+
+        .pv-avatar {
+            width: 64px;
+            height: 64px;
+            border-radius: 50%;
+            background: var(--c-gradient);
+            color: #fff;
+            font-size: 24px;
+            font-weight: 800;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 4px 16px var(--c-glow);
+            transition: all .3s;
+        }
+
+            .pv-avatar.admin {
+                background: linear-gradient(135deg,#f43f5e,#fb7185);
+                box-shadow: 0 4px 16px rgba(244,63,94,.3);
+            }
+
+            .pv-avatar.teacher {
+                background: linear-gradient(135deg,#3b82f6,#60a5fa);
+                box-shadow: 0 4px 16px rgba(59,130,246,.3);
+            }
+
+            .pv-avatar.student {
+                background: linear-gradient(135deg,#10b981,#34d399);
+                box-shadow: 0 4px 16px rgba(16,185,129,.3);
+            }
+
+            .pv-avatar.parent {
+                background: linear-gradient(135deg,#f59f00,#fbbf24);
+                box-shadow: 0 4px 16px rgba(245,159,0,.3);
+            }
+
+        .pv-name {
+            font-size: .95rem;
+            font-weight: 800;
+            color: var(--text-1);
+            text-align: center;
+        }
+
+        .pv-username {
+            font-size: .78rem;
+            color: var(--text-3);
+        }
+
+        .pv-role-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            padding: 4px 12px;
+            border-radius: 50px;
+            font-size: .72rem;
+            font-weight: 700;
+            border: 1px solid transparent;
+        }
+
+            .pv-role-badge.admin {
+                background: #fff1f2;
+                color: #e03131;
+                border-color: #fecdd3;
+            }
+
+            .pv-role-badge.teacher {
+                background: #eff6ff;
+                color: #2563eb;
+                border-color: #bfdbfe;
+            }
+
+            .pv-role-badge.student {
+                background: #ecfdf5;
+                color: #059669;
+                border-color: #a7f3d0;
+            }
+
+            .pv-role-badge.parent {
+                background: #fffbeb;
+                color: #d97706;
+                border-color: #fde68a;
+            }
+
+            .pv-role-badge.default {
+                background: var(--bg-page);
+                color: var(--text-3);
+                border-color: var(--border);
+            }
+
+        /* Preview info rows */
+        .pv-divider {
+            height: 1px;
+            background: var(--border);
+            margin: 14px 0;
+        }
+
+        .pv-row {
+            display: flex;
+            align-items: flex-start;
+            gap: 8px;
+            margin-bottom: 10px;
+            font-size: .8rem;
+        }
+
+            .pv-row:last-child {
+                margin-bottom: 0;
+            }
+
+        .pv-row-icon {
+            width: 22px;
+            height: 22px;
+            border-radius: 5px;
+            background: var(--bg-page);
+            color: var(--text-3);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 10px;
+            flex-shrink: 0;
+            margin-top: 1px;
+        }
+
+        .pv-row-lbl {
+            font-size: .68rem;
+            color: var(--text-3);
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: .4px;
+        }
+
+        .pv-row-val {
+            font-size: .82rem;
+            color: var(--text-1);
+            font-weight: 600;
+            margin-top: 1px;
+        }
+
+        .pv-row-empty {
+            color: var(--text-3);
+            font-weight: 400;
+            font-style: italic;
+        }
+
+        /* ── Action buttons ── */
+        .form-actions {
+            display: flex;
+            align-items: center;
+            justify-content: flex-end;
+            gap: 10px;
+            padding: 16px 24px;
+            border-top: 1px solid var(--border);
+            background: #f9fafd;
+        }
+
+        /* ── Responsive ── */
+        @@media (max-width: 900px) {
+            .create-layout {
+                grid-template-columns: 1fr;
+            }
+
+            .preview-card {
+                position: static;
+            }
+
+            .role-cards {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+
+        @@media (max-width: 600px) {
+            .form-grid {
+                grid-template-columns: 1fr;
+            }
+
+                .form-grid.cols-3 {
+                    grid-template-columns: 1fr;
+                }
+
+            .span-2 {
+                grid-column: span 1;
+            }
+
+            .subject-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+
+            .role-cards {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+
+
+        /* ── Parent custom combobox ── */
+        .parent-combobox-wrap {
+            position: relative;
+        }
+
+        .parent-dropdown {
+            position: absolute;
+            top: calc(100% + 4px);
+            left: 0;
+            right: 0;
+            background: var(--bg-card);
+            border: 1.5px solid var(--border);
+            border-radius: var(--r-md);
+            box-shadow: 0 8px 24px rgba(0,0,0,.10);
+            z-index: 999;
+            overflow: hidden;
+            max-height: 240px;
+            overflow-y: auto;
+        }
+
+        .parent-dropdown-item {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 10px 14px;
+            cursor: pointer;
+            transition: background .12s;
+            border-bottom: 1px solid var(--border);
+        }
+
+            .parent-dropdown-item:last-child {
+                border-bottom: none;
+            }
+
+            .parent-dropdown-item:hover,
+            .parent-dropdown-item.highlighted {
+                background: #fffbeb;
+            }
+
+            .parent-dropdown-item.selected {
+                background: #fffbeb;
+            }
+
+        .parent-item-avatar {
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            background: linear-gradient(135deg,#f59f00,#fbbf24);
+            color: #fff;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 12px;
+            font-weight: 700;
+            flex-shrink: 0;
+        }
+
+        .parent-item-info {
+            flex: 1;
+            min-width: 0;
+        }
+
+        .parent-item-name {
+            font-size: .83rem;
+            font-weight: 600;
+            color: var(--text-1);
+        }
+
+        .parent-item-phone {
+            font-size: .73rem;
+            color: var(--text-3);
+            margin-top: 1px;
+        }
+
+            .parent-item-phone i {
+                font-size: 9px;
+                margin-right: 2px;
+            }
+
+        .parent-item-check {
+            color: #f59f00;
+            font-size: 12px;
+            opacity: 0;
+            flex-shrink: 0;
+        }
+
+        .parent-dropdown-item.selected .parent-item-check {
+            opacity: 1;
+        }
+
+        .parent-dropdown-empty {
+            padding: 16px;
+            text-align: center;
+            color: var(--text-3);
+            font-size: .82rem;
+        }
+
+        /* ── Parent selected chip ── */
+        .parent-chip {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 10px 14px;
+            border-radius: var(--r-md);
+            background: #fffbeb;
+            border: 1.5px solid #fde68a;
+        }
+
+        .parent-chip-avatar {
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            background: linear-gradient(135deg,#f59f00,#fbbf24);
+            color: #fff;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 13px;
+            font-weight: 700;
+            flex-shrink: 0;
+        }
+
+        .parent-chip-info {
+            flex: 1;
+            min-width: 0;
+        }
+
+        .parent-chip-name {
+            font-size: .85rem;
+            font-weight: 700;
+            color: #b45309;
+        }
+
+        .parent-chip-phone {
+            font-size: .75rem;
+            color: #92400e;
+            margin-top: 1px;
+        }
+
+        .parent-chip-remove {
+            width: 26px;
+            height: 26px;
+            border-radius: 50%;
+            border: 1.5px solid #fde68a;
+            background: #fff;
+            color: #d97706;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            font-size: 11px;
+            transition: all .15s;
+            flex-shrink: 0;
+        }
+
+            .parent-chip-remove:hover {
+                background: #f43f5e;
+                border-color: #f43f5e;
+                color: #fff;
+            }
+        /* ── Parent mode toggle buttons ── */
+        .parent-mode-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 6px 14px;
+            border: 1.5px solid var(--border);
+            border-radius: var(--r-sm);
+            background: var(--bg-page);
+            color: var(--text-2);
+            font-size: .78rem;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all .15s;
+            font-family: 'Plus Jakarta Sans', system-ui, sans-serif;
+        }
+
+            .parent-mode-btn:hover {
+                border-color: #f59f00;
+                color: #d97706;
+                background: #fffbeb;
+            }
+
+            .parent-mode-btn.active {
+                border-color: #f59f00;
+                background: #fffbeb;
+                color: #d97706;
+                box-shadow: 0 0 0 3px rgba(245,159,0,.12);
+            }
+
+        /* ── Student checkbox list ── */
+        .student-check-item {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 10px 14px;
+            cursor: pointer;
+            transition: background .12s;
+            border-bottom: 1px solid var(--border);
+        }
+
+            .student-check-item:last-child {
+                border-bottom: none;
+            }
+
+            .student-check-item:hover {
+                background: #f0fdf4;
+            }
+
+            .student-check-item input[type="checkbox"] {
+                display: none;
+            }
+
+            .student-check-item .check-icon {
+                font-size: 11px;
+                color: #10b981;
+                opacity: 0;
+                transition: opacity .15s;
+                flex-shrink: 0;
+            }
+
+            .student-check-item:has(input:checked) {
+                background: #ecfdf5;
+            }
+
+                .student-check-item:has(input:checked) .check-icon {
+                    opacity: 1;
+                }
+
+        #roleSpecificCard {
+            overflow: visible;
+            position: relative;
+            z-index: 20;
+        }
+
+            #roleSpecificCard .form-card-body {
+                overflow: visible;
+            }
+
+        .parent-dropdown {
+            z-index: 9999;
+        }
+    </style>
+}
+
+<!-- ════════════════════════════════════════
+     PAGE HEADER
+════════════════════════════════════════ -->
+<div class="page-header">
+    <div>
+        <h1 class="page-heading">Tạo <span>người dùng mới</span></h1>
+        <p class="page-subheading">
+            <i class="fas fa-circle-info" style="color:var(--c-primary)"></i>
+            Điền đầy đủ thông tin để tạo tài khoản mới trong hệ thống
+        </p>
+    </div>
+    <div class="page-actions">
+        <a href="/Admin/Users" class="btn-outline">
+            <i class="fas fa-arrow-left"></i> Quay lại
+        </a>
+    </div>
+</div>
+
+<!-- ════════════════════════════════════════
+     MAIN LAYOUT
+════════════════════════════════════════ -->
+<div class="create-layout">
+
+    <!-- ── Cột trái: Form ── -->
+    <div>
+        <form method="post" id="createForm">
+
+            <!-- ┌──────────────────────────────────────┐ -->
+            <!-- │  CARD 1 — Vai trò                    │ -->
+            <!-- └──────────────────────────────────────┘ -->
+            <div class="form-card" style="margin-bottom:16px">
+                <div class="form-card-hd">
+                    <div class="form-card-icon"><i class="fas fa-id-badge"></i></div>
+                    <div>
+                        <div class="form-card-title">Vai trò tài khoản</div>
+                        <div class="form-card-subtitle">Chọn vai trò để hiển thị các trường phù hợp</div>
+                    </div>
+                </div>
+                <div class="form-card-body">
+                    <div class="role-cards">
+                        <input type="radio" asp-for="Input.Role" value="Admin"
+                               id="roleAdmin" class="role-card-input admin" />
+                        <label for="roleAdmin" class="role-card admin">
+                            <div class="role-card-icon"><i class="fas fa-shield-halved"></i></div>
+                            <span class="role-card-name">Admin</span>
+                            <span class="role-card-desc">Quản trị hệ thống</span>
+                        </label>
+
+                        <input type="radio" asp-for="Input.Role" value="Teacher"
+                               id="roleTeacher" class="role-card-input teacher" />
+                        <label for="roleTeacher" class="role-card teacher">
+                            <div class="role-card-icon"><i class="fas fa-chalkboard-user"></i></div>
+                            <span class="role-card-name">Giáo viên</span>
+                            <span class="role-card-desc">Giảng dạy các lớp</span>
+                        </label>
+
+                        <input type="radio" asp-for="Input.Role" value="Student"
+                               id="roleStudent" class="role-card-input student" />
+                        <label for="roleStudent" class="role-card student">
+                            <div class="role-card-icon"><i class="fas fa-user-graduate"></i></div>
+                            <span class="role-card-name">Học sinh</span>
+                            <span class="role-card-desc">Tham gia các lớp học</span>
+                        </label>
+
+                        <input type="radio" asp-for="Input.Role" value="Parent"
+                               id="roleParent" class="role-card-input parent" />
+                        <label for="roleParent" class="role-card parent">
+                            <div class="role-card-icon"><i class="fas fa-hands-holding"></i></div>
+                            <span class="role-card-name">Phụ huynh</span>
+                            <span class="role-card-desc">Theo dõi học sinh</span>
+                        </label>
+                    </div>
+                    <span asp-validation-for="Input.Role" class="field-error mt-2"></span>
+                </div>
+            </div>
+
+            <!-- ┌──────────────────────────────────────┐ -->
+            <!-- │  CARD 2 — Tài khoản & Mật khẩu      │ -->
+            <!-- └──────────────────────────────────────┘ -->
+            <div class="form-card" style="margin-bottom:16px">
+                <div class="form-card-hd">
+                    <div class="form-card-icon"><i class="fas fa-key"></i></div>
+                    <div>
+                        <div class="form-card-title">Thông tin tài khoản</div>
+                        <div class="form-card-subtitle">Username và mật khẩu dùng để đăng nhập</div>
+                    </div>
+                </div>
+                <div class="form-card-body">
+                    <div class="form-grid">
+                        <div class="form-field">
+                            <label class="field-label" for="inputUsername">
+                                <i class="fas fa-at" style="color:var(--text-3);font-size:11px"></i>
+                                Username <span class="req">*</span>
+                            </label>
+                            <div class="input-wrap">
+                                <span class="input-icon"><i class="fas fa-at"></i></span>
+                                <input asp-for="Input.Username"
+                                       id="inputUsername"
+                                       class="form-input"
+                                       placeholder="vd: nguyenvana" />
+                            </div>
+                            <span asp-validation-for="Input.Username" class="field-error"></span>
+                        </div>
+
+                        <div class="form-field">
+                            <label class="field-label" for="inputPassword">
+                                <i class="fas fa-lock" style="color:var(--text-3);font-size:11px"></i>
+                                Mật khẩu <span class="req">*</span>
+                            </label>
+                            <div class="input-wrap has-toggle">
+                                <span class="input-icon"><i class="fas fa-lock"></i></span>
+                                <input asp-for="Input.Password"
+                                       id="inputPassword"
+                                       type="password"
+                                       class="form-input"
+                                       placeholder="Tối thiểu 6 ký tự" />
+                                <button type="button" class="pw-toggle" id="pwToggle" title="Hiện/ẩn mật khẩu">
+                                    <i class="fas fa-eye" id="pwIcon"></i>
+                                </button>
+                            </div>
+                            <span asp-validation-for="Input.Password" class="field-error"></span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ┌──────────────────────────────────────┐ -->
+            <!-- │  CARD 3 — Thông tin cá nhân          │ -->
+            <!-- └──────────────────────────────────────┘ -->
+            <div class="form-card" style="margin-bottom:16px">
+                <div class="form-card-hd">
+                    <div class="form-card-icon"><i class="fas fa-user"></i></div>
+                    <div>
+                        <div class="form-card-title">Thông tin cá nhân</div>
+                        <div class="form-card-subtitle">Họ tên, ngày sinh và liên hệ</div>
+                    </div>
+                </div>
+                <div class="form-card-body">
+                    <div class="form-grid" style="margin-bottom:16px">
+                        <div class="form-field span-2">
+                            <label class="field-label" for="inputFullname">
+                                Họ và tên <span class="req">*</span>
+                            </label>
+                            <div class="input-wrap">
+                                <span class="input-icon"><i class="fas fa-user"></i></span>
+                                <input asp-for="Input.Fullname"
+                                       id="inputFullname"
+                                       class="form-input"
+                                       placeholder="Nguyễn Văn A" />
+                            </div>
+                            <span asp-validation-for="Input.Fullname" class="field-error"></span>
+                        </div>
+
+                        <div class="form-field">
+                            <label class="field-label">
+                                Giới tính
+                                <span class="badge-opt">tuỳ chọn</span>
+                            </label>
+                            <select asp-for="Input.Gender" class="form-select">
+                                <option value="0">Nam</option>
+                                <option value="1">Nữ</option>
+                            </select>
+                        </div>
+
+                        <div class="form-field">
+                            <label class="field-label" for="inputDob">
+                                Ngày sinh
+                                <span class="badge-opt">tuỳ chọn</span>
+                            </label>
+                            <input asp-for="Input.Dob"
+                                   id="inputDob"
+                                   type="date"
+                                   class="form-input" />
+                        </div>
+                    </div>
+
+                    <div class="form-grid">
+                        <div class="form-field">
+                            <label class="field-label" for="inputPhone">
+                                Số điện thoại
+                                <span class="badge-opt">tuỳ chọn</span>
+                            </label>
+                            <div class="input-wrap">
+                                <span class="input-icon"><i class="fas fa-phone"></i></span>
+                                <input asp-for="Input.Phone"
+                                       id="inputPhone"
+                                       class="form-input"
+                                       placeholder="0912 345 678" />
+                            </div>
+                        </div>
+
+                        <div class="form-field">
+                            <label class="field-label" for="inputNote">
+                                Ghi chú
+                                <span class="badge-opt">tuỳ chọn</span>
+                            </label>
+                            <input asp-for="Input.Note"
+                                   id="inputNote"
+                                   class="form-input"
+                                   placeholder="Ghi chú thêm về tài khoản..." />
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ┌──────────────────────────────────────┐ -->
+            <!-- │  CARD 4 — Thông tin theo vai trò     │ -->
+            <!-- └──────────────────────────────────────┘ -->
+            <div class="form-card" id="roleSpecificCard" style="display:none;margin-bottom:16px">
+
+                <!-- Teacher panel -->
+                <div id="teacherPanel" class="role-panel">
+                    <div class="form-card-hd">
+                        <div class="form-card-icon" style="background:rgba(59,130,246,.1);color:#3b82f6">
+                            <i class="fas fa-chalkboard-user"></i>
+                        </div>
+                        <div>
+                            <div class="form-card-title">Thông tin giáo viên</div>
+                            <div class="form-card-subtitle">Chọn môn giảng dạy (tối đa 3 môn)</div>
+                        </div>
+                    </div>
+                    <div class="form-card-body">
+                        <div class="subject-grid">
+                            @{
+                                var subjects = new[] {
+                                                        (0, "fa-square-root-variable", "Toán"),
+                                                        (1, "fa-book-open",            "Tiếng Việt"),
+                                                        (2, "fa-language",             "Tiếng Anh"),
+                                                        (3, "fa-atom",                 "Vật lý"),
+                                                        (4, "fa-dna",                  "Sinh học"),
+                                                        (5, "fa-flask",                "Hóa học"),
+                                                        (6, "fa-earth-asia",           "Địa lý"),
+                                                        (7, "fa-landmark",             "Lịch sử"),
+                                                        (8, "fa-ellipsis",             "Khác"),
+                                                        };
+                            }
+                            @foreach (var (val, icon, name) in subjects)
+                            {
+                                <span>
+                                    <input type="checkbox"
+                                           name="Input.Subjects"
+                                           value="@val"
+                                           id="sub@(val)"
+                                           class="subject-item subject-checkbox" />
+                                    <label for="sub@(val)" class="subject-label">
+                                        <span class="sub-icon"><i class="fas @icon"></i></span>
+                                        @name
+                                    </label>
+                                </span>
+                            }
+                        </div>
+                        <div class="subject-limit-note" id="subjectNote">
+                            <i class="fas fa-circle-info"></i>
+                            <span id="subjectNoteText">Đã chọn <strong id="subjectCount">0</strong> / 3 môn</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Student panel -->
+                <div id="studentPanel" class="role-panel">
+                    <div class="form-card-hd">
+                        <div class="form-card-icon" style="background:rgba(16,185,129,.1);color:#10b981">
+                            <i class="fas fa-user-graduate"></i>
+                        </div>
+                        <div>
+                            <div class="form-card-title">Thông tin học sinh</div>
+                            <div class="form-card-subtitle">Trường học và liên kết phụ huynh</div>
+                        </div>
+                    </div>
+                    <div class="form-card-body">
+                        <div class="form-section">
+                            <div class="section-label"><i class="fas fa-school"></i> Trường học</div>
+                            <div class="form-field">
+                                <label class="field-label">
+                                    Trường đang học
+                                    <span class="badge-opt">tuỳ chọn</span>
+                                </label>
+                                <div class="input-wrap">
+                                    <span class="input-icon"><i class="fas fa-school"></i></span>
+                                    <input asp-for="Input.CurrentSchool"
+                                           class="form-input"
+                                           placeholder="Tên trường học hiện tại" />
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="form-section">
+                            <div class="section-label"><i class="fas fa-user-shield"></i> Phụ huynh / Người giám hộ</div>
+                            <div id="parentSelectMode">
+                                <input type="hidden" asp-for="Input.ParentId" id="parentIdHidden" />
+                                <div id="parentCombobox">
+                                    <div class="parent-combobox-wrap">
+                                        <div class="input-wrap">
+                                            <span class="input-icon"><i class="fas fa-magnifying-glass"></i></span>
+                                            <input type="text"
+                                                   id="parentSearchInput"
+                                                   class="form-input"
+                                                   placeholder="Tìm theo tên hoặc SĐT..."
+                                                   autocomplete="off" />
+                                        </div>
+                                        <div id="parentDropdown" class="parent-dropdown" style="display:none;">
+                                            <div id="parentDropdownList">
+                                                @if (!Model.Parents.Any())
+                                                {
+                                                    <div class="parent-dropdown-empty">
+                                                        <i class="fas fa-inbox"></i> Không có phụ huynh nào trong hệ thống
+                                                    </div>
+                                                }
+                                                else
+                                                {
+                                                    @foreach (var p in Model.Parents)
+                                                    {
+                                                        <div class="parent-dropdown-item"
+                                                             data-id="@p.ParentId"
+                                                             data-name="@p.Fullname"
+                                                             data-phone="@p.Phone"
+                                                             data-search="@(p.Fullname.ToLower()) @(p.Phone?.ToLower())">
+                                                            <div class="parent-item-avatar">
+                                                                @p.Fullname.Substring(0, 1).ToUpper()
+                                                            </div>
+                                                            <div class="parent-item-info">
+                                                                <div class="parent-item-name">@p.Fullname</div>
+                                                                <div class="parent-item-phone">
+                                                                    <i class="fas fa-phone"></i> @p.Phone
+                                                                </div>
+                                                            </div>
+                                                            <i class="fas fa-check parent-item-check"></i>
+                                                        </div>
+                                                    }
+                                                }
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div style="font-size:.73rem;color:var(--text-3);margin-top:5px;">
+                                        <i class="fas fa-circle-info" style="margin-right:3px;"></i>
+                                        Để trống nếu chưa có phụ huynh trong hệ thống
+                                    </div>
+                                </div>
+
+                                <div id="parentSelectedChip" style="display:none;">
+                                    <div class="parent-chip">
+                                        <div class="parent-chip-avatar" id="parentChipAvatar">P</div>
+                                        <div class="parent-chip-info">
+                                            <div class="parent-chip-name" id="parentChipName"></div>
+                                            <div class="parent-chip-phone" id="parentChipPhone"></div>
+                                        </div>
+                                        <button type="button"
+                                                class="parent-chip-remove"
+                                                id="parentChipRemove"
+                                                title="Bỏ chọn">
+                                            <i class="fas fa-xmark"></i>
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div id="parentCreateMode" style="display:none;">
+                                <div style="padding:16px;border-radius:var(--r-md);background:#fffbeb;border:1.5px solid #fde68a;">
+                                    <div style="font-size:.72rem;font-weight:800;color:#d97706;text-transform:uppercase;letter-spacing:.5px;margin-bottom:14px;display:flex;align-items:center;gap:6px;">
+                                        <i class="fas fa-user-plus"></i> Thông tin phụ huynh mới
+                                    </div>
+                                    <div class="form-grid" style="margin-bottom:12px;">
+                                        <div class="form-field">
+                                            <label class="field-label">Họ và tên <span class="req">*</span></label>
+                                            <div class="input-wrap">
+                                                <span class="input-icon"><i class="fas fa-user"></i></span>
+                                                <input asp-for="Input.NewParent_Fullname" id="newParentFullname" class="form-input" placeholder="Nguyễn Thị B" />
+                                            </div>
+                                            <span asp-validation-for="Input.NewParent_Fullname" class="field-error"></span>
+                                        </div>
+                                        <div class="form-field">
+                                            <label class="field-label">Số điện thoại <span class="badge-opt">tuỳ chọn</span></label>
+                                            <div class="input-wrap">
+                                                <span class="input-icon"><i class="fas fa-phone"></i></span>
+                                                <input asp-for="Input.NewParent_Phone" class="form-input" placeholder="0912 345 678" />
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="form-grid">
+                                        <div class="form-field">
+                                            <label class="field-label">Username <span class="req">*</span></label>
+                                            <div class="input-wrap">
+                                                <span class="input-icon"><i class="fas fa-at"></i></span>
+                                                <input asp-for="Input.NewParent_Username" class="form-input" placeholder="vd: parent.nguyenb" />
+                                            </div>
+                                            <span asp-validation-for="Input.NewParent_Username" class="field-error"></span>
+                                        </div>
+                                        <div class="form-field">
+                                            <label class="field-label">Mật khẩu <span class="req">*</span></label>
+                                            <div class="input-wrap">
+                                                <span class="input-icon"><i class="fas fa-lock"></i></span>
+                                                <input asp-for="Input.NewParent_Password" class="form-input" placeholder="Tối thiểu 6 ký tự" />
+                                            </div>
+                                            <span asp-validation-for="Input.NewParent_Password" class="field-error"></span>
+                                        </div>
+                                    </div>
+                                </div>
+                                <input type="hidden" id="createNewParentFlag" asp-for="Input.CreateNewParent" value="true" />
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Parent panel -->
+                <div id="parentPanel" class="role-panel">
+                    <div class="form-card-hd">
+                        <div class="form-card-icon" style="background:rgba(245,159,0,.1);color:#f59f00">
+                            <i class="fas fa-hands-holding"></i>
+                        </div>
+                        <div>
+                            <div class="form-card-title">Thông tin phụ huynh</div>
+                            <div class="form-card-subtitle">Gắn học sinh vào tài khoản phụ huynh này</div>
+                        </div>
+                    </div>
+                    <div class="form-card-body">
+                        <div class="form-section">
+                            <div class="section-label"><i class="fas fa-child"></i> Gắn học sinh <span class="badge-opt">tuỳ chọn</span></div>
+                            <div class="input-wrap" style="margin-bottom:8px;">
+                                <span class="input-icon"><i class="fas fa-magnifying-glass"></i></span>
+                                <input type="text" id="studentSearchInput" class="form-input" placeholder="Tìm tên học sinh..." autocomplete="off" />
+                            </div>
+                            <div id="studentCheckboxList"
+                                 style="max-height:220px;overflow-y:auto;border:1.5px solid var(--border);border-radius:var(--r-sm);background:#f8f9fc;">
+                                @if (!Model.Students.Any())
+                                {
+                                    <div style="padding:16px;text-align:center;color:var(--text-3);font-size:.82rem;">
+                                        <i class="fas fa-info-circle" style="margin-right:4px;"></i>
+                                        Không có học sinh nào chưa có phụ huynh.
+                                    </div>
+                                }
+                                else
+                                {
+                                    @foreach (var s in Model.Students)
+                                    {
+                                        <label class="student-check-item" data-name="@s.Fullname.ToLower()" for="stu_@s.StudentId">
+                                            <input type="checkbox" id="stu_@s.StudentId" name="Input.StudentIds" value="@s.StudentId" class="student-checkbox" />
+                                            <div style="width:28px;height:28px;border-radius:50%;background:linear-gradient(135deg,#10b981,#34d399);color:#fff;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;flex-shrink:0;">
+                                                @s.Fullname.Substring(0, 1).ToUpper()
+                                            </div>
+                                            <div style="flex:1;min-width:0;">
+                                                <div style="font-weight:600;font-size:.83rem;">@s.Fullname</div>
+                                                <div style="font-size:.73rem;color:var(--text-3);">@s.Phone — @s.CurrentSchool</div>
+                                            </div>
+                                            <i class="fas fa-check check-icon"></i>
+                                        </label>
+                                    }
+                                }
+                            </div>
+                            <div id="studentSelectedCount" style="margin-top:8px;font-size:.75rem;color:var(--text-3);display:flex;align-items:center;gap:5px;">
+                                <i class="fas fa-circle-info"></i>
+                                Đã chọn <strong id="studentCountNum">0</strong> học sinh
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Admin/Staff panel -->
+                <div id="staffPanel" class="role-panel">
+                    <div class="form-card-hd">
+                        <div class="form-card-icon" style="background:rgba(244,63,94,.1);color:#f43f5e">
+                            <i class="fas fa-shield-halved"></i>
+                        </div>
+                        <div>
+                            <div class="form-card-title">Thông tin quản trị</div>
+                            <div class="form-card-subtitle">Thông tin bổ sung cho admin</div>
+                        </div>
+                    </div>
+                    <div class="form-card-body">
+                        <div class="form-grid" style="max-width:460px">
+                            <div class="form-field span-2">
+                                <label class="field-label">
+                                    Chức danh
+                                    <span class="badge-opt">tuỳ chọn</span>
+                                </label>
+                                <div class="input-wrap">
+                                    <span class="input-icon"><i class="fas fa-briefcase"></i></span>
+                                    <input asp-for="Input.Title" class="form-input" placeholder="VD: Quản lý, Kế toán..." />
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+
+            <!-- ── Action buttons ── -->
+            <div class="form-card">
+                <div class="form-actions">
+                    <a href="/Admin/Users" class="btn-outline">
+                        <i class="fas fa-times"></i> Hủy
+                    </a>
+                    <button type="submit" class="btn-brand">
+                        <i class="fas fa-user-plus"></i> Tạo tài khoản
+                    </button>
+                </div>
+            </div>
+
+        </form>
+    </div>
+
+    <!-- ── Cột phải: Preview sidebar ── -->
+    <div>
+        <div class="preview-card">
+            <div class="preview-hd">
+                <i class="fas fa-eye"></i> Xem trước
+            </div>
+            <div class="preview-body">
+                <div class="pv-avatar-wrap">
+                    <div class="pv-avatar" id="pvAvatar">?</div>
+                    <div>
+                        <div class="pv-name" id="pvName">Chưa nhập tên</div>
+                        <div class="pv-username" id="pvUsername" style="text-align:center">@@username</div>
+                    </div>
+                    <span class="pv-role-badge default" id="pvRoleBadge">
+                        <i class="fas fa-circle-question" id="pvRoleIcon"></i>
+                        <span id="pvRoleText">Chưa chọn vai trò</span>
+                    </span>
+                </div>
+
+                <div class="pv-divider"></div>
+
+                <div class="pv-row">
+                    <div class="pv-row-icon"><i class="fas fa-phone"></i></div>
+                    <div>
+                        <div class="pv-row-lbl">Điện thoại</div>
+                        <div class="pv-row-val pv-row-empty" id="pvPhone">Chưa nhập</div>
+                    </div>
+                </div>
+                <div class="pv-row">
+                    <div class="pv-row-icon"><i class="fas fa-venus-mars"></i></div>
+                    <div>
+                        <div class="pv-row-lbl">Giới tính</div>
+                        <div class="pv-row-val" id="pvGender">Nam</div>
+                    </div>
+                </div>
+                <div class="pv-row">
+                    <div class="pv-row-icon"><i class="fas fa-cake-candles"></i></div>
+                    <div>
+                        <div class="pv-row-lbl">Ngày sinh</div>
+                        <div class="pv-row-val pv-row-empty" id="pvDob">Chưa nhập</div>
+                    </div>
+                </div>
+                <div class="pv-row" id="pvNoteRow" style="display:none">
+                    <div class="pv-row-icon"><i class="fas fa-note-sticky"></i></div>
+                    <div>
+                        <div class="pv-row-lbl">Ghi chú</div>
+                        <div class="pv-row-val" id="pvNote"></div>
+                    </div>
+                </div>
+
+                <div class="pv-divider" id="pvExtraDivider" style="display:none"></div>
+                <div id="pvExtra"></div>
+            </div>
+        </div>
+    </div>
+
+</div>
+
+@section Scripts {
+    <script src="~/lib/jquery-validation/jquery.validate.min.js"></script>
+    <script src="~/lib/jquery-validation-unobtrusive/jquery.validate.unobtrusive.min.js"></script>
+    <script>
+        (function() {
+            /* ══════════════════════════════════════
+               ROLE SWITCHING
+            ══════════════════════════════════════ */
+            var roleCard = document.getElementById('roleSpecificCard');
+
+            var rolePanels = {
+                'Teacher': 'teacherPanel',
+                'Student': 'studentPanel',
+                'Admin':   'staffPanel',
+                'Parent':  'parentPanel'
+            };
+
+            var roleConfig = {
+                'Admin':   { cls:'admin',   icon:'fa-shield-halved',   label:'Admin',     badgeCls:'admin'   },
+                'Teacher': { cls:'teacher', icon:'fa-chalkboard-user', label:'Giáo viên', badgeCls:'teacher' },
+                'Student': { cls:'student', icon:'fa-user-graduate',   label:'Học sinh',  badgeCls:'student' },
+                'Parent':  { cls:'parent',  icon:'fa-hands-holding',   label:'Phụ huynh', badgeCls:'parent'  }
+            };
+
+            function onRoleChange(role) {
+                var panelId = rolePanels[role];
+                if (!panelId) {
+                    roleCard.style.display = 'none';
+                    return;
+                }
+
+                roleCard.style.display = 'block';
+
+                Object.values(rolePanels).forEach(function(id) {
+                    var el = document.getElementById(id);
+                    if (el) {
+                        el.classList.remove('visible');
+                        el.style.display = 'none';
+                    }
+                });
+
+                var targetPanel = document.getElementById(panelId);
+                if (targetPanel) {
+                    targetPanel.style.display = 'block';
+                    setTimeout(function() { targetPanel.classList.add('visible'); }, 10);
+                }
+
+                // ── FIX: updatePreviewRole TRƯỚC để badge/avatar đúng
+                // trước khi switchParentMode gọi updatePreviewSubjects bên trong ──
+                try {
+                    updatePreviewRole(role);
+                    if (role === 'Student') switchParentMode('select');
+                    if (role !== 'Parent') updateStudentCount();
+                } catch (e) {
+                    console.error("Lỗi cập nhật UI phụ:", e);
+                }
+            }
+
+            document.querySelectorAll('input[name="Input.Role"]').forEach(function(radio) {
+                radio.addEventListener('change', function() { onRoleChange(this.value); });
+                if (radio.checked) onRoleChange(radio.value);
+            });
+
+            /* ══════════════════════════════════════
+               SUBJECT CHECKBOXES
+            ══════════════════════════════════════ */
+            var MAX_SUBJECTS = 3;
+
+            function updateSubjectUI() {
+                var checked = document.querySelectorAll('.subject-checkbox:checked');
+                var count = checked.length;
+                var noteEl = document.getElementById('subjectNote');
+                var countEl = document.getElementById('subjectCount');
+
+                if (countEl) countEl.textContent = count;
+                if (noteEl) {
+                    noteEl.className = 'subject-limit-note' + (count === MAX_SUBJECTS ? ' warning' : '');
+                }
+                document.querySelectorAll('.subject-checkbox').forEach(function(cb) {
+                    if (!cb.checked) cb.disabled = (count >= MAX_SUBJECTS);
+                });
+                updatePreviewSubjects();
+            }
+
+            document.querySelectorAll('.subject-checkbox').forEach(function(cb) {
+                cb.addEventListener('change', function() { updateSubjectUI(); });
+            });
+
+            /* ══════════════════════════════════════
+               PASSWORD TOGGLE
+            ══════════════════════════════════════ */
+            var pwInput  = document.getElementById('inputPassword');
+            var pwToggle = document.getElementById('pwToggle');
+            var pwIcon   = document.getElementById('pwIcon');
+
+            if (pwToggle && pwInput) {
+                pwToggle.addEventListener('click', function() {
+                    var show = pwInput.type === 'password';
+                    pwInput.type = show ? 'text' : 'password';
+                    pwIcon.className = show ? 'fas fa-eye-slash' : 'fas fa-eye';
+                });
+            }
+
+            /* ══════════════════════════════════════
+               LIVE PREVIEW
+            ══════════════════════════════════════ */
+            var pvAvatar    = document.getElementById('pvAvatar');
+            var pvName      = document.getElementById('pvName');
+            var pvUsername  = document.getElementById('pvUsername');
+            var pvPhone     = document.getElementById('pvPhone');
+            var pvGender    = document.getElementById('pvGender');
+            var pvDob       = document.getElementById('pvDob');
+            var pvNote      = document.getElementById('pvNote');
+            var pvNoteRow   = document.getElementById('pvNoteRow');
+            var pvExtra     = document.getElementById('pvExtra');
+            var pvExtraDiv  = document.getElementById('pvExtraDivider');
+            var pvRoleBadge = document.getElementById('pvRoleBadge');
+            var pvRoleIcon  = document.getElementById('pvRoleIcon');
+            var pvRoleText  = document.getElementById('pvRoleText');
+
+            function getInitial(fullname) {
+                var trimmed = fullname.trim();
+                if (!trimmed) return '?';
+                var parts = trimmed.split(/\s+/);
+                return parts[parts.length - 1].charAt(0).toUpperCase();
+            }
+
+            function updatePreviewRole(role) {
+                var cfg = roleConfig[role];
+                pvRoleBadge.className  = 'pv-role-badge ' + (cfg ? cfg.badgeCls : 'default');
+                pvRoleIcon.className   = 'fas ' + (cfg ? cfg.icon : 'fa-circle-question');
+                pvRoleText.textContent = cfg ? cfg.label : 'Chưa chọn vai trò';
+                pvAvatar.className     = 'pv-avatar ' + (cfg ? cfg.cls : '');
+                updatePreviewSubjects();
+            }
+
+            function updatePreviewSubjects() {
+                var role = document.querySelector('input[name="Input.Role"]:checked');
+                pvExtra.innerHTML = '';
+                pvExtraDiv.style.display = 'none';
+                if (!role) return;
+
+                if (role.value === 'Teacher') {
+                    var checked = Array.from(document.querySelectorAll('.subject-checkbox:checked'));
+                    if (checked.length > 0) {
+                        pvExtraDiv.style.display = 'block';
+                        var names = checked.map(function(cb) {
+                            var lbl = document.querySelector('label[for="' + cb.id + '"]');
+                            return lbl ? lbl.textContent.trim() : '';
+                        });
+                        pvExtra.innerHTML =
+                            '<div class="pv-row">' +
+                            '<div class="pv-row-icon" style="background:rgba(59,130,246,.1);color:#3b82f6"><i class="fas fa-book"></i></div>' +
+                            '<div><div class="pv-row-lbl">Môn dạy</div>' +
+                            '<div class="pv-row-val">' + names.join(', ') + '</div></div></div>';
+                    }
+                } else if (role.value === 'Student') {
+                    var school        = document.querySelector('input[name="Input.CurrentSchool"]');
+                    var newParentName = document.getElementById('newParentFullname');
+                    var isCreating    = document.getElementById('createNewParentFlag');
+                    var chipName      = document.getElementById('parentChipName');
+                    var rows = [];
+
+                    if (school && school.value.trim()) {
+                        rows.push(
+                            '<div class="pv-row">' +
+                            '<div class="pv-row-icon" style="background:rgba(16,185,129,.1);color:#10b981"><i class="fas fa-school"></i></div>' +
+                            '<div><div class="pv-row-lbl">Trường</div>' +
+                            '<div class="pv-row-val">' + school.value.trim() + '</div></div></div>'
+                        );
+                    }
+                    if (isCreating && isCreating.value === 'true' && newParentName && newParentName.value.trim()) {
+                        rows.push(
+                            '<div class="pv-row">' +
+                            '<div class="pv-row-icon" style="background:rgba(245,159,0,.1);color:#d97706"><i class="fas fa-user-plus"></i></div>' +
+                            '<div><div class="pv-row-lbl">Phụ huynh (mới)</div>' +
+                            '<div class="pv-row-val">' + newParentName.value.trim() + '</div></div></div>'
+                        );
+                    } else if (chipName && chipName.textContent.trim()) {
+                        rows.push(
+                            '<div class="pv-row">' +
+                            '<div class="pv-row-icon" style="background:rgba(245,159,0,.1);color:#d97706"><i class="fas fa-user-shield"></i></div>' +
+                            '<div><div class="pv-row-lbl">Phụ huynh</div>' +
+                            '<div class="pv-row-val">' + chipName.textContent.trim() + '</div></div></div>'
+                        );
+                    }
+                    if (rows.length > 0) {
+                        pvExtraDiv.style.display = 'block';
+                        pvExtra.innerHTML = rows.join('');
+                    }
+
+                } else if (role.value === 'Parent') {
+                    var checkedStudents = document.querySelectorAll('.student-checkbox:checked');
+                    if (checkedStudents.length > 0) {
+                        pvExtraDiv.style.display = 'block';
+                        pvExtra.innerHTML =
+                            '<div class="pv-row">' +
+                            '<div class="pv-row-icon" style="background:rgba(16,185,129,.1);color:#10b981"><i class="fas fa-child"></i></div>' +
+                            '<div><div class="pv-row-lbl">Học sinh được gắn</div>' +
+                            '<div class="pv-row-val">' + checkedStudents.length + ' học sinh</div></div></div>';
+                    }
+                } else if (role.value === 'Admin') {
+                    var title = document.querySelector('input[name="Input.Title"]');
+                    if (title && title.value.trim()) {
+                        pvExtraDiv.style.display = 'block';
+                        pvExtra.innerHTML =
+                            '<div class="pv-row">' +
+                            '<div class="pv-row-icon" style="background:rgba(244,63,94,.1);color:#f43f5e"><i class="fas fa-briefcase"></i></div>' +
+                            '<div><div class="pv-row-lbl">Chức danh</div>' +
+                            '<div class="pv-row-val">' + title.value.trim() + '</div></div></div>';
+                    }
+                }
+            }
+
+            /* Bind live inputs */
+            var inputFullname = document.getElementById('inputFullname');
+            if (inputFullname) {
+                inputFullname.addEventListener('input', function() {
+                    var val = this.value.trim();
+                    pvName.textContent = val || 'Chưa nhập tên';
+                    pvAvatar.textContent = getInitial(this.value);
+                });
+            }
+
+            var inputUsername = document.getElementById('inputUsername');
+            if (inputUsername) {
+                inputUsername.addEventListener('input', function() {
+                    pvUsername.textContent = this.value.trim() ? '@@' + this.value.trim() : '@@username';
+                });
+            }
+
+            var inputPhone = document.getElementById('inputPhone');
+            if (inputPhone) {
+                inputPhone.addEventListener('input', function() {
+                    var val = this.value.trim();
+                    pvPhone.textContent = val || 'Chưa nhập';
+                    pvPhone.className = 'pv-row-val' + (val ? '' : ' pv-row-empty');
+                });
+            }
+
+            var genderSel = document.querySelector('select[name="Input.Gender"]');
+            if (genderSel) {
+                genderSel.addEventListener('change', function() {
+                    pvGender.textContent = this.options[this.selectedIndex].text;
+                });
+            }
+
+            var inputDob = document.getElementById('inputDob');
+            if (inputDob) {
+                inputDob.addEventListener('input', function() {
+                    var val = this.value;
+                    if (val) {
+                        var d = new Date(val);
+                        pvDob.textContent = d.toLocaleDateString('vi-VN');
+                        pvDob.className = 'pv-row-val';
+                    } else {
+                        pvDob.textContent = 'Chưa nhập';
+                        pvDob.className = 'pv-row-val pv-row-empty';
+                    }
+                });
+            }
+
+            var inputNote = document.getElementById('inputNote');
+            if (inputNote) {
+                inputNote.addEventListener('input', function() {
+                    var val = this.value.trim();
+                    if (val) {
+                        pvNote.textContent = val;
+                        pvNoteRow.style.display = 'flex';
+                    } else {
+                        pvNoteRow.style.display = 'none';
+                    }
+                });
+            }
+
+            document.querySelector('input[name="Input.CurrentSchool"]') &&
+            document.querySelector('input[name="Input.CurrentSchool"]').addEventListener('input', updatePreviewSubjects);
+            document.querySelector('input[name="Input.Title"]') &&
+            document.querySelector('input[name="Input.Title"]').addEventListener('input', updatePreviewSubjects);
+            document.getElementById('newParentFullname') &&
+            document.getElementById('newParentFullname').addEventListener('input', updatePreviewSubjects);
+
+            /* ══════════════════════════════════════
+               STUDENT PANEL — Parent combobox
+            ══════════════════════════════════════ */
+            var parentSearchInput  = document.getElementById('parentSearchInput');
+            var parentIdHidden     = document.getElementById('parentIdHidden');
+            var parentDropdown     = document.getElementById('parentDropdown');
+            var parentDropdownList = document.getElementById('parentDropdownList');
+            var parentCombobox     = document.getElementById('parentCombobox');
+            var parentChip         = document.getElementById('parentSelectedChip');
+            var parentChipAvatar   = document.getElementById('parentChipAvatar');
+            var parentChipName     = document.getElementById('parentChipName');
+            var parentChipPhone    = document.getElementById('parentChipPhone');
+            var parentChipRemove   = document.getElementById('parentChipRemove');
+
+            function selectParent(id, name, phone) {
+                if (parentIdHidden)   parentIdHidden.value = id;
+                if (parentChipAvatar) parentChipAvatar.textContent = name.charAt(0).toUpperCase();
+                if (parentChipName)   parentChipName.textContent = name;
+                if (parentChipPhone)  parentChipPhone.textContent = phone ? ('☎ ' + phone) : '';
+                document.querySelectorAll('.parent-dropdown-item').forEach(function(el) {
+                    el.classList.toggle('selected', el.dataset.id === String(id));
+                });
+                if (parentCombobox) parentCombobox.style.display = 'none';
+                if (parentChip)     parentChip.style.display = 'block';
+                if (parentDropdown) parentDropdown.style.display = 'none';
+                if (parentSearchInput) parentSearchInput.value = '';
+                updatePreviewSubjects();
+            }
+
+            function clearParent() {
+                if (parentIdHidden) parentIdHidden.value = '';
+                document.querySelectorAll('.parent-dropdown-item').forEach(function(el) {
+                    el.classList.remove('selected');
+                });
+                if (parentChip)     parentChip.style.display = 'none';
+                if (parentCombobox) parentCombobox.style.display = 'block';
+                if (parentSearchInput) {
+                    parentSearchInput.value = '';
+                    parentSearchInput.focus();
+                }
+                document.querySelectorAll('.parent-dropdown-item').forEach(function(el) {
+                    el.style.display = '';
+                });
+                updatePreviewSubjects();
+            }
+
+            if (parentSearchInput) {
+                parentSearchInput.addEventListener('focus', function() {
+                    if (parentDropdown) parentDropdown.style.display = 'block';
+                });
+                parentSearchInput.addEventListener('input', function() {
+                    var kw = this.value.toLowerCase().trim();
+                    document.querySelectorAll('.parent-dropdown-item').forEach(function(el) {
+                        el.style.display = (el.dataset.search || '').includes(kw) ? '' : 'none';
+                    });
+                    if (parentDropdown) parentDropdown.style.display = 'block';
+                });
+            }
+
+            if (parentDropdownList) {
+                parentDropdownList.addEventListener('click', function(e) {
+                    var item = e.target.closest('.parent-dropdown-item');
+                    if (!item) return;
+                    selectParent(item.dataset.id, item.dataset.name, item.dataset.phone);
+                });
+            }
+
+            if (parentChipRemove) {
+                parentChipRemove.addEventListener('click', clearParent);
+            }
+
+            document.addEventListener('click', function(e) {
+                var wrap = document.querySelector('.parent-combobox-wrap');
+                if (wrap && !wrap.contains(e.target)) {
+                    if (parentDropdown) parentDropdown.style.display = 'none';
+                }
+            });
+
+            if (parentSearchInput) {
+                parentSearchInput.addEventListener('keydown', function(e) {
+                    var items = Array.from(document.querySelectorAll(
+                        '.parent-dropdown-item:not([style*="display: none"]):not([style*="display:none"])'));
+                    var hi = document.querySelector('.parent-dropdown-item.highlighted');
+                    var idx = hi ? items.indexOf(hi) : -1;
+
+                    if (e.key === 'ArrowDown') {
+                        e.preventDefault();
+                        if (hi) hi.classList.remove('highlighted');
+                        idx = (idx + 1) % items.length;
+                        items[idx].classList.add('highlighted');
+                        items[idx].scrollIntoView({ block: 'nearest' });
+                    } else if (e.key === 'ArrowUp') {
+                        e.preventDefault();
+                        if (hi) hi.classList.remove('highlighted');
+                        idx = (idx - 1 + items.length) % items.length;
+                        items[idx].classList.add('highlighted');
+                        items[idx].scrollIntoView({ block: 'nearest' });
+                    } else if (e.key === 'Enter') {
+                        e.preventDefault();
+                        if (hi) {
+                            selectParent(hi.dataset.id, hi.dataset.name, hi.dataset.phone);
+                            hi.classList.remove('highlighted');
+                        }
+                    } else if (e.key === 'Escape') {
+                        if (parentDropdown) parentDropdown.style.display = 'none';
+                    }
+                });
+            }
+
+            (function restoreParentChip() {
+                var hidden = document.getElementById('parentIdHidden');
+                if (!hidden || !hidden.value) return;
+                var item = document.querySelector('.parent-dropdown-item[data-id="' + hidden.value + '"]');
+                if (item) selectParent(item.dataset.id, item.dataset.name, item.dataset.phone);
+            })();
+
+            function switchParentMode(mode) {
+                var selectMode = document.getElementById('parentSelectMode');
+                var createMode = document.getElementById('parentCreateMode');
+                var btnSelect  = document.getElementById('btnSelectParent');
+                var btnCreate  = document.getElementById('btnCreateParent');
+                var hiddenFlag = document.getElementById('createNewParentFlag');
+
+                if (mode === 'select') {
+                    if (selectMode) selectMode.style.display = 'block';
+                    if (createMode) createMode.style.display = 'none';
+                    if (btnSelect)  btnSelect.classList.add('active');
+                    if (btnCreate)  btnCreate.classList.remove('active');
+                    if (hiddenFlag) hiddenFlag.value = 'false';
+                } else {
+                    if (selectMode) selectMode.style.display = 'none';
+                    if (createMode) createMode.style.display = 'block';
+                    if (btnSelect)  btnSelect.classList.remove('active');
+                    if (btnCreate)  btnCreate.classList.add('active');
+                    if (hiddenFlag) hiddenFlag.value = 'true';
+                    clearParent();
+                }
+                updatePreviewSubjects();
+            }
+
+            /* ══════════════════════════════════════
+               PARENT PANEL — Student checkboxes
+            ══════════════════════════════════════ */
+            var studentSearchInput = document.getElementById('studentSearchInput');
+            var studentCountEl     = document.getElementById('studentCountNum');
+
+            function updateStudentCount() {
+                var count = document.querySelectorAll('.student-checkbox:checked').length;
+                if (studentCountEl) studentCountEl.textContent = count;
+                updatePreviewSubjects();
+            }
+
+            document.querySelectorAll('.student-checkbox').forEach(function(cb) {
+                cb.addEventListener('change', updateStudentCount);
+            });
+
+            if (studentSearchInput) {
+                studentSearchInput.addEventListener('input', function() {
+                    var kw = this.value.toLowerCase();
+                    document.querySelectorAll('.student-check-item').forEach(function(item) {
+                        item.style.display = (item.dataset.name || '').includes(kw) ? '' : 'none';
+                    });
+                });
+            }
+
+        })();
+    </script>
+}

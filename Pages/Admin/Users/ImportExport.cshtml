@@ -1,0 +1,1094 @@
+﻿@page
+@model TutoringCenterManagement.Pages.Admin.Users.ImportExportModel
+@{
+    ViewData["Title"] = "Import / Export người dùng";
+}
+
+@section Styles {
+    <style>
+        /* ════════════════════════════════════
+           IMPORT / EXPORT PAGE
+           Đồng bộ với Create page design system
+        ════════════════════════════════════ */
+
+        /* ── Layout 2 cột ── */
+        .ie-layout {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            align-items: start;
+            margin-bottom: 20px;
+        }
+
+        /* ── Form card (tái sử dụng từ Create) ── */
+        .form-card {
+            background: var(--bg-card);
+            border-radius: var(--r-lg);
+            border: 1px solid var(--border);
+            box-shadow: var(--sh-sm);
+            overflow: hidden;
+        }
+
+        .form-card-hd {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 14px 20px;
+            border-bottom: 1px solid var(--border);
+            background: linear-gradient(to right, #fafbff, #fff);
+        }
+
+        .form-card-icon {
+            width: 30px;
+            height: 30px;
+            border-radius: 8px;
+            background: rgba(232,89,12,.1);
+            color: var(--c-primary);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 13px;
+            flex-shrink: 0;
+        }
+
+        .form-card-title {
+            font-size: .92rem;
+            font-weight: 700;
+            color: var(--text-1);
+        }
+
+        .form-card-subtitle {
+            font-size: .75rem;
+            color: var(--text-3);
+            margin-top: 1px;
+        }
+
+        .form-card-body {
+            padding: 22px 24px;
+        }
+
+        .form-actions {
+            display: flex;
+            align-items: center;
+            justify-content: flex-end;
+            gap: 10px;
+            padding: 16px 24px;
+            border-top: 1px solid var(--border);
+            background: #f9fafd;
+        }
+
+        /* ── Section label ── */
+        .section-label {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: .72rem;
+            font-weight: 800;
+            color: var(--text-3);
+            text-transform: uppercase;
+            letter-spacing: .8px;
+            margin-bottom: 14px;
+        }
+
+            .section-label::after {
+                content: '';
+                flex: 1;
+                height: 1px;
+                background: var(--border);
+            }
+
+            .section-label i {
+                width: 20px;
+                height: 20px;
+                border-radius: 5px;
+                background: rgba(232,89,12,.1);
+                color: var(--c-primary);
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                font-size: 9px;
+                flex-shrink: 0;
+            }
+
+        /* ── Sheet badges (Export card) ── */
+        .sheet-list {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 8px;
+            margin-bottom: 20px;
+        }
+
+        .sheet-item {
+            display: flex;
+            align-items: center;
+            gap: 9px;
+            padding: 10px 12px;
+            border-radius: var(--r-sm);
+            border: 1px solid var(--border);
+            border-left-width: 3px;
+            background: var(--bg-page);
+        }
+
+        .sheet-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            flex-shrink: 0;
+        }
+
+        .sheet-item.staff {
+            border-left-color: #f43f5e;
+        }
+
+            .sheet-item.staff .sheet-dot {
+                background: #f43f5e;
+            }
+
+        .sheet-item.teacher {
+            border-left-color: #3b82f6;
+        }
+
+            .sheet-item.teacher .sheet-dot {
+                background: #3b82f6;
+            }
+
+        .sheet-item.student {
+            border-left-color: #10b981;
+        }
+
+            .sheet-item.student .sheet-dot {
+                background: #10b981;
+            }
+
+        .sheet-item.parent {
+            border-left-color: #f59f00;
+        }
+
+            .sheet-item.parent .sheet-dot {
+                background: #f59f00;
+            }
+
+        .sheet-item-name {
+            font-size: .82rem;
+            font-weight: 700;
+            color: var(--text-1);
+        }
+
+        .sheet-item-desc {
+            font-size: .7rem;
+            color: var(--text-3);
+            margin-top: 1px;
+        }
+
+        /* ── Action download buttons ── */
+        .dl-btn {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 13px 16px;
+            border-radius: var(--r-md);
+            border: 1.5px solid var(--border);
+            background: var(--bg-page);
+            text-decoration: none !important;
+            transition: all .15s;
+            width: 100%;
+            margin-bottom: 10px;
+            cursor: pointer;
+            font-family: inherit;
+        }
+
+            .dl-btn:hover {
+                transform: translateY(-1px);
+                box-shadow: var(--sh-sm);
+                text-decoration: none;
+            }
+
+            .dl-btn.green {
+                border-color: #a7f3d0;
+                background: #f0fdf4;
+            }
+
+                .dl-btn.green:hover {
+                    border-color: #10b981;
+                    background: #ecfdf5;
+                }
+
+            .dl-btn.slate {
+                border-color: #cbd5e1;
+                background: #f8fafc;
+            }
+
+                .dl-btn.slate:hover {
+                    border-color: #94a3b8;
+                    background: #f1f5f9;
+                }
+
+        .dl-btn-icon {
+            width: 38px;
+            height: 38px;
+            border-radius: var(--r-sm);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 17px;
+            flex-shrink: 0;
+        }
+
+        .dl-btn.green .dl-btn-icon {
+            background: #dcfce7;
+            color: #059669;
+        }
+
+        .dl-btn.slate .dl-btn-icon {
+            background: #e2e8f0;
+            color: #475569;
+        }
+
+        .dl-btn-title {
+            font-size: .86rem;
+            font-weight: 700;
+            color: var(--text-1);
+            flex: 1;
+        }
+
+        .dl-btn-desc {
+            font-size: .72rem;
+            color: var(--text-3);
+            margin-top: 2px;
+        }
+
+        .dl-btn-arrow {
+            color: var(--text-3);
+            font-size: 11px;
+            flex-shrink: 0;
+        }
+
+        /* ── Step header (Import) ── */
+        .step-header {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 12px;
+        }
+
+        .step-badge {
+            width: 22px;
+            height: 22px;
+            border-radius: 50%;
+            background: var(--c-primary);
+            color: #fff;
+            font-size: .7rem;
+            font-weight: 800;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+        }
+
+        .step-title {
+            font-size: .78rem;
+            font-weight: 800;
+            color: var(--text-2);
+            text-transform: uppercase;
+            letter-spacing: .5px;
+        }
+
+        /* ── File drop zone ── */
+        .drop-zone {
+            border: 2px dashed var(--border);
+            border-radius: var(--r-md);
+            padding: 30px 20px;
+            text-align: center;
+            background: var(--bg-page);
+            cursor: pointer;
+            transition: all .2s;
+            position: relative;
+            margin-bottom: 14px;
+        }
+
+            .drop-zone:hover,
+            .drop-zone.drag-over {
+                border-color: var(--c-primary);
+                background: #fff9f5;
+            }
+
+            .drop-zone input[type="file"] {
+                position: absolute;
+                inset: 0;
+                opacity: 0;
+                cursor: pointer;
+                width: 100%;
+                height: 100%;
+            }
+
+        .dz-icon {
+            width: 54px;
+            height: 54px;
+            border-radius: 50%;
+            background: rgba(232,89,12,.07);
+            color: var(--c-primary);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 22px;
+            margin: 0 auto 12px;
+            transition: all .2s;
+        }
+
+        .drop-zone:hover .dz-icon,
+        .drop-zone.drag-over .dz-icon {
+            background: rgba(232,89,12,.14);
+            transform: translateY(-3px) scale(1.05);
+        }
+
+        .dz-title {
+            font-size: .88rem;
+            font-weight: 700;
+            color: var(--text-1);
+            margin-bottom: 5px;
+        }
+
+        .dz-sub {
+            font-size: .75rem;
+            color: var(--text-3);
+            line-height: 1.5;
+        }
+
+        /* File đã chọn (chip) */
+        .file-chip {
+            display: none;
+            align-items: center;
+            gap: 10px;
+            padding: 11px 14px;
+            border-radius: var(--r-md);
+            background: #ecfdf5;
+            border: 1.5px solid #a7f3d0;
+            margin-bottom: 14px;
+        }
+
+            .file-chip.show {
+                display: flex;
+            }
+
+        .file-chip-name {
+            font-size: .85rem;
+            font-weight: 700;
+            color: #059669;
+            flex: 1;
+            min-width: 0;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        .file-chip-size {
+            font-size: .72rem;
+            color: var(--text-3);
+            flex-shrink: 0;
+        }
+
+        .file-chip-remove {
+            background: none;
+            border: none;
+            color: #94a3b8;
+            cursor: pointer;
+            padding: 0 2px;
+            font-size: 13px;
+            flex-shrink: 0;
+            transition: color .15s;
+        }
+
+            .file-chip-remove:hover {
+                color: #f43f5e;
+            }
+
+        /* ── Warning note ── */
+        .warn-note {
+            display: flex;
+            align-items: flex-start;
+            gap: 10px;
+            padding: 12px 14px;
+            border-radius: var(--r-sm);
+            background: #fffbeb;
+            border: 1px solid #fde68a;
+            font-size: .78rem;
+            color: #92400e;
+            line-height: 1.55;
+            margin-bottom: 4px;
+        }
+
+            .warn-note i {
+                color: #d97706;
+                font-size: 14px;
+                flex-shrink: 0;
+                margin-top: 2px;
+            }
+
+        /* ── Kết quả import ── */
+        .result-stats {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 12px;
+            margin-bottom: 22px;
+        }
+
+        .stat-card {
+            padding: 18px 12px 14px;
+            border-radius: var(--r-md);
+            text-align: center;
+            border: 1px solid transparent;
+            position: relative;
+            overflow: hidden;
+        }
+
+            .stat-card::before {
+                content: '';
+                position: absolute;
+                top: 0;
+                left: 0;
+                right: 0;
+                height: 3px;
+                border-radius: 0;
+            }
+
+            .stat-card.success {
+                background: #ecfdf5;
+                border-color: #a7f3d0;
+            }
+
+                .stat-card.success::before {
+                    background: #10b981;
+                }
+
+            .stat-card.failed {
+                background: #fff1f2;
+                border-color: #fecdd3;
+            }
+
+                .stat-card.failed::before {
+                    background: #f43f5e;
+                }
+
+            .stat-card.total {
+                background: #f8fafc;
+                border-color: var(--border);
+            }
+
+                .stat-card.total::before {
+                    background: #94a3b8;
+                }
+
+        .stat-num {
+            font-size: 2.2rem;
+            font-weight: 900;
+            line-height: 1;
+            margin-bottom: 5px;
+        }
+
+        .stat-card.success .stat-num {
+            color: #059669;
+        }
+
+        .stat-card.failed .stat-num {
+            color: #e03131;
+        }
+
+        .stat-card.total .stat-num {
+            color: var(--text-1);
+        }
+
+        .stat-lbl {
+            font-size: .72rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: .5px;
+        }
+
+        .stat-card.success .stat-lbl {
+            color: #059669;
+        }
+
+        .stat-card.failed .stat-lbl {
+            color: #e03131;
+        }
+
+        .stat-card.total .stat-lbl {
+            color: var(--text-3);
+        }
+
+        /* ── Error table ── */
+        .err-table-wrap {
+            border: 1px solid var(--border);
+            border-radius: var(--r-md);
+            overflow: hidden;
+        }
+
+        .err-table {
+            width: 100%;
+            border-collapse: separate;
+            border-spacing: 0;
+            font-size: .82rem;
+        }
+
+            .err-table thead th {
+                padding: 10px 14px;
+                font-size: .68rem;
+                font-weight: 700;
+                text-transform: uppercase;
+                letter-spacing: .6px;
+                color: var(--text-2);
+                background: #f4f6fc;
+                border-bottom: 2px solid var(--border);
+                white-space: nowrap;
+            }
+
+                .err-table thead th:first-child {
+                    padding-left: 20px;
+                    width: 44px;
+                }
+
+                .err-table thead th:last-child {
+                    padding-right: 20px;
+                }
+
+            .err-table tbody td {
+                padding: 10px 14px;
+                border-bottom: 1px solid #f0f2f8;
+                vertical-align: top;
+            }
+
+                .err-table tbody td:first-child {
+                    padding-left: 20px;
+                    color: var(--text-3);
+                    font-weight: 700;
+                }
+
+                .err-table tbody td:last-child {
+                    padding-right: 20px;
+                    color: #e03131;
+                }
+
+            .err-table tbody tr:last-child td {
+                border-bottom: none;
+            }
+
+            .err-table tbody tr:hover td {
+                background: #fff8f8;
+            }
+
+        .err-sheet-badge {
+            display: inline-flex;
+            align-items: center;
+            padding: 2px 7px;
+            border-radius: 4px;
+            font-size: .67rem;
+            font-weight: 700;
+            background: #fff1f2;
+            color: #e03131;
+            border: 1px solid #fecdd3;
+            margin-right: 5px;
+            vertical-align: middle;
+        }
+
+        /* ── Toast notifications ── */
+        .toast-wrap {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            z-index: 9999;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            pointer-events: none;
+        }
+
+        .toast-item {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 12px 16px;
+            border-radius: var(--r-md);
+            background: #fff;
+            border: 1px solid var(--border);
+            box-shadow: 0 8px 28px rgba(0,0,0,.13);
+            font-size: .83rem;
+            font-weight: 600;
+            color: var(--text-1);
+            min-width: 270px;
+            max-width: 380px;
+            pointer-events: all;
+            animation: toastSlide .3s cubic-bezier(.34,1.4,.64,1);
+        }
+
+            .toast-item.success {
+                border-left: 4px solid #10b981;
+            }
+
+            .toast-item.error {
+                border-left: 4px solid #f43f5e;
+            }
+
+            .toast-item.success .toast-icon {
+                color: #10b981;
+            }
+
+            .toast-item.error .toast-icon {
+                color: #f43f5e;
+            }
+
+        .toast-icon {
+            font-size: 16px;
+            flex-shrink: 0;
+        }
+
+        .toast-close {
+            margin-left: auto;
+            background: none;
+            border: none;
+            color: var(--text-3);
+            cursor: pointer;
+            font-size: 12px;
+            flex-shrink: 0;
+            transition: color .15s;
+        }
+
+            .toast-close:hover {
+                color: var(--text-1);
+            }
+
+        @@keyframes toastSlide {
+            from {
+                opacity: 0;
+                transform: translateX(24px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateX(0);
+            }
+        }
+
+        /* ── Responsive ── */
+        @@media (max-width: 860px) {
+            .ie-layout {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        @@media (max-width: 480px) {
+            .sheet-list {
+                grid-template-columns: 1fr;
+            }
+
+            .result-stats {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+}
+
+<!-- Toast container -->
+<div class="toast-wrap" id="toastWrap"></div>
+
+<!-- ════════════════════════════════════════
+     PAGE HEADER
+════════════════════════════════════════ -->
+<div class="page-header">
+    <div>
+        <h1 class="page-heading">Import / Export <span>người dùng</span></h1>
+        <p class="page-subheading">
+            <i class="fas fa-circle-info" style="color:var(--c-primary)"></i>
+            Xuất danh sách người dùng hoặc nhập hàng loạt từ file Excel
+        </p>
+    </div>
+    <div class="page-actions">
+        <a href="/Admin/Users" class="btn-outline">
+            <i class="fas fa-arrow-left"></i> Quay lại
+        </a>
+    </div>
+</div>
+
+<!-- ════════════════════════════════════════
+     LAYOUT 2 CỘT
+════════════════════════════════════════ -->
+<div class="ie-layout">
+
+    <!-- ══════════════════════════════
+         CỘT TRÁI — EXPORT
+    ══════════════════════════════ -->
+    <div class="form-card">
+        <div class="form-card-hd">
+            <div class="form-card-icon" style="background:rgba(16,185,129,.1);color:#059669">
+                <i class="fas fa-file-arrow-down"></i>
+            </div>
+            <div>
+                <div class="form-card-title">Export người dùng</div>
+                <div class="form-card-subtitle">Tải xuống toàn bộ danh sách dưới dạng Excel</div>
+            </div>
+        </div>
+        <div class="form-card-body">
+
+            <!-- 4 sheet -->
+            <div class="section-label"><i class="fas fa-layer-group"></i> Nội dung file xuất</div>
+            <div class="sheet-list">
+                <div class="sheet-item staff">
+                    <span class="sheet-dot"></span>
+                    <div>
+                        <div class="sheet-item-name">Staff</div>
+                        <div class="sheet-item-desc">Nhân viên / Quản lý</div>
+                    </div>
+                </div>
+                <div class="sheet-item teacher">
+                    <span class="sheet-dot"></span>
+                    <div>
+                        <div class="sheet-item-name">Teacher</div>
+                        <div class="sheet-item-desc">Giáo viên + môn dạy</div>
+                    </div>
+                </div>
+                <div class="sheet-item student">
+                    <span class="sheet-dot"></span>
+                    <div>
+                        <div class="sheet-item-name">Student</div>
+                        <div class="sheet-item-desc">Học sinh + phụ huynh</div>
+                    </div>
+                </div>
+                <div class="sheet-item parent">
+                    <span class="sheet-dot"></span>
+                    <div>
+                        <div class="sheet-item-name">Parent</div>
+                        <div class="sheet-item-desc">Phụ huynh + danh sách HS</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Nút export -->
+            <div class="section-label"><i class="fas fa-download"></i> Tải xuống</div>
+            <a asp-page="/Admin/Users/ImportExport" asp-page-handler="Export"
+               class="dl-btn green">
+                <div class="dl-btn-icon"><i class="fas fa-file-excel"></i></div>
+                <div style="flex:1;min-width:0">
+                    <div class="dl-btn-title">Xuất toàn bộ người dùng</div>
+                    <div class="dl-btn-desc">File .xlsx · 4 sheet · Dữ liệu thực tế</div>
+                </div>
+                <i class="fas fa-arrow-down dl-btn-arrow"></i>
+            </a>
+
+        </div>
+    </div>
+
+    <!-- ══════════════════════════════
+         CỘT PHẢI — IMPORT
+    ══════════════════════════════ -->
+    <div>
+        <form method="post" asp-page-handler="Import"
+              enctype="multipart/form-data" id="importForm">
+            @Html.AntiForgeryToken()
+
+            <div class="form-card">
+                <div class="form-card-hd">
+                    <div class="form-card-icon" style="background:rgba(59,130,246,.1);color:#2563eb">
+                        <i class="fas fa-file-arrow-up"></i>
+                    </div>
+                    <div>
+                        <div class="form-card-title">Import người dùng</div>
+                        <div class="form-card-subtitle">Tạo hàng loạt tài khoản từ file Excel</div>
+                    </div>
+                </div>
+                <div class="form-card-body">
+
+                    <!-- BƯỚC 1: Tải template -->
+                    <div class="step-header">
+                        <div class="step-badge">1</div>
+                        <div class="step-title">Tải file mẫu (nếu chưa có)</div>
+                    </div>
+                    <a asp-page="/Admin/Users/ImportExport" asp-page-handler="Template"
+                       class="dl-btn slate" style="margin-bottom:22px">
+                        <div class="dl-btn-icon"><i class="fas fa-file-alt"></i></div>
+                        <div style="flex:1;min-width:0">
+                            <div class="dl-btn-title">Tải file mẫu (Template)</div>
+                            <div class="dl-btn-desc">Có sẵn dropdown Gender &amp; Subject · Không có dòng mẫu</div>
+                        </div>
+                        <i class="fas fa-arrow-down dl-btn-arrow"></i>
+                    </a>
+
+                    <!-- BƯỚC 2: Upload file -->
+                    <div class="step-header">
+                        <div class="step-badge">2</div>
+                        <div class="step-title">Chọn file để import</div>
+                    </div>
+
+                    <!-- File chip (hiện sau khi chọn) -->
+                    <div class="file-chip" id="fileChip">
+                        <i class="fas fa-file-excel" style="color:#059669;font-size:18px;flex-shrink:0"></i>
+                        <span class="file-chip-name" id="chipName"></span>
+                        <span class="file-chip-size" id="chipSize"></span>
+                        <button type="button" class="file-chip-remove" id="chipRemove" title="Bỏ chọn">
+                            <i class="fas fa-xmark"></i>
+                        </button>
+                    </div>
+
+                    <!-- Drop zone -->
+                    <div class="drop-zone" id="dropZone">
+                        <input type="file" name="file" accept=".xlsx"
+                               id="fileInput" required />
+                        <div class="dz-icon"><i class="fas fa-cloud-arrow-up"></i></div>
+                        <div class="dz-title">Kéo &amp; thả file vào đây</div>
+                        <div class="dz-sub">
+                            hoặc <strong>click để chọn</strong><br>
+                            Chỉ hỗ trợ <strong>.xlsx</strong> &nbsp;·&nbsp; Tối đa <strong>5 MB</strong>
+                        </div>
+                    </div>
+
+                    <!-- Lưu ý -->
+                    <div class="warn-note">
+                        <i class="fas fa-triangle-exclamation"></i>
+                        <div>
+                            <strong>Lưu ý trước khi import:</strong><br>
+                            Password sẽ được <strong>mã hóa BCrypt tự động</strong>.
+                            Username đã tồn tại sẽ <strong>bị bỏ qua</strong>.
+                            Username học sinh của Phụ huynh phải tồn tại trong hệ thống.
+                        </div>
+                    </div>
+
+                </div>
+
+                <div class="form-actions">
+                    <button type="button" class="btn-outline" id="btnReset">
+                        <i class="fas fa-rotate-left"></i> Đặt lại
+                    </button>
+                    <button type="submit" class="btn-brand" id="btnSubmit">
+                        <i class="fas fa-upload"></i> Bắt đầu Import
+                    </button>
+                </div>
+            </div>
+
+        </form>
+    </div>
+
+</div>
+
+<!-- ════════════════════════════════════════
+     KẾT QUẢ IMPORT (hiện sau khi upload)
+════════════════════════════════════════ -->
+@if (Model.ShowResult)
+{
+    var total = Model.ImportSuccess + Model.ImportFailed;
+    var hasErr = Model.ImportErrors.Any();
+    var allOk = Model.ImportFailed == 0;
+
+    <div class="form-card" id="resultCard">
+        <div class="form-card-hd">
+            <div class="form-card-icon"
+                 style="background:@(allOk ? "rgba(16,185,129,.1)" : "rgba(244,63,94,.1)");
+                            color:@(allOk ? "#059669" : "#e03131")">
+                <i class="fas @(allOk ? "fa-circle-check" : "fa-circle-exclamation")"></i>
+            </div>
+            <div>
+                <div class="form-card-title">Kết quả Import</div>
+                <div class="form-card-subtitle">
+                    @if (allOk)
+                    {
+                        <text>Tất cả <strong>@total</strong> dòng đã được xử lý thành công</text>
+                    }
+                    else
+                    {
+                        <text>Hoàn tất · <strong style="color:#059669">@Model.ImportSuccess</strong> thành công, <strong style="color:#e03131">@Model.ImportFailed</strong> thất bại</text>
+                    }
+                </div>
+            </div>
+        </div>
+        <div class="form-card-body">
+
+            <!-- Stat cards -->
+            <div class="result-stats">
+                <div class="stat-card success">
+                    <div class="stat-num">@Model.ImportSuccess</div>
+                    <div class="stat-lbl">Thành công</div>
+                </div>
+                <div class="stat-card failed">
+                    <div class="stat-num">@Model.ImportFailed</div>
+                    <div class="stat-lbl">Thất bại</div>
+                </div>
+                <div class="stat-card total">
+                    <div class="stat-num">@total</div>
+                    <div class="stat-lbl">Tổng dòng</div>
+                </div>
+            </div>
+
+            <!-- Bảng lỗi -->
+            @if (hasErr)
+            {
+                <div class="section-label"><i class="fas fa-triangle-exclamation"></i> Chi tiết lỗi</div>
+                <div class="err-table-wrap">
+                    <table class="err-table">
+                        <thead>
+                            <tr>
+                                <th>#</th>
+                                <th>Sheet · Dòng</th>
+                                <th>Nội dung lỗi</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @for (int i = 0; i < Model.ImportErrors.Count; i++)
+                            {
+                                // Phân tích chuỗi dạng "[SheetName] Dòng X: message"
+                                var raw = Model.ImportErrors[i];
+                                var bEnd = raw.IndexOf(']');
+                                var sheet = bEnd > 1 ? raw.Substring(1, bEnd - 1) : "—";
+                                var rest = bEnd >= 0 ? raw.Substring(bEnd + 1).Trim() : raw;
+                                var colon = rest.IndexOf(':');
+                                var lineStr = colon > 0 ? rest.Substring(0, colon).Trim() : rest;
+                                var msg = colon > 0 ? rest.Substring(colon + 1).Trim() : "";
+                                <tr>
+                                    <td>@(i + 1)</td>
+                                    <td>
+                                        <span class="err-sheet-badge">@sheet</span>
+                                        <span style="font-size:.8rem;color:var(--text-2)">@lineStr</span>
+                                    </td>
+                                    <td>@msg</td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            }
+            else
+            {
+                <div style="display:flex;align-items:center;gap:10px;padding:16px;
+                                    background:#ecfdf5;border-radius:var(--r-md);
+                                    border:1px solid #a7f3d0;
+                                    font-size:.85rem;font-weight:600;color:#059669;">
+                    <i class="fas fa-circle-check" style="font-size:22px"></i>
+                    Không có lỗi — toàn bộ dữ liệu đã được nhập thành công!
+                </div>
+            }
+
+        </div>
+
+        <div class="form-actions">
+            <a href="/Admin/Users/ImportExport" class="btn-outline">
+                <i class="fas fa-rotate-left"></i> Import tiếp
+            </a>
+            <a href="/Admin/Users" class="btn-brand">
+                <i class="fas fa-users"></i> Xem danh sách người dùng
+            </a>
+        </div>
+    </div>
+}
+
+@section Scripts {
+    <script>
+        (function () {
+
+            /* ─── Toast helper ─── */
+            function toast(msg, type) {
+                var wrap = document.getElementById('toastWrap');
+                var el = document.createElement('div');
+                el.className = 'toast-item ' + (type || 'success');
+                el.innerHTML =
+                    '<i class="fas ' + (type === 'error' ? 'fa-circle-xmark' : 'fa-circle-check') + ' toast-icon"></i>' +
+                    '<span style="flex:1">' + msg + '</span>' +
+                    '<button class="toast-close" onclick="this.closest(\'.toast-item\').remove()">' +
+                    '<i class="fas fa-xmark"></i></button>';
+                wrap.appendChild(el);
+                setTimeout(function () { el && el.remove(); }, 5000);
+            }
+
+            /* Hiện toast từ TempData */
+            @if (TempData["SuccessMessage"] != null)
+            {
+                    <text>toast('@Html.Raw(TempData["SuccessMessage"].ToString().Replace("'", "\\'"))', 'success');</text>
+            }
+            @if (TempData["ErrorMessage"] != null)
+            {
+                    <text>toast('@Html.Raw(TempData["ErrorMessage"].ToString().Replace("'", "\\'"))', 'error');</text>
+            }
+
+            /* Scroll đến kết quả nếu có */
+            var resultCard = document.getElementById('resultCard');
+            if (resultCard) {
+                setTimeout(function () {
+                    resultCard.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                }, 350);
+            }
+
+            /* ─── File drop zone ─── */
+            var dropZone   = document.getElementById('dropZone');
+            var fileInput  = document.getElementById('fileInput');
+            var fileChip   = document.getElementById('fileChip');
+            var chipName   = document.getElementById('chipName');
+            var chipSize   = document.getElementById('chipSize');
+            var chipRemove = document.getElementById('chipRemove');
+            var btnReset   = document.getElementById('btnReset');
+            var btnSubmit  = document.getElementById('btnSubmit');
+
+            function fmtSize(b) {
+                if (b < 1024)       return b + ' B';
+                if (b < 1048576)    return (b / 1024).toFixed(1) + ' KB';
+                return (b / 1048576).toFixed(2) + ' MB';
+            }
+
+            function applyFile(file) {
+                if (!file) return;
+                if (!file.name.toLowerCase().endsWith('.xlsx')) {
+                    toast('Chỉ hỗ trợ file định dạng .xlsx', 'error');
+                    clearFile(); return;
+                }
+                if (file.size > 5 * 1024 * 1024) {
+                    toast('File vượt quá giới hạn 5 MB', 'error');
+                    clearFile(); return;
+                }
+                chipName.textContent = file.name;
+                chipSize.textContent = fmtSize(file.size);
+                fileChip.classList.add('show');
+                dropZone.style.display = 'none';
+            }
+
+            function clearFile() {
+                fileInput.value = '';
+                fileChip.classList.remove('show');
+                dropZone.style.display = '';
+            }
+
+            fileInput.addEventListener('change', function () {
+                if (this.files[0]) applyFile(this.files[0]);
+            });
+
+            chipRemove.addEventListener('click', clearFile);
+            btnReset.addEventListener('click', clearFile);
+
+            /* Drag & drop */
+            dropZone.addEventListener('dragover', function (e) {
+                e.preventDefault();
+                this.classList.add('drag-over');
+            });
+            dropZone.addEventListener('dragleave', function (e) {
+                if (!this.contains(e.relatedTarget)) this.classList.remove('drag-over');
+            });
+            dropZone.addEventListener('drop', function (e) {
+                e.preventDefault();
+                this.classList.remove('drag-over');
+                var f = e.dataTransfer.files[0];
+                if (f) {
+                    try {
+                        var dt = new DataTransfer();
+                        dt.items.add(f);
+                        fileInput.files = dt.files;
+                    } catch (_) {}
+                    applyFile(f);
+                }
+            });
+
+            /* Loading state khi submit */
+            document.getElementById('importForm').addEventListener('submit', function (e) {
+                if (!fileInput.files || !fileInput.files[0]) {
+                    toast('Vui lòng chọn file trước khi import', 'error');
+                    e.preventDefault(); return;
+                }
+                btnSubmit.disabled = true;
+                btnSubmit.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Đang xử lý...';
+            });
+
+        })();
+    </script>
+}

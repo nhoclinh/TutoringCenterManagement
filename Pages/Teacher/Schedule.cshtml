@@ -1,0 +1,1465 @@
+﻿@page
+@model TutoringCenterManagement.Pages.Teacher.ScheduleModel
+@using TutoringCenterManagement.Data.Enums
+@{
+    ViewData["Title"] = "Lịch dạy";
+    var today = DateOnly.FromDateTime(DateTime.Today);
+    var totalSess = Model.Sessions.Count;
+
+    string StatusCls(SessionStatus s) => s switch
+    {
+        SessionStatus.Scheduled => "scheduled",
+        SessionStatus.Ongoing => "ongoing",
+        SessionStatus.Completed => "completed",
+        SessionStatus.Cancelled => "cancelled",
+        _ => ""
+    };
+    string DowVi(DayOfWeek d) => d switch
+    {
+        DayOfWeek.Monday => "Thứ hai",
+        DayOfWeek.Tuesday => "Thứ ba",
+        DayOfWeek.Wednesday => "Thứ tư",
+        DayOfWeek.Thursday => "Thứ năm",
+        DayOfWeek.Friday => "Thứ sáu",
+        DayOfWeek.Saturday => "Thứ bảy",
+        _ => "Chủ nhật"
+    };
+    string SubjectColor(Subject s) => s switch
+    {
+        Subject.Math => "#3b82f6",
+        Subject.Vietnamese => "#10b981",
+        Subject.English => "#f59f00",
+        Subject.Physics => "#8b5cf6",
+        Subject.Biology => "#06b6d4",
+        Subject.Chemistry => "#ec4899",
+        Subject.Geography => "#84cc16",
+        Subject.History => "#f97316",
+        _ => "#6b7280"
+    };
+}
+
+@section Styles {
+    <style>
+        /* ══════════════════════════════════════════════
+           TEACHER SCHEDULE — đồng bộ design system
+        ══════════════════════════════════════════════ */
+
+        /* ── KPI strip CSS removed ── */
+
+        /* ── Today panel ── */
+        .today-panel {
+            background: linear-gradient(135deg, var(--c-primary) 0%, var(--c-secondary) 100%);
+            border-radius: var(--r-lg);
+            padding: 16px 20px;
+            margin-bottom: 18px;
+            display: flex;
+            align-items: center;
+            gap: 14px;
+            flex-wrap: nowrap;
+            box-shadow: 0 4px 20px rgba(232,89,12,.25);
+        }
+
+        .today-panel-icon {
+            width: 44px;
+            height: 44px;
+            border-radius: 12px;
+            background: rgba(255,255,255,.2);
+            color: #fff;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 18px;
+            flex-shrink: 0;
+        }
+
+        .today-panel-text {
+            flex-shrink: 0;
+            min-width: 0;
+        }
+
+            .today-panel-text .tp-date {
+                font-size: .78rem;
+                font-weight: 600;
+                color: rgba(255,255,255,.8);
+            }
+
+            .today-panel-text .tp-val {
+                font-size: 1.05rem;
+                font-weight: 800;
+                color: #fff;
+                margin-top: 2px;
+                white-space: nowrap;
+            }
+
+        .today-panel-sep {
+            width: 1px;
+            align-self: stretch;
+            background: rgba(255,255,255,.25);
+            flex-shrink: 0;
+        }
+
+        .today-sess-count {
+            display: flex;
+            gap: 8px;
+            margin-left: auto;
+            flex-shrink: 0;
+        }
+
+        .today-sess-bubble {
+            background: rgba(255,255,255,.2);
+            border: 1px solid rgba(255,255,255,.3);
+            border-radius: 50px;
+            padding: 5px 13px;
+            font-size: .8rem;
+            font-weight: 700;
+            color: #fff;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            white-space: nowrap;
+        }
+
+            .today-sess-bubble i {
+                font-size: 11px;
+                opacity: .85;
+            }
+
+        /* Tablet ≤ 768px: bubbles xuống hàng 2, dàn đều */
+        @@media (max-width: 768px) {
+            .today-panel {
+                flex-wrap: wrap;
+                gap: 10px 14px;
+            }
+
+            .today-panel-sep {
+                display: none;
+            }
+
+            .today-sess-count {
+                width: 100%;
+                margin-left: 0;
+                gap: 6px;
+            }
+
+            .today-sess-bubble {
+                flex: 1;
+                justify-content: center;
+                font-size: .78rem;
+                padding: 5px 10px;
+            }
+        }
+
+        /* Mobile nhỏ ≤ 480px */
+        @@media (max-width: 480px) {
+            .today-panel {
+                padding: 13px 14px;
+            }
+
+            .today-panel-icon {
+                width: 36px;
+                height: 36px;
+                font-size: 15px;
+            }
+
+            .today-panel-text .tp-val {
+                font-size: .9rem;
+            }
+
+            .today-sess-bubble {
+                font-size: .72rem;
+                padding: 4px 8px;
+                gap: 4px;
+            }
+
+                .today-sess-bubble i {
+                    display: none;
+                }
+        }
+
+        /* ── Filter card ── */
+        .filter-card {
+            background: var(--bg-card);
+            border-radius: var(--r-lg);
+            border: 1px solid var(--border);
+            box-shadow: var(--sh-sm);
+            padding: 16px 20px;
+            margin-bottom: 18px;
+        }
+
+        .filter-grid {
+            display: grid;
+            grid-template-columns: 2fr 1.2fr 1.2fr 1.2fr auto;
+            gap: 10px;
+            align-items: flex-end;
+        }
+
+            .filter-grid label {
+                font-size: .71rem;
+                font-weight: 700;
+                color: var(--text-2);
+                text-transform: uppercase;
+                letter-spacing: .5px;
+                display: block;
+                margin-bottom: 5px;
+            }
+
+        .filter-select, .filter-date {
+            width: 100%;
+            height: 36px;
+            padding: 0 10px;
+            border: 1.5px solid var(--border);
+            border-radius: var(--r-sm);
+            background: #f8f9fc;
+            color: var(--text-1);
+            font-size: .83rem;
+            font-family: inherit;
+            outline: none;
+            cursor: pointer;
+            box-sizing: border-box;
+            transition: border-color .15s,box-shadow .15s;
+        }
+
+            .filter-select:focus, .filter-date:focus {
+                border-color: var(--c-primary);
+                background: #fff;
+                box-shadow: inset 0 0 0 2px rgba(232,89,12,.12);
+            }
+
+        .filter-select {
+            padding-right: 28px;
+            -webkit-appearance: none;
+            appearance: none;
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='10' viewBox='0 0 24 24' fill='none' stroke='%239aa0b4' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E");
+            background-repeat: no-repeat;
+            background-position: right 9px center;
+        }
+
+        .filter-btn-group {
+            display: flex;
+            gap: 6px;
+            align-items: flex-end;
+        }
+
+        /* ── View toggle ── */
+        .view-toggle {
+            display: flex;
+            border: 1.5px solid var(--border);
+            border-radius: var(--r-sm);
+            overflow: hidden;
+            background: var(--bg-page);
+        }
+
+        .vt-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 6px 14px;
+            font-size: .8rem;
+            font-weight: 600;
+            color: var(--text-2);
+            background: transparent;
+            border: none;
+            cursor: pointer;
+            transition: all .15s;
+        }
+
+            .vt-btn:not(:last-child) {
+                border-right: 1px solid var(--border);
+            }
+
+            .vt-btn.active {
+                background: var(--c-gradient);
+                color: #fff;
+            }
+
+            .vt-btn:not(.active):hover {
+                color: var(--c-primary);
+                background: #fff9f5;
+            }
+
+        /* ── Content topbar ── */
+        .content-topbar {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-bottom: 14px;
+        }
+
+        .topbar-left {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
+        /* ── Pagesize ── */
+        .pagesize-wrap {
+            display: flex;
+            align-items: center;
+            gap: 7px;
+            font-size: .78rem;
+            font-weight: 600;
+            color: var(--text-2);
+        }
+
+        .pagesize-select {
+            height: 30px;
+            padding: 0 22px 0 8px;
+            border: 1.5px solid var(--border);
+            border-radius: var(--r-sm);
+            background: #f8f9fc;
+            color: var(--text-1);
+            font-size: .78rem;
+            font-family: inherit;
+            outline: none;
+            cursor: pointer;
+            -webkit-appearance: none;
+            appearance: none;
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='9' height='9' viewBox='0 0 24 24' fill='none' stroke='%239aa0b4' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E");
+            background-repeat: no-repeat;
+            background-position: right 7px center;
+        }
+
+        /* ── Table card ── */
+        .table-card {
+            background: var(--bg-card);
+            border-radius: var(--r-lg);
+            border: 1px solid var(--border);
+            box-shadow: var(--sh-sm);
+            overflow: hidden;
+        }
+
+        .table-card-hd {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 13px 20px;
+            border-bottom: 1px solid var(--border);
+            background: linear-gradient(to right,#fafbff,#fff);
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+
+        .table-card-title {
+            display: flex;
+            align-items: center;
+            gap: 9px;
+            font-size: .9rem;
+            font-weight: 700;
+            color: var(--text-1);
+        }
+
+        .ct-icon {
+            width: 28px;
+            height: 28px;
+            border-radius: 7px;
+            background: rgba(232,89,12,.1);
+            color: var(--c-primary);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 12px;
+        }
+
+        /* ── Sessions table ── */
+        .sessions-table {
+            width: 100%;
+            border-collapse: separate;
+            border-spacing: 0;
+            table-layout: fixed;
+        }
+
+            .sessions-table thead th {
+                padding: 11px 14px;
+                font-size: .69rem;
+                font-weight: 700;
+                text-transform: uppercase;
+                letter-spacing: .7px;
+                color: var(--text-2);
+                background: #f4f6fc;
+                border-bottom: 2px solid var(--border);
+                white-space: nowrap;
+            }
+
+                .sessions-table thead th:first-child {
+                    padding-left: 20px;
+                }
+
+                .sessions-table thead th:last-child {
+                    padding-right: 20px;
+                    text-align: right;
+                }
+
+            .sessions-table tbody td {
+                padding: 12px 14px;
+                font-size: .83rem;
+                color: var(--text-1);
+                border-bottom: 1px solid #f0f2f8;
+                vertical-align: middle;
+            }
+
+                .sessions-table tbody td:first-child {
+                    padding-left: 20px;
+                }
+
+                .sessions-table tbody td:last-child {
+                    padding-right: 20px;
+                }
+
+            .sessions-table tbody tr:last-child td {
+                border-bottom: none;
+            }
+
+            .sessions-table tbody tr {
+                transition: background .12s;
+                cursor: pointer;
+            }
+
+                .sessions-table tbody tr:hover td {
+                    background: #f8faff;
+                }
+
+                .sessions-table tbody tr.row-hidden {
+                    display: none;
+                }
+
+                .sessions-table tbody tr.today-row td {
+                    background: rgba(232,89,12,.03);
+                }
+
+        /* Column widths */
+        .col-date {
+            width: 108px;
+        }
+
+        .col-class {
+            width: 130px;
+        }
+
+        .col-subj {
+            width: 96px;
+        }
+
+        .col-shift {
+            width: 155px;
+        }
+
+        .col-room {
+            width: 90px;
+        }
+
+        .col-role {
+            width: 90px;
+        }
+
+        .col-status {
+            width: 138px;
+        }
+
+        .col-act {
+            width: 82px;
+        }
+
+        /* Date cell */
+        .date-day {
+            font-size: .85rem;
+            font-weight: 800;
+            color: var(--text-1);
+        }
+
+        .date-dow {
+            font-size: .67rem;
+            font-weight: 600;
+            color: var(--text-3);
+            margin-top: 1px;
+        }
+
+        .date-today-dot {
+            display: inline-block;
+            width: 6px;
+            height: 6px;
+            border-radius: 50%;
+            background: var(--c-primary);
+            margin-left: 4px;
+            vertical-align: middle;
+        }
+
+        /* Pills */
+        .class-pill {
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            background: rgba(232,89,12,.08);
+            color: var(--c-primary);
+            font-weight: 700;
+            font-size: .78rem;
+            padding: 3px 9px;
+            border-radius: 20px;
+        }
+
+        .room-pill {
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            background: rgba(59,130,246,.08);
+            color: #1d4ed8;
+            font-weight: 700;
+            font-size: .78rem;
+            padding: 3px 9px;
+            border-radius: 20px;
+        }
+
+        .subj-pill {
+            display: inline-flex;
+            padding: 3px 9px;
+            border-radius: 20px;
+            font-size: .7rem;
+            font-weight: 700;
+            color: #fff;
+            white-space: nowrap;
+        }
+
+        .role-pill {
+            display: inline-flex;
+            padding: 2px 9px;
+            border-radius: 20px;
+            font-size: .7rem;
+            font-weight: 700;
+            white-space: nowrap;
+        }
+
+            .role-pill.main {
+                background: rgba(232,89,12,.1);
+                color: var(--c-primary);
+            }
+
+            .role-pill.assist {
+                background: rgba(59,130,246,.1);
+                color: #1d4ed8;
+            }
+
+        /* Status badges */
+        .sess-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            padding: 3px 10px;
+            border-radius: 20px;
+            font-size: .72rem;
+            font-weight: 700;
+            white-space: nowrap;
+        }
+
+            .sess-badge.scheduled {
+                background: rgba(59,130,246,.1);
+                color: #1d4ed8;
+            }
+
+            .sess-badge.ongoing {
+                background: rgba(16,185,129,.1);
+                color: #059669;
+            }
+
+            .sess-badge.completed {
+                background: rgba(109,40,217,.1);
+                color: #5b21b6;
+            }
+
+            .sess-badge.cancelled {
+                background: rgba(244,63,94,.1);
+                color: #be123c;
+            }
+
+        /* Act buttons */
+        .act-btn {
+            width: 32px;
+            height: 32px;
+            border-radius: var(--r-sm);
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            border: 1.5px solid var(--border);
+            background: #fff;
+            font-size: 12px;
+            cursor: pointer;
+            text-decoration: none !important;
+            color: var(--text-2);
+            flex-shrink: 0;
+            transition: all .15s;
+        }
+
+            .act-btn:hover {
+                transform: translateY(-1px);
+                box-shadow: 0 4px 12px rgba(0,0,0,.1);
+            }
+
+            .act-btn.attend:hover {
+                border-color: #10b981;
+                color: #10b981;
+                background: #f0fdf4;
+            }
+
+        /* Table footer */
+        .table-foot {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 11px 20px;
+            border-top: 1px solid var(--border);
+            background: #f9fafd;
+            flex-wrap: wrap;
+            gap: 8px;
+        }
+
+        .foot-info {
+            font-size: .78rem;
+            color: var(--text-2);
+            font-weight: 500;
+        }
+
+        /* Empty state */
+        .empty-row td {
+            padding: 64px 20px !important;
+            text-align: center;
+            background: transparent !important;
+            border-bottom: none !important;
+        }
+
+        .empty-icon {
+            width: 64px;
+            height: 64px;
+            border-radius: 50%;
+            background: var(--bg-page);
+            margin: 0 auto 14px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
+            color: var(--text-3);
+        }
+
+        .empty-title {
+            font-size: .95rem;
+            font-weight: 700;
+            color: var(--text-1);
+            margin-bottom: 6px;
+        }
+
+        .empty-desc {
+            font-size: .8rem;
+            color: var(--text-2);
+        }
+
+        /* ── Status summary bar ── */
+        .status-summary {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+            align-items: center;
+            padding: 10px 20px;
+            border-top: 1px solid var(--border);
+            background: #fafbff;
+        }
+
+        .ss-item {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            font-size: .74rem;
+            font-weight: 600;
+            color: var(--text-2);
+        }
+
+        .ss-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 2px;
+        }
+
+        .ss-sep {
+            width: 1px;
+            height: 14px;
+            background: var(--border);
+        }
+
+        /* ── Calendar ── */
+        .calendar-card {
+            background: var(--bg-card);
+            border-radius: var(--r-lg);
+            border: 1px solid var(--border);
+            box-shadow: var(--sh-sm);
+            padding: 20px;
+        }
+
+        .fc {
+            font-family: 'Plus Jakarta Sans',system-ui,sans-serif !important;
+            font-size: .82rem !important;
+        }
+
+            .fc .fc-toolbar-title {
+                font-size: 1rem !important;
+                font-weight: 700 !important;
+                color: var(--text-1) !important;
+            }
+
+            .fc .fc-button {
+                background: var(--bg-page) !important;
+                border: 1px solid var(--border) !important;
+                color: var(--text-2) !important;
+                font-size: .78rem !important;
+                font-weight: 600 !important;
+                padding: 5px 11px !important;
+                border-radius: var(--r-sm) !important;
+                box-shadow: none !important;
+                transition: all .15s !important;
+            }
+
+                .fc .fc-button:hover {
+                    background: #fff9f5 !important;
+                    border-color: var(--c-primary) !important;
+                    color: var(--c-primary) !important;
+                }
+
+            .fc .fc-button-active,
+            .fc .fc-button-primary:not(:disabled).fc-button-active {
+                background: var(--c-gradient) !important;
+                border-color: transparent !important;
+                color: #fff !important;
+            }
+
+            .fc .fc-col-header-cell {
+                background: #f4f6fc !important;
+                font-size: .72rem !important;
+                font-weight: 700 !important;
+                text-transform: uppercase !important;
+                letter-spacing: .5px !important;
+                color: var(--text-2) !important;
+            }
+
+            .fc .fc-daygrid-day-number {
+                font-size: .78rem !important;
+                font-weight: 600 !important;
+                color: var(--text-2) !important;
+            }
+
+            .fc .fc-day-today {
+                background: rgba(232,89,12,.04) !important;
+            }
+
+                .fc .fc-day-today .fc-daygrid-day-number {
+                    color: var(--c-primary) !important;
+                    font-weight: 800 !important;
+                }
+
+            .fc th, .fc td {
+                border-color: var(--border) !important;
+            }
+
+            .fc .fc-toolbar.fc-header-toolbar {
+                margin-bottom: 16px !important;
+            }
+
+            .fc .fc-event {
+                border: none !important;
+                border-radius: 5px !important;
+                font-size: .72rem !important;
+                font-weight: 600 !important;
+                padding: 1px 5px !important;
+                box-shadow: 0 1px 4px rgba(0,0,0,.12) !important;
+                cursor: pointer !important;
+            }
+
+        .fc-event-scheduled {
+            background: linear-gradient(90deg,#3b82f6,#60a5fa) !important;
+        }
+
+        .fc-event-ongoing {
+            background: linear-gradient(90deg,#10b981,#34d399) !important;
+        }
+
+        .fc-event-completed {
+            background: linear-gradient(90deg,#6d28d9,#8b5cf6) !important;
+        }
+
+        .fc-event-cancelled {
+            background: linear-gradient(90deg,#9ca3af,#d1d5db) !important;
+        }
+
+        /* ── Detail modal ── */
+        .cm-backdrop {
+            visibility: hidden;
+            opacity: 0;
+            pointer-events: none;
+            position: fixed;
+            inset: 0;
+            z-index: 9990;
+            background: rgba(15,17,23,.52);
+            backdrop-filter: blur(3px);
+            transition: opacity .2s,visibility .2s;
+        }
+
+        .cm-modal {
+            visibility: hidden;
+            opacity: 0;
+            pointer-events: none;
+            position: fixed;
+            inset: 0;
+            z-index: 9991;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 16px;
+            transition: opacity .2s,visibility .2s;
+        }
+
+            .cm-backdrop.cm-open, .cm-modal.cm-open {
+                visibility: visible;
+                opacity: 1;
+                pointer-events: all;
+            }
+
+        .cm-box {
+            background: #fff;
+            border-radius: var(--r-xl);
+            box-shadow: 0 24px 56px rgba(0,0,0,.18),0 8px 20px rgba(0,0,0,.08);
+            width: 100%;
+            max-width: 460px;
+            overflow: hidden;
+            transform: scale(.94) translateY(10px);
+            transition: transform .22s cubic-bezier(.34,1.4,.64,1);
+        }
+
+        .cm-modal.cm-open .cm-box {
+            transform: scale(1) translateY(0);
+        }
+
+        .cm-head {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 16px 20px;
+            background: linear-gradient(to right,#f7f8fc,#fff);
+            border-bottom: 1px solid var(--border);
+        }
+
+        .cm-icon-wrap {
+            width: 40px;
+            height: 40px;
+            border-radius: var(--r-md);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 17px;
+            flex-shrink: 0;
+            background: rgba(232,89,12,.1);
+            color: var(--c-primary);
+        }
+
+        .cm-head-text h6 {
+            font-size: .95rem;
+            font-weight: 800;
+            color: var(--text-1);
+            margin: 0 0 2px;
+        }
+
+        .cm-head-text p {
+            font-size: .8rem;
+            color: var(--text-2);
+            margin: 0;
+        }
+
+        .cm-close {
+            margin-left: auto;
+            width: 28px;
+            height: 28px;
+            border-radius: var(--r-sm);
+            border: none;
+            background: transparent;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 13px;
+            color: var(--text-3);
+            transition: background .15s,color .15s;
+        }
+
+            .cm-close:hover {
+                background: var(--bg-page);
+                color: var(--text-1);
+            }
+
+        .cm-body {
+            padding: 4px 20px 8px;
+        }
+
+        .cm-row {
+            display: flex;
+            gap: 12px;
+            align-items: flex-start;
+            padding: 10px 0;
+            border-bottom: 1px solid #f0f2f8;
+        }
+
+            .cm-row:last-child {
+                border-bottom: none;
+            }
+
+        .cm-row-icon {
+            width: 32px;
+            height: 32px;
+            border-radius: var(--r-sm);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 12px;
+            flex-shrink: 0;
+        }
+
+        .cm-row-label {
+            font-size: .67rem;
+            font-weight: 700;
+            color: var(--text-3);
+            text-transform: uppercase;
+            letter-spacing: .5px;
+            margin-bottom: 3px;
+        }
+
+        .cm-row-val {
+            font-size: .88rem;
+            font-weight: 700;
+            color: var(--text-1);
+        }
+
+        .cm-foot {
+            display: flex;
+            justify-content: flex-end;
+            gap: 8px;
+            padding: 12px 20px 16px;
+            border-top: 1px solid var(--border);
+            background: #f9fafd;
+        }
+
+        /* ── Responsive ── */
+
+        @@media(max-width:900px) {
+            .filter-grid {
+                grid-template-columns: 1fr 1fr;
+            }
+
+            .filter-btn-group {
+                grid-column: span 2;
+            }
+
+            .col-subj, .col-role {
+                display: none;
+            }
+        }
+
+        @@media(max-width:620px) {
+
+            .col-room {
+                display: none;
+            }
+
+            .col-shift {
+                width: 120px;
+            }
+        }
+    </style>
+}
+
+@* Toast container *@
+<div id="toastWrap" style="position:fixed;top:20px;right:20px;z-index:9999;display:flex;flex-direction:column;gap:8px"></div>
+
+@* ── Today banner ── *@
+<div class="today-panel">
+    <div class="today-panel-icon"><i class="fas fa-calendar-day"></i></div>
+    <div class="today-panel-text">
+        <div class="tp-date">Hôm nay</div>
+        <div class="tp-val">@DowVi(today.DayOfWeek), @today.ToString("dd/MM/yyyy")</div>
+    </div>
+    <div class="today-panel-sep"></div>
+    <div class="today-panel-text">
+        <div class="tp-date">Tuần này</div>
+        <div class="tp-val">@Model.ThisWeekSessions buổi</div>
+    </div>
+    <div class="today-panel-sep"></div>
+    <div class="today-panel-text">
+        <div class="tp-date">Tháng này</div>
+        <div class="tp-val">@Model.ThisMonthSessions buổi</div>
+    </div>
+    <div class="today-sess-count">
+        <span class="today-sess-bubble">
+            <i class="fas fa-calendar-day"></i>
+            @Model.TodaySessions buổi hôm nay
+        </span>
+        <span class="today-sess-bubble">
+            <i class="fas fa-clock"></i>
+            @Model.ScheduledSessions đã lên lịch
+        </span>
+        <span class="today-sess-bubble">
+            <i class="fas fa-circle-check"></i>
+            @Model.CompletedSessions hoàn thành
+        </span>
+    </div>
+</div>
+
+
+
+@* ── Filter card ── *@
+<div class="filter-card">
+    <form method="get" id="filterForm">
+        <div class="filter-grid">
+            <div>
+                <label>Lớp học</label>
+                <select name="ClassFilter" class="filter-select">
+                    <option value="">Tất cả lớp của tôi</option>
+                    @foreach (var c in Model.MyClasses)
+                    {
+                        var sel = Model.ClassFilter == c.ClassId.ToString();
+                        <option value="@c.ClassId" selected="@sel">@c.ClassCode</option>
+                    }
+                </select>
+            </div>
+            <div>
+                <label>Trạng thái</label>
+                <select name="StatusFilter" class="filter-select">
+                    <option value="">Tất cả</option>
+                    <option value="0" selected="@(Model.StatusFilter == "0")">Đã lên lịch</option>
+                    <option value="1" selected="@(Model.StatusFilter == "1")">Đang diễn ra</option>
+                    <option value="2" selected="@(Model.StatusFilter == "2")">Hoàn thành</option>
+                    <option value="3" selected="@(Model.StatusFilter == "3")">Đã hủy</option>
+                </select>
+            </div>
+            <div>
+                <label>Từ ngày</label>
+                <input type="date" name="FromDate" class="filter-date" value="@Model.FromDate" />
+            </div>
+            <div>
+                <label>Đến ngày</label>
+                <input type="date" name="ToDate" class="filter-date" value="@Model.ToDate" />
+            </div>
+            <div class="filter-btn-group">
+                <button type="submit" class="btn-brand" style="height:36px;padding:0 16px;font-size:.82rem;white-space:nowrap">
+                    <i class="fas fa-search"></i> Lọc
+                </button>
+                <a href="/Teacher/Schedule" class="btn-outline" style="height:36px;padding:0 12px;font-size:.82rem;display:inline-flex;align-items:center" title="Đặt lại">
+                    <i class="fas fa-rotate-left"></i>
+                </a>
+            </div>
+        </div>
+    </form>
+</div>
+
+@* ── Content topbar ── *@
+<div class="content-topbar">
+    <div class="topbar-left">
+        <div class="pagesize-wrap" id="pagesizeWrap">
+            <span>Hiển thị</span>
+            <select class="pagesize-select" id="pagesizeSelect">
+                <option value="20">20</option>
+                <option value="50">50</option>
+                <option value="100" selected>100</option>
+                <option value="0">Tất cả</option>
+            </select>
+            <span>bản ghi</span>
+        </div>
+        <span style="font-size:.78rem;color:var(--text-3);font-weight:500" id="showingLabel"></span>
+    </div>
+    <div class="view-toggle">
+        <button class="vt-btn active" id="btnCalView" onclick="switchView('calendar')">
+            <i class="fas fa-calendar-days"></i> Lịch
+        </button>
+        <button class="vt-btn" id="btnTableView" onclick="switchView('table')">
+            <i class="fas fa-table-list"></i> Danh sách
+        </button>
+    </div>
+</div>
+
+@* ── TABLE VIEW ── *@
+<div id="tableView" style="display:none">
+    <div class="table-card">
+        <div class="table-card-hd">
+            <div class="table-card-title">
+                <div class="ct-icon"><i class="fas fa-calendar-alt"></i></div>
+                Danh sách buổi dạy
+            </div>
+            <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
+                <div class="status-summary" style="padding:0;border:none;background:none">
+                    <span class="ss-item"><span class="ss-dot" style="background:#3b82f6"></span>@Model.ScheduledSessions lịch</span>
+                    <span class="ss-sep"></span>
+                    <span class="ss-item"><span class="ss-dot" style="background:#6d28d9"></span>@Model.CompletedSessions xong</span>
+                    <span class="ss-sep"></span>
+                    <span class="ss-item"><span class="ss-dot" style="background:#9ca3af"></span>@Model.CancelledSessions huỷ</span>
+                </div>
+                <span style="font-size:.75rem;color:var(--text-3);font-weight:500">
+                    Tổng: <strong style="color:var(--text-1)">@totalSess buổi</strong>
+                </span>
+            </div>
+        </div>
+        <div style="overflow-x:auto">
+            <table class="sessions-table">
+                <colgroup>
+                    <col class="col-date">
+                    <col class="col-class">
+                    <col class="col-subj">
+                    <col class="col-shift">
+                    <col class="col-room">
+                    <col class="col-role">
+                    <col class="col-status">
+                    <col class="col-act">
+                </colgroup>
+                <thead>
+                    <tr>
+                        <th>Ngày</th>
+                        <th>Lớp</th>
+                        <th class="col-subj">Môn</th>
+                        <th>Ca học</th>
+                        <th>Phòng</th>
+                        <th class="col-role">Vai trò</th>
+                        <th>Trạng thái</th>
+                        <th style="text-align:right">Thao tác</th>
+                    </tr>
+                </thead>
+                <tbody id="sessTableBody">
+                    @if (Model.Sessions.Any())
+                    {
+                        @foreach (var s in Model.Sessions)
+                        {
+                            var sc = StatusCls(s.Status);
+                            var dow = DowVi(s.SessionDate.DayOfWeek);
+                            var col = SubjectColor(s.Subject);
+                            var isToday = s.SessionDate == today;
+                            var sn = s.ClassCode.Replace("'", "\\'");
+                            var sd = s.SessionDate.ToString("dd/MM/yyyy");
+                            var ssh = s.ShiftName.Replace("'", "\\'");
+                            var sst = s.ShiftTime.Replace("'", "\\'");
+                            var sr = s.RoomCode.Replace("'", "\\'");
+                            var ste = s.TeacherName.Replace("'", "\\'");
+                            var sas = (s.AssistantName ?? "").Replace("'", "\\'");
+                            <tr class="@(isToday ? "today-row" : "")"
+                                onclick="openModal(@s.SessionId,'@sn','@sd','@dow','@ssh','@sst','@sr','@ste','@sas','@sc',@(s.IsMainTeacher ? "true" : "false"),@(s.HasAttendance ? "true" : "false"),'@s.Note')">
+                                <td>
+                                    <div class="date-day">
+                                        @s.SessionDate.ToString("dd/MM/yyyy")
+                                        @if (isToday)
+                                        {
+                                            <span class="date-today-dot" title="Hôm nay"></span>
+                                        }
+                                    </div>
+                                    <div class="date-dow">@dow</div>
+                                </td>
+                                <td><span class="class-pill"><i class="fas fa-chalkboard" style="font-size:10px"></i> @s.ClassCode</span></td>
+                                <td class="col-subj"><span class="subj-pill" style="background:@col">@s.SubjectLabel</span></td>
+                                <td style="color:var(--text-2)">
+                                    @s.ShiftName
+                                    <span style="color:var(--text-3);font-size:.75rem;display:block">@s.ShiftTime</span>
+                                </td>
+                                <td><span class="room-pill"><i class="fas fa-door-open" style="font-size:10px"></i> @s.RoomCode</span></td>
+                                <td class="col-role">
+                                    @if (s.IsMainTeacher)
+                                    {
+                                        <span class="role-pill main"><i class="fas fa-star" style="font-size:9px"></i> Chính</span>
+                                    }
+                                    else
+                                    {
+                                        <span class="role-pill assist"><i class="fas fa-user-gear" style="font-size:9px"></i> Trợ giảng</span>
+                                    }
+                                </td>
+                                <td>
+                                    <span class="sess-badge @sc">
+                                        @if (s.Status == SessionStatus.Scheduled)
+                                        {
+                                            <i class="fas fa-calendar-check"></i>
+                                            <text> Đã lên lịch</text>
+        }
+                                        else if (s.Status == SessionStatus.Ongoing)
+                                        {
+                                            <i class="fas fa-circle-dot"></i>
+                                            <text> Đang diễn ra</text>
+        }
+                                        else if (s.Status == SessionStatus.Completed)
+                                        {
+                                            <i class="fas fa-check-circle"></i>
+                                            <text> Hoàn thành</text>
+        }
+                                        else
+                                        {
+                                            <i class="fas fa-ban"></i>
+                                            <text> Đã hủy</text>
+        }
+                                    </span>
+                                </td>
+                                <td onclick="event.stopPropagation()">
+                                    <div style="display:flex;justify-content:flex-end;gap:5px">
+                                        <a href="@s.AttendanceUrl" class="act-btn attend"
+                                           title="@(s.HasAttendance ? "Xem điểm danh" : "Điểm danh")">
+                                            <i class="fas fa-clipboard-check"></i>
+                                        </a>
+                                    </div>
+                                </td>
+                            </tr>
+                        }
+                    }
+                    else
+                    {
+                        <tr class="empty-row">
+                            <td colspan="8">
+                                <div class="empty-icon"><i class="fas fa-calendar-xmark"></i></div>
+                                <div class="empty-title">Không có buổi học nào</div>
+                                <div class="empty-desc">Thử thay đổi bộ lọc hoặc kiểm tra lại lịch</div>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+        @if (Model.Sessions.Any())
+        {
+            <div class="table-foot">
+                <span class="foot-info">Hiển thị <strong id="footShowing">@totalSess</strong> / @totalSess buổi</span>
+            </div>
+        }
+    </div>
+</div>
+
+@* ── CALENDAR VIEW ── *@
+<div id="calendarView">
+    <div class="calendar-card">
+        <div id="scheduleCalendar"></div>
+    </div>
+</div>
+
+@* ── DETAIL MODAL ── *@
+<div class="cm-backdrop" id="cmBackdrop"></div>
+<div class="cm-modal" id="cmModal">
+    <div class="cm-box">
+        <div class="cm-head">
+            <div class="cm-icon-wrap"><i class="fas fa-calendar-alt"></i></div>
+            <div class="cm-head-text">
+                <h6 id="cm-title">Buổi học</h6>
+                <p id="cm-subtitle"></p>
+            </div>
+            <button class="cm-close" id="cmClose"><i class="fas fa-times"></i></button>
+        </div>
+        <div class="cm-body">
+            <div class="cm-row">
+                <div class="cm-row-icon" style="background:rgba(232,89,12,.1);color:var(--c-primary)"><i class="fas fa-chalkboard"></i></div>
+                <div>
+                    <div class="cm-row-label">Lớp học</div>
+                    <div class="cm-row-val" id="cm-class">—</div>
+                </div>
+            </div>
+            <div class="cm-row">
+                <div class="cm-row-icon" style="background:rgba(59,130,246,.1);color:#3b82f6"><i class="fas fa-calendar"></i></div>
+                <div>
+                    <div class="cm-row-label">Ngày học</div>
+                    <div class="cm-row-val" id="cm-date">—</div>
+                </div>
+            </div>
+            <div class="cm-row">
+                <div class="cm-row-icon" style="background:rgba(139,92,246,.1);color:#8b5cf6"><i class="fas fa-clock"></i></div>
+                <div>
+                    <div class="cm-row-label">Ca học</div>
+                    <div class="cm-row-val" id="cm-shift">—</div>
+                </div>
+            </div>
+            <div class="cm-row">
+                <div class="cm-row-icon" style="background:rgba(6,182,212,.1);color:#06b6d4"><i class="fas fa-door-open"></i></div>
+                <div>
+                    <div class="cm-row-label">Phòng học</div>
+                    <div class="cm-row-val" id="cm-room">—</div>
+                </div>
+            </div>
+            <div class="cm-row">
+                <div class="cm-row-icon" style="background:rgba(16,185,129,.1);color:#10b981"><i class="fas fa-user-tie"></i></div>
+                <div>
+                    <div class="cm-row-label">Giáo viên</div>
+                    <div class="cm-row-val" id="cm-teacher">—</div>
+                </div>
+            </div>
+            <div class="cm-row">
+                <div class="cm-row-icon" style="background:rgba(245,159,0,.1);color:#f59f00"><i class="fas fa-tag"></i></div>
+                <div>
+                    <div class="cm-row-label">Trạng thái & Vai trò</div>
+                    <div class="cm-row-val" id="cm-status">—</div>
+                </div>
+            </div>
+            <div class="cm-row" id="cm-note-row" style="display:none">
+                <div class="cm-row-icon" style="background:#f4f6fc;color:var(--text-3)"><i class="fas fa-note-sticky"></i></div>
+                <div>
+                    <div class="cm-row-label">Ghi chú</div>
+                    <div class="cm-row-val" id="cm-note" style="font-weight:500;color:var(--text-2);font-size:.83rem">—</div>
+                </div>
+            </div>
+        </div>
+        <div class="cm-foot">
+            <button class="btn-outline" id="cmClose2" style="height:34px;padding:0 14px;font-size:.8rem">
+                <i class="fas fa-times"></i> Đóng
+            </button>
+            <a class="btn-brand" id="cm-attend-link" href="#" style="height:34px;padding:0 14px;font-size:.8rem">
+                <i class="fas fa-clipboard-check"></i> Điểm danh
+            </a>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <link href="~/lib/fullcalendar/index.global.min.css" rel="stylesheet" />
+    <script src="~/lib/fullcalendar/index.global.min.js"></script>
+    <script>
+        (function () {
+            var calInit = false;
+            var fcCal   = null;
+
+            /* ── View switch ── */
+            var calEl   = document.getElementById('calendarView');
+            var tblEl   = document.getElementById('tableView');
+            var btnCal  = document.getElementById('btnCalView');
+            var btnTbl  = document.getElementById('btnTableView');
+            var psWrap  = document.getElementById('pagesizeWrap');
+
+            window.switchView = function (v) {
+                if (v === 'calendar') {
+                    tblEl.style.display = 'none';
+                    calEl.style.display = 'block';
+                    btnCal.classList.add('active'); btnTbl.classList.remove('active');
+                    psWrap.style.display = 'none';
+                    if (!calInit) initCalendar();
+                } else {
+                    calEl.style.display = 'none';
+                    tblEl.style.display = 'block';
+                    btnTbl.classList.add('active'); btnCal.classList.remove('active');
+                    psWrap.style.display = 'flex';
+                    applyPageSize();
+                }
+            };
+
+            /* ── Page size ── */
+            var allRows = [];
+            document.addEventListener('DOMContentLoaded', function () {
+                var tbody = document.getElementById('sessTableBody');
+                if (tbody) allRows = Array.from(tbody.querySelectorAll('tr[onclick]'));
+
+                psWrap.style.display = 'none'; // calendar là default
+
+                var sel = document.getElementById('pagesizeSelect');
+                if (sel) sel.addEventListener('change', applyPageSize);
+
+                initCalendar();
+            });
+
+            function applyPageSize() {
+                var sel   = document.getElementById('pagesizeSelect');
+                var limit = sel ? parseInt(sel.value) : 100;
+                var shown = 0;
+                allRows.forEach(function (r, i) {
+                    if (limit === 0 || i < limit) { r.classList.remove('row-hidden'); shown++; }
+                    else r.classList.add('row-hidden');
+                });
+                var fsh = document.getElementById('footShowing');
+                if (fsh) fsh.textContent = shown;
+                var sl = document.getElementById('showingLabel');
+                if (sl) sl.textContent = shown + ' / ' + allRows.length + ' bản ghi';
+            }
+
+            /* ── Modal ── */
+            var statusLabels = {
+                'scheduled': '<span class="sess-badge scheduled"><i class="fas fa-calendar-check"></i> Đã lên lịch</span>',
+                'ongoing':   '<span class="sess-badge ongoing"><i class="fas fa-circle-dot"></i> Đang diễn ra</span>',
+                'completed': '<span class="sess-badge completed"><i class="fas fa-check-circle"></i> Hoàn thành</span>',
+                'cancelled': '<span class="sess-badge cancelled"><i class="fas fa-ban"></i> Đã hủy</span>'
+            };
+
+            window.openModal = function (sid, cls, date, dow, shift, shiftTime, room, teacher, assistant, statusCls, isMain, hasAtt, note) {
+                document.getElementById('cm-title').textContent    = 'Buổi dạy — ' + cls;
+                document.getElementById('cm-subtitle').textContent = date + ' · ' + dow;
+                document.getElementById('cm-class').textContent    = cls;
+                document.getElementById('cm-date').textContent     = date + ' (' + dow + ')';
+                document.getElementById('cm-shift').textContent    = shift + '  ' + shiftTime;
+                document.getElementById('cm-room').textContent     = room;
+
+                var teacherText = teacher;
+                if (assistant) teacherText += ' · Trợ: ' + assistant;
+                document.getElementById('cm-teacher').textContent = teacherText;
+
+                var rolePill = isMain
+                    ? '<span class="role-pill main" style="margin-right:6px"><i class="fas fa-star" style="font-size:9px"></i> Chính</span>'
+                    : '<span class="role-pill assist" style="margin-right:6px"><i class="fas fa-user-gear" style="font-size:9px"></i> Trợ giảng</span>';
+                document.getElementById('cm-status').innerHTML = rolePill + (statusLabels[statusCls] || statusCls);
+
+                var noteRow = document.getElementById('cm-note-row');
+                if (note && note.trim()) {
+                    document.getElementById('cm-note').textContent = note;
+                    noteRow.style.display = 'flex';
+                } else {
+                    noteRow.style.display = 'none';
+                }
+
+                var attendLink = document.getElementById('cm-attend-link');
+                attendLink.href = hasAtt
+                    ? '/Teacher/Attendance/Edit?sessionId='   + sid
+                    : '/Teacher/Attendance/Create?sessionId=' + sid;
+                attendLink.innerHTML = hasAtt
+                    ? '<i class="fas fa-pen-to-square"></i> Xem điểm danh'
+                    : '<i class="fas fa-clipboard-check"></i> Điểm danh';
+
+                document.getElementById('cmBackdrop').classList.add('cm-open');
+                document.getElementById('cmModal').classList.add('cm-open');
+            };
+
+            function closeModal() {
+                document.getElementById('cmBackdrop').classList.remove('cm-open');
+                document.getElementById('cmModal').classList.remove('cm-open');
+            }
+            document.getElementById('cmClose').addEventListener('click', closeModal);
+            document.getElementById('cmClose2').addEventListener('click', closeModal);
+            document.getElementById('cmBackdrop').addEventListener('click', closeModal);
+            document.addEventListener('keydown', function(e) { if (e.key === 'Escape') closeModal(); });
+
+            /* ── FullCalendar ── */
+            function initCalendar() {
+                if (calInit) return;
+                calInit = true;
+
+                var classFilter  = document.querySelector('[name="ClassFilter"]').value;
+                var statusFilter = document.querySelector('[name="StatusFilter"]').value;
+
+                fcCal = new FullCalendar.Calendar(document.getElementById('scheduleCalendar'), {
+                    initialView: 'dayGridMonth',
+                    locale: 'vi',
+                    headerToolbar: {
+                        left:   'prev,next today',
+                        center: 'title',
+                        right:  'dayGridMonth,timeGridWeek,timeGridDay'
+                    },
+                    events: function (fetchInfo, successCb, failureCb) {
+                        var url = '/Teacher/Schedule?handler=GetEvents'
+                            + '&start=' + fetchInfo.startStr
+                            + '&end='   + fetchInfo.endStr;
+                        if (classFilter)  url += '&classFilter='  + encodeURIComponent(classFilter);
+                        if (statusFilter) url += '&statusFilter=' + encodeURIComponent(statusFilter);
+                        fetch(url).then(function(r){return r.json();}).then(successCb).catch(failureCb);
+                    },
+                    eventClick: function (info) {
+                        var p = info.event.extendedProps;
+                        openModal(
+                            p.sessionId, p.className, p.date, p.dow,
+                            p.shift, p.shiftTime, p.room, p.teacher,
+                            p.assistant, p.statusCls, p.isMain, p.hasAttendance, p.note
+                        );
+                    },
+                    eventClassNames: function (arg) {
+                        return ['fc-event-' + arg.event.extendedProps.statusCls];
+                    },
+                    dayMaxEvents: 4,
+                    height: 'auto'
+                });
+                fcCal.render();
+            }
+        })();
+    </script>
+}

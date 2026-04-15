@@ -1,0 +1,1632 @@
+﻿@page
+@model TutoringCenterManagement.Pages.Student.Attendance.IndexModel
+@{
+    ViewData["Title"] = Model.IsParent ? "Điểm danh của con" : "Điểm danh của tôi";
+    var today = DateOnly.FromDateTime(DateTime.Today);
+    var currentYear = DateTime.Today.Year;
+
+    string DowVi(System.DayOfWeek d) => d switch
+    {
+        System.DayOfWeek.Monday => "Thứ 2",
+        System.DayOfWeek.Tuesday => "Thứ 3",
+        System.DayOfWeek.Wednesday => "Thứ 4",
+        System.DayOfWeek.Thursday => "Thứ 5",
+        System.DayOfWeek.Friday => "Thứ 6",
+        System.DayOfWeek.Saturday => "Thứ 7",
+        _ => "CN"
+    };
+    string RateColor(double r) => r >= 80 ? "#10b981" : r >= 60 ? "#f59f00" : "#f43f5e";
+    var rc = RateColor(Model.Statistics.AttendanceRate);
+
+    int streak = 0;
+    foreach (var r in Model.RecentList) { if (r.IsPresent) streak++; else break; }
+
+    var mn = new[]{"","Tháng 1","Tháng 2","Tháng 3","Tháng 4","Tháng 5","Tháng 6",
+                   "Tháng 7","Tháng 8","Tháng 9","Tháng 10","Tháng 11","Tháng 12"};
+
+    string BuildTabHref(int? sid)
+    {
+        var qs = new System.Collections.Generic.List<string>();
+        if (!string.IsNullOrEmpty(Model.FilterYear)) qs.Add("FilterYear=" + Uri.EscapeDataString(Model.FilterYear!));
+        if (!string.IsNullOrEmpty(Model.FilterMonth)) qs.Add("FilterMonth=" + Uri.EscapeDataString(Model.FilterMonth!));
+        if (!string.IsNullOrEmpty(Model.FromDate)) qs.Add("FromDate=" + Uri.EscapeDataString(Model.FromDate!));
+        if (!string.IsNullOrEmpty(Model.ToDate)) qs.Add("ToDate=" + Uri.EscapeDataString(Model.ToDate!));
+        if (!string.IsNullOrEmpty(Model.ClassFilter)) qs.Add("ClassFilter=" + Uri.EscapeDataString(Model.ClassFilter!));
+        if (!string.IsNullOrEmpty(Model.StatusFilter)) qs.Add("StatusFilter=" + Uri.EscapeDataString(Model.StatusFilter!));
+        qs.Add("StudentIdFilter=" + (sid?.ToString() ?? "0"));
+        return "?" + string.Join("&", qs);
+    }
+}
+
+@section Styles {
+    <style>
+        /* ══════════════════════════════════════════════════════════════════
+           ĐIỂM DANH — Student & Parent · Design v4
+           Tone: Professional & Refined · Đồng bộ design system dự án
+        ══════════════════════════════════════════════════════════════════ */
+
+        /* ── Filter card ────────────────────────────────────────────── */
+        .fc {
+            background: var(--bg-card);
+            border-radius: var(--r-lg);
+            border: 1px solid var(--border);
+            box-shadow: var(--sh-sm);
+            margin-bottom: 20px;
+            overflow: hidden;
+        }
+
+        .fc-header {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 13px 20px;
+            border-bottom: 1px solid var(--border);
+            background: linear-gradient(to right,#fafbff,#fff);
+        }
+
+        .fc-header-icon {
+            width: 30px;
+            height: 30px;
+            border-radius: 8px;
+            flex-shrink: 0;
+            background: rgba(232,89,12,.1);
+            color: var(--c-primary);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 12px;
+        }
+
+        .fc-header-title {
+            font-size: .86rem;
+            font-weight: 800;
+            color: var(--text-1);
+        }
+
+        .fc-header-sub {
+            font-size: .68rem;
+            color: var(--text-3);
+            margin-top: 1px;
+        }
+
+        .fc-period-pill {
+            margin-left: auto;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 4px 13px;
+            border-radius: 50px;
+            background: rgba(232,89,12,.08);
+            border: 1px solid rgba(232,89,12,.2);
+            font-size: .76rem;
+            font-weight: 700;
+            color: var(--c-primary);
+            white-space: nowrap;
+        }
+        /* Filter body: 1 hàng ngang */
+        .fc-body {
+            padding: 14px 20px;
+            display: flex;
+            align-items: flex-end;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+
+        .fc-sep {
+            width: 1px;
+            height: 34px;
+            background: var(--border);
+            flex-shrink: 0;
+        }
+
+        .fc-sep-lbl {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            font-size: .65rem;
+            font-weight: 700;
+            color: var(--text-3);
+            text-transform: uppercase;
+            letter-spacing: .4px;
+            white-space: nowrap;
+            flex-shrink: 0;
+            align-self: flex-end;
+            margin-bottom: 0;
+            height: 34px;
+        }
+
+            .fc-sep-lbl::before, .fc-sep-lbl::after {
+                content: '';
+                display: block;
+                width: 1px;
+                height: 20px;
+                background: var(--border);
+            }
+
+        .fc-zone-col {
+            display: flex;
+            flex-direction: column;
+            gap: 3px;
+        }
+
+        .fc-lbl {
+            font-size: .62rem;
+            font-weight: 700;
+            color: var(--text-3);
+            text-transform: uppercase;
+            letter-spacing: .4px;
+        }
+
+        .fc-sel, .fc-date {
+            height: 34px;
+            padding: 0 26px 0 9px;
+            border: 1.5px solid var(--border);
+            border-radius: var(--r-sm);
+            background: #f8f9fc;
+            color: var(--text-1);
+            font-size: .8rem;
+            font-family: inherit;
+            font-weight: 600;
+            outline: none;
+            cursor: pointer;
+            transition: border-color .15s, background .15s;
+            box-sizing: border-box;
+        }
+
+        .fc-sel {
+            -webkit-appearance: none;
+            appearance: none;
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='9' height='9' viewBox='0 0 24 24' fill='none' stroke='%239aa0b4' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E");
+            background-repeat: no-repeat;
+            background-position: right 7px center;
+        }
+
+        .fc-date {
+            padding: 0 9px;
+            width: 136px;
+            -webkit-appearance: none;
+        }
+
+            .fc-sel:focus, .fc-date:focus {
+                border-color: var(--c-primary);
+                background-color: #fff;
+            }
+
+        .fc-sel.has-val {
+            border-color: var(--c-primary);
+            background-color: #fff9f5;
+            color: var(--c-primary);
+        }
+
+        .fc-date.has-val {
+            border-color: #3b82f6;
+            background-color: #eff6ff;
+            color: #1d4ed8;
+        }
+
+        .fc-date.disabled-look {
+            opacity: .4;
+            pointer-events: none;
+        }
+
+        .fc-sel.disabled-look {
+            opacity: .4;
+            pointer-events: none;
+        }
+
+        .fc-arrow {
+            font-size: .68rem;
+            font-weight: 700;
+            color: var(--text-3);
+            align-self: flex-end;
+            height: 34px;
+            display: flex;
+            align-items: center;
+            padding: 0 2px;
+        }
+
+        .fc-hint {
+            padding: 7px 20px;
+            background: #f7f8fc;
+            border-top: 1px solid var(--border);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: .71rem;
+            color: var(--text-3);
+            font-weight: 500;
+        }
+
+            .fc-hint i {
+                color: var(--c-primary);
+            }
+
+            .fc-hint.mode-date {
+                background: #eff6ff;
+            }
+
+                .fc-hint.mode-date i {
+                    color: #3b82f6;
+                }
+
+        @@media (max-width: 900px) {
+            .fc-body {
+                gap: 8px;
+            }
+
+            .fc-sep {
+                display: none;
+            }
+        }
+
+        /* ── KPI strip ──────────────────────────────────────────────── */
+        .att-kpi {
+            display: grid;
+            grid-template-columns: repeat(4,1fr);
+            gap: 12px;
+            margin-bottom: 18px;
+        }
+
+        .kpi-card {
+            background: var(--bg-card);
+            border-radius: var(--r-lg);
+            border: 1px solid var(--border);
+            box-shadow: var(--sh-xs);
+            padding: 16px 16px 13px;
+            position: relative;
+            overflow: hidden;
+            transition: box-shadow .2s, transform .2s;
+        }
+
+            .kpi-card:hover {
+                box-shadow: var(--sh-md);
+                transform: translateY(-2px);
+            }
+
+            .kpi-card::after {
+                content: '';
+                position: absolute;
+                top: 0;
+                left: 0;
+                right: 0;
+                height: 3px;
+            }
+
+            .kpi-card.kc-o::after {
+                background: linear-gradient(90deg,#e8590c,#f59f00);
+            }
+
+            .kpi-card.kc-g::after {
+                background: linear-gradient(90deg,#10b981,#34d399);
+            }
+
+            .kpi-card.kc-r::after {
+                background: linear-gradient(90deg,#f43f5e,#fb7185);
+            }
+
+            .kpi-card.kc-p::after {
+                background: linear-gradient(90deg,#8b5cf6,#a78bfa);
+            }
+
+        .kpi-card-row {
+            display: flex;
+            align-items: flex-start;
+            justify-content: space-between;
+        }
+
+        .kpi-card-icon {
+            width: 36px;
+            height: 36px;
+            border-radius: 9px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 14px;
+            flex-shrink: 0;
+        }
+
+        .kc-o .kpi-card-icon {
+            background: rgba(232,89,12,.1);
+            color: #e8590c;
+        }
+
+        .kc-g .kpi-card-icon {
+            background: rgba(16,185,129,.1);
+            color: #10b981;
+        }
+
+        .kc-r .kpi-card-icon {
+            background: rgba(244,63,94,.1);
+            color: #f43f5e;
+        }
+
+        .kc-p .kpi-card-icon {
+            background: rgba(139,92,246,.1);
+            color: #8b5cf6;
+        }
+
+        .kpi-card-lbl {
+            font-size: .67rem;
+            font-weight: 700;
+            color: var(--text-3);
+            text-transform: uppercase;
+            letter-spacing: .5px;
+        }
+
+        .kpi-card-val {
+            font-size: 1.8rem;
+            font-weight: 800;
+            color: var(--text-1);
+            line-height: 1.05;
+            margin-top: 9px;
+        }
+
+            .kpi-card-val small {
+                font-size: .9rem;
+            }
+
+        .kpi-card-foot {
+            font-size: .69rem;
+            color: var(--text-3);
+            margin-top: 5px;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+            .kpi-card-foot .pos {
+                color: #10b981;
+                font-weight: 700;
+            }
+
+            .kpi-card-foot .neg {
+                color: #f43f5e;
+                font-weight: 700;
+            }
+
+        @@media (max-width: 768px) {
+            .att-kpi {
+                grid-template-columns: 1fr 1fr;
+            }
+        }
+
+        /* ── Rate bar ───────────────────────────────────────────────── */
+        .rate-bar {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            flex-wrap: wrap;
+            background: var(--bg-card);
+            border-radius: var(--r-lg);
+            border: 1px solid var(--border);
+            box-shadow: var(--sh-xs);
+            padding: 12px 20px;
+            margin-bottom: 18px;
+        }
+
+        .rate-bar-label {
+            font-size: .8rem;
+            font-weight: 700;
+            color: var(--text-2);
+            white-space: nowrap;
+            flex-shrink: 0;
+        }
+
+        .rate-bar-track {
+            flex: 1;
+            min-width: 80px;
+            height: 8px;
+            background: #eef1f8;
+            border-radius: 4px;
+            overflow: hidden;
+        }
+
+        .rate-bar-fill {
+            height: 100%;
+            border-radius: 4px;
+            transition: width .8s cubic-bezier(.4,0,.2,1);
+        }
+
+        .rate-bar-pct {
+            font-size: .88rem;
+            font-weight: 800;
+            min-width: 48px;
+            text-align: right;
+            flex-shrink: 0;
+        }
+
+        .rate-bar-sub {
+            font-size: .7rem;
+            color: var(--text-3);
+            white-space: nowrap;
+        }
+
+        /* ── Child tabs ─────────────────────────────────────────────── */
+        .child-tabs {
+            display: flex;
+            gap: 6px;
+            flex-wrap: wrap;
+            margin-bottom: 16px;
+        }
+
+        .child-tab {
+            display: inline-flex;
+            align-items: center;
+            gap: 7px;
+            padding: 6px 14px;
+            border-radius: 50px;
+            border: 1.5px solid var(--border);
+            background: var(--bg-card);
+            color: var(--text-2);
+            font-size: .79rem;
+            font-weight: 600;
+            text-decoration: none;
+            transition: all .15s;
+        }
+
+            .child-tab:hover {
+                border-color: var(--c-primary);
+                color: var(--c-primary);
+            }
+
+            .child-tab.active {
+                background: var(--c-gradient);
+                border-color: transparent;
+                color: #fff;
+            }
+
+        .child-av {
+            width: 22px;
+            height: 22px;
+            border-radius: 50%;
+            background: rgba(232,89,12,.12);
+            color: var(--c-primary);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 10px;
+            font-weight: 800;
+        }
+
+        .child-tab.active .child-av {
+            background: rgba(255,255,255,.25);
+            color: #fff;
+        }
+
+        /* ── 2-col layout ───────────────────────────────────────────── */
+        .att-layout {
+            display: grid;
+            grid-template-columns: 1fr 270px;
+            gap: 18px;
+            align-items: start;
+        }
+
+        @@media (max-width: 1024px) {
+            .att-layout {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        /* ── Chart card ─────────────────────────────────────────────── */
+        .att-chart {
+            background: var(--bg-card);
+            border-radius: var(--r-lg);
+            border: 1px solid var(--border);
+            box-shadow: var(--sh-sm);
+            overflow: hidden;
+            margin-bottom: 18px;
+        }
+
+        .card-hd {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 10px;
+            padding: 13px 20px;
+            border-bottom: 1px solid var(--border);
+            background: linear-gradient(to right,#fafbff,#fff);
+            flex-wrap: wrap;
+        }
+
+        .card-hd-l {
+            display: flex;
+            align-items: center;
+            gap: 9px;
+        }
+
+        .card-ico {
+            width: 28px;
+            height: 28px;
+            border-radius: 7px;
+            background: rgba(232,89,12,.1);
+            color: var(--c-primary);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 12px;
+        }
+
+        .card-title {
+            font-size: .88rem;
+            font-weight: 700;
+            color: var(--text-1);
+        }
+
+        .card-sub {
+            font-size: .68rem;
+            color: var(--text-3);
+            margin-top: 1px;
+        }
+
+        .card-body {
+            padding: 16px 20px;
+        }
+
+        .chart-lgd {
+            display: flex;
+            gap: 12px;
+        }
+
+        .lgd-item {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            font-size: .71rem;
+            font-weight: 600;
+            color: var(--text-2);
+        }
+
+        .lgd-dot {
+            width: 10px;
+            height: 10px;
+            border-radius: 2px;
+        }
+
+        /* ── Table card ─────────────────────────────────────────────── */
+        .tbl-card {
+            background: var(--bg-card);
+            border-radius: var(--r-lg);
+            border: 1px solid var(--border);
+            box-shadow: var(--sh-sm);
+            overflow: hidden;
+        }
+
+        .tbl-hd {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 8px;
+            padding: 13px 20px;
+            border-bottom: 1px solid var(--border);
+            background: linear-gradient(to right,#fafbff,#fff);
+            flex-wrap: wrap;
+        }
+
+        .tbl-hd-l {
+            display: flex;
+            align-items: center;
+            gap: 9px;
+            font-size: .9rem;
+            font-weight: 700;
+            color: var(--text-1);
+        }
+
+        .tbl-count {
+            font-size: .74rem;
+            color: var(--text-3);
+            font-weight: 500;
+        }
+
+            .tbl-count strong {
+                color: var(--text-1);
+            }
+
+        .att-tbl {
+            width: 100%;
+            border-collapse: separate;
+            border-spacing: 0;
+        }
+
+            .att-tbl thead th {
+                padding: 9px 13px;
+                font-size: .67rem;
+                font-weight: 700;
+                color: var(--text-2);
+                text-transform: uppercase;
+                letter-spacing: .6px;
+                background: #f4f6fc;
+                border-bottom: 2px solid var(--border);
+                white-space: nowrap;
+            }
+
+                .att-tbl thead th:first-child {
+                    padding-left: 20px;
+                }
+
+                .att-tbl thead th:last-child {
+                    padding-right: 20px;
+                }
+
+            .att-tbl tbody td {
+                padding: 11px 13px;
+                font-size: .82rem;
+                color: var(--text-1);
+                border-bottom: 1px solid #f0f2f8;
+                vertical-align: middle;
+            }
+
+                .att-tbl tbody td:first-child {
+                    padding-left: 20px;
+                }
+
+                .att-tbl tbody td:last-child {
+                    padding-right: 20px;
+                }
+
+            .att-tbl tbody tr:last-child td {
+                border-bottom: none;
+            }
+
+            .att-tbl tbody tr {
+                transition: background .1s;
+            }
+
+                .att-tbl tbody tr:hover td {
+                    background: #f8faff;
+                }
+
+                .att-tbl tbody tr.rp td {
+                    background: rgba(16,185,129,.028);
+                }
+
+                .att-tbl tbody tr.ra td {
+                    background: rgba(244,63,94,.022);
+                }
+
+                .att-tbl tbody tr.rp:hover td {
+                    background: rgba(16,185,129,.055);
+                }
+
+                .att-tbl tbody tr.ra:hover td {
+                    background: rgba(244,63,94,.045);
+                }
+
+        .d-main {
+            font-size: .83rem;
+            font-weight: 800;
+            color: var(--text-1);
+        }
+
+        .d-sub {
+            font-size: .67rem;
+            font-weight: 600;
+            color: var(--text-3);
+            margin-top: 1px;
+        }
+
+        .today-dot {
+            display: inline-block;
+            width: 5px;
+            height: 5px;
+            border-radius: 50%;
+            background: var(--c-primary);
+            margin-left: 4px;
+            vertical-align: middle;
+        }
+
+        .pill-cls {
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            background: rgba(232,89,12,.08);
+            color: var(--c-primary);
+            font-weight: 700;
+            font-size: .75rem;
+            padding: 2px 8px;
+            border-radius: 20px;
+        }
+
+        .pill-room {
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            background: rgba(59,130,246,.08);
+            color: #1d4ed8;
+            font-weight: 700;
+            font-size: .75rem;
+            padding: 2px 8px;
+            border-radius: 20px;
+        }
+
+        .pill-std {
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            background: rgba(139,92,246,.08);
+            color: #7c3aed;
+            font-weight: 700;
+            font-size: .73rem;
+            padding: 2px 7px;
+            border-radius: 6px;
+            border: 1px solid rgba(139,92,246,.2);
+        }
+
+        .att-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            padding: 4px 11px;
+            border-radius: 20px;
+            font-size: .72rem;
+            font-weight: 700;
+        }
+
+            .att-badge.p {
+                background: #ecfdf5;
+                color: #059669;
+                border: 1px solid #a7f3d0;
+            }
+
+            .att-badge.a {
+                background: #fff1f2;
+                color: #e03131;
+                border: 1px solid #fecdd3;
+            }
+
+        .tcell-name {
+            font-size: .8rem;
+            font-weight: 700;
+            color: var(--text-1);
+        }
+
+        .tcell-asst {
+            font-size: .69rem;
+            color: var(--text-3);
+            margin-top: 2px;
+        }
+
+        .empty-cell {
+            text-align: center;
+            padding: 60px 20px !important;
+            background: transparent !important;
+            border: none !important;
+        }
+
+        .empty-ico {
+            width: 56px;
+            height: 56px;
+            border-radius: 50%;
+            background: #f4f6fc;
+            margin: 0 auto 13px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 20px;
+            color: var(--text-3);
+        }
+
+        .tbl-foot {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 10px 20px;
+            border-top: 1px solid var(--border);
+            background: #f9fafd;
+            flex-wrap: wrap;
+            gap: 8px;
+        }
+
+        .tbl-foot-info {
+            font-size: .74rem;
+            color: var(--text-2);
+        }
+
+        @@media (max-width: 960px) {
+            .col-student {
+                display: none;
+            }
+        }
+
+        @@media (max-width: 768px) {
+            .col-room, .col-teach {
+                display: none;
+            }
+        }
+
+        @@media (max-width: 540px) {
+            .col-shift {
+                display: none;
+            }
+        }
+
+        /* ── Sidebar cards ──────────────────────────────────────────── */
+        .sb-card {
+            background: var(--bg-card);
+            border-radius: var(--r-lg);
+            border: 1px solid var(--border);
+            box-shadow: var(--sh-sm);
+            overflow: hidden;
+            margin-bottom: 14px;
+        }
+
+            .sb-card:last-child {
+                margin-bottom: 0;
+            }
+
+        .sb-hd {
+            display: flex;
+            align-items: center;
+            gap: 9px;
+            padding: 11px 16px;
+            border-bottom: 1px solid var(--border);
+            background: linear-gradient(to right,#fafbff,#fff);
+        }
+
+        .sb-ico {
+            width: 26px;
+            height: 26px;
+            border-radius: 7px;
+            background: rgba(232,89,12,.1);
+            color: var(--c-primary);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 11px;
+        }
+
+        .sb-title {
+            font-size: .84rem;
+            font-weight: 700;
+            color: var(--text-1);
+        }
+
+        .sb-body {
+            padding: 14px 16px;
+        }
+
+        /* Donut */
+        .donut-wrap {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 4px 0 10px;
+        }
+
+        .donut-box {
+            position: relative;
+            width: 110px;
+            height: 110px;
+        }
+
+        .donut-svg {
+            transform: rotate(-90deg);
+            position: absolute;
+            top: 0;
+            left: 0;
+        }
+
+        .donut-mid {
+            position: absolute;
+            inset: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .donut-num {
+            font-size: 1.4rem;
+            font-weight: 800;
+            line-height: 1;
+        }
+
+        .donut-lbl {
+            font-size: .61rem;
+            font-weight: 600;
+            color: var(--text-3);
+            margin-top: 2px;
+        }
+
+        .stat-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 7px 0;
+            border-bottom: 1px solid #f0f2f8;
+            font-size: .8rem;
+        }
+
+            .stat-row:last-child {
+                border-bottom: none;
+            }
+
+        .stat-label {
+            display: flex;
+            align-items: center;
+            gap: 7px;
+            font-weight: 600;
+            color: var(--text-2);
+        }
+
+        .stat-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            flex-shrink: 0;
+        }
+
+        .stat-val {
+            font-weight: 800;
+            color: var(--text-1);
+        }
+
+        /* Streak */
+        .streak-grid {
+            display: flex;
+            gap: 5px;
+            flex-wrap: wrap;
+            padding: 4px 0 8px;
+        }
+
+        .s-dot {
+            width: 29px;
+            height: 29px;
+            border-radius: 6px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 11px;
+            font-weight: 700;
+            cursor: default;
+            transition: transform .12s;
+            position: relative;
+        }
+
+            .s-dot:hover {
+                transform: scale(1.15);
+            }
+
+            .s-dot.p {
+                background: #ecfdf5;
+                color: #059669;
+                border: 1px solid #bbf7d0;
+            }
+
+            .s-dot.a {
+                background: #fff1f2;
+                color: #e03131;
+                border: 1px solid #fecdd3;
+            }
+
+            .s-dot.e {
+                background: #f4f6fc;
+                color: #d1d5db;
+                border: 1px solid #e8eaf2;
+            }
+
+        .streak-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            padding: 3px 10px;
+            border-radius: 50px;
+            font-size: .7rem;
+            font-weight: 700;
+            margin-bottom: 8px;
+        }
+
+            .streak-badge.on {
+                background: rgba(16,185,129,.1);
+                color: #059669;
+                border: 1px solid rgba(16,185,129,.2);
+            }
+
+            .streak-badge.off {
+                background: rgba(244,63,94,.1);
+                color: #e03131;
+                border: 1px solid rgba(244,63,94,.2);
+            }
+
+        .streak-cap {
+            font-size: .64rem;
+            color: var(--text-3);
+            text-align: center;
+            margin-top: 3px;
+        }
+
+        /* Class breakdown */
+        .cls-row {
+            padding: 8px 0;
+            border-bottom: 1px solid #f0f2f8;
+        }
+
+            .cls-row:last-child {
+                border-bottom: none;
+            }
+
+        .cls-top {
+            display: flex;
+            justify-content: space-between;
+            align-items: baseline;
+            margin-bottom: 4px;
+        }
+
+        .cls-name {
+            font-size: .8rem;
+            font-weight: 700;
+            color: var(--text-1);
+        }
+
+        .cls-rate {
+            font-size: .77rem;
+            font-weight: 800;
+        }
+
+        .cls-bar {
+            height: 5px;
+            background: #f0f2f8;
+            border-radius: 3px;
+            overflow: hidden;
+            margin-bottom: 3px;
+        }
+
+        .cls-fill {
+            height: 100%;
+            border-radius: 3px;
+            transition: width .6s;
+        }
+
+        .cls-meta {
+            display: flex;
+            justify-content: space-between;
+            font-size: .66rem;
+            color: var(--text-3);
+            font-weight: 600;
+        }
+    </style>
+}
+
+@* ── PAGE HEADER ── *@
+<div class="page-header">
+    <div>
+        <h1 class="page-heading">
+            @if (Model.IsParent)
+            {
+                <text>Điểm danh <span>của con</span></text>
+            }
+            else
+            {
+
+                <text>Điểm danh <span>của tôi</span></text>
+            }
+        </h1>
+        <p class="page-subheading">
+            <i class="fas fa-filter" style="color:var(--c-primary)"></i>
+            Đang xem: <strong>@Model.PeriodLabel</strong>
+        </p>
+    </div>
+</div>
+
+@* ── FILTER CARD ── *@
+<div class="fc">
+    <div class="fc-header">
+        <div class="fc-header-icon"><i class="fas fa-sliders"></i></div>
+        <div>
+            <div class="fc-header-title">Bộ lọc điểm danh</div>
+            <div class="fc-header-sub">Chọn năm/tháng hoặc khoảng ngày — hai chế độ không dùng cùng nhau</div>
+        </div>
+        <span class="fc-period-pill">
+            <i class="fas fa-calendar-check" style="font-size:10px"></i> @Model.PeriodLabel
+        </span>
+    </div>
+
+    <form method="get" id="ff">
+        @if (Model.IsParent && Model.StudentIdFilter.HasValue && Model.StudentIdFilter > 0)
+        {
+            <input type="hidden" name="StudentIdFilter" value="@Model.StudentIdFilter" />
+        }
+
+        <div class="fc-body">
+            @* ── Năm ── *@
+            <div class="fc-zone-col">
+                <span class="fc-lbl">Năm</span>
+                <select name="FilterYear" id="selYear"
+                        class="fc-sel @(!Model.HasDateRange && !string.IsNullOrEmpty(Model.FilterYear) ? "has-val" : "") @(Model.HasDateRange ? "disabled-look" : "")"
+                        onchange="onPeriodChange()">
+                    @for (int y = currentYear + 1; y >= currentYear - 4; y--)
+                    {
+                        if (y == Model.ActiveYear && !Model.HasDateRange)
+                        {
+                            <option value="@y" selected="selected">@y</option>
+                        }
+                        else
+                        {
+                            <option value="@y">@y</option>
+                        }
+                    }
+                </select>
+            </div>
+            @* ── Tháng ── *@
+            <div class="fc-zone-col">
+                <span class="fc-lbl">Tháng</span>
+                <select name="FilterMonth" id="selMonth"
+                        class="fc-sel @(!Model.HasDateRange && Model.ActiveMonth > 0 ? "has-val" : "") @(Model.HasDateRange ? "disabled-look" : "")"
+                        onchange="onPeriodChange()">
+                    @if (Model.ActiveMonth == 0 || Model.HasDateRange)
+                    {
+                        <option value="0" selected="selected">Cả năm</option>
+                    }
+                    else
+                    {
+                        <option value="0">Cả năm</option>
+                    }
+                    @for (int m = 1; m <= 12; m++)
+                    {
+                        if (m == Model.ActiveMonth && !Model.HasDateRange)
+                        {
+                            <option value="@m" selected="selected">@mn[m]</option>
+                        }
+                        else
+                        {
+                            <option value="@m">@mn[m]</option>
+                        }
+                    }
+                </select>
+            </div>
+
+            @* ── Separator "hoặc" ── *@
+            <div class="fc-sep-lbl">hoặc</div>
+
+            @* ── Từ ngày ── *@
+            <div class="fc-zone-col">
+                <span class="fc-lbl">Từ ngày</span>
+                <input type="date" name="FromDate" id="inpFrom"
+                       class="fc-date @(!string.IsNullOrEmpty(Model.FromDate) ? "has-val" : "")"
+                       value="@Model.FromDate" onchange="onDateChange()" />
+            </div>
+            <div class="fc-arrow">→</div>
+            @* ── Đến ngày ── *@
+            <div class="fc-zone-col">
+                <span class="fc-lbl">Đến ngày</span>
+                <input type="date" name="ToDate" id="inpTo"
+                       class="fc-date @(!string.IsNullOrEmpty(Model.ToDate) ? "has-val" : "")"
+                       value="@Model.ToDate" onchange="onDateChange()" />
+            </div>
+
+            @* ── Separator ── *@
+            <div class="fc-sep"></div>
+
+            @* ── Lớp học ── *@
+            <div class="fc-zone-col">
+                <span class="fc-lbl">Lớp học</span>
+                <select name="ClassFilter" class="fc-sel @(!string.IsNullOrEmpty(Model.ClassFilter) ? "has-val" : "")"
+                        onchange="document.getElementById('ff').submit()">
+                    <option value="">— Tất cả lớp —</option>
+                    @foreach (var c in Model.Classes)
+                    {
+                        if (Model.ClassFilter == c.ClassId.ToString())
+                        {
+                            <option value="@c.ClassId" selected="selected">@c.ClassCode</option>
+                        }
+                        else
+                        {
+                            <option value="@c.ClassId">@c.ClassCode</option>
+                        }
+                    }
+                </select>
+            </div>
+
+            @* ── Trạng thái ── *@
+            <div class="fc-zone-col">
+                <span class="fc-lbl">Trạng thái</span>
+                <select name="StatusFilter" class="fc-sel @(!string.IsNullOrEmpty(Model.StatusFilter) ? "has-val" : "")"
+                        onchange="document.getElementById('ff').submit()">
+                    <option value="">— Tất cả —</option>
+                    @if (Model.StatusFilter == "present")
+                    {
+                        <option value="present" selected="selected">✓ Có mặt</option>
+                        <option value="absent">✗ Vắng mặt</option>
+ }
+                    else if (Model.StatusFilter == "absent")
+                    {
+                        <option value="present">✓ Có mặt</option>
+                        <option value="absent" selected="selected">✗ Vắng mặt</option>
+ }
+                    else
+                    {
+                        <option value="present">✓ Có mặt</option>
+                        <option value="absent">✗ Vắng mặt</option>
+ }
+                </select>
+            </div>
+
+            @* ── Reset ── *@
+            <div style="align-self:flex-end">
+                <a href="/Student/Attendance" class="btn-outline"
+                   style="height:34px;padding:0 13px;display:inline-flex;align-items:center;gap:6px;font-size:.8rem;font-weight:700;text-decoration:none"
+                   title="Đặt lại tất cả bộ lọc">
+                    <i class="fas fa-rotate-left"></i> Đặt lại
+                </a>
+            </div>
+        </div>
+
+        @* Hint bar *@
+        <div class="fc-hint @(Model.HasDateRange ? "mode-date" : "")">
+            @if (Model.HasDateRange)
+            {
+                <i class="fas fa-circle-info"></i>
+                <text>Chế độ <strong>khoảng ngày</strong> — bộ lọc năm/tháng bị bỏ qua</text>
+            }
+            else
+            {
+                <i class="fas fa-circle-info"></i>
+                <text>Chế độ <strong>năm/tháng</strong> — nhập ngày bên trái để chuyển sang khoảng ngày</text>
+            }
+            @{
+                var activeFilters = new System.Collections.Generic.List<string>();
+                if (!string.IsNullOrEmpty(Model.ClassFilter)) activeFilters.Add("lớp");
+                if (!string.IsNullOrEmpty(Model.StatusFilter)) activeFilters.Add("trạng thái");
+                if (activeFilters.Any())
+                {
+                    <text> · Đang lọc thêm theo: <strong>@string.Join(", ", activeFilters)</strong></text>
+                }
+            }
+        </div>
+    </form>
+</div>
+
+@* ── CHILD TABS (Parent only) ── *@
+@if (Model.IsParent && Model.MyChildren.Any())
+{
+
+    <div class="child-tabs">
+        <a href="@BuildTabHref(0)" class="child-tab @(Model.StudentIdFilter == null || Model.StudentIdFilter == 0 ? "active" : "")">
+            <div class="child-av"><i class="fas fa-users" style="font-size:9px"></i></div>Tất cả con
+        </a>
+        @foreach (var child in Model.MyChildren)
+        {
+            var ini = !string.IsNullOrEmpty(child.Fullname) ? child.Fullname.Trim().Split(' ')[^1][..1].ToUpper() : "?";
+            <a href="@BuildTabHref(child.StudentId)" class="child-tab @(Model.StudentIdFilter == child.StudentId ? "active" : "")">
+                <div class="child-av">@ini</div>
+                @child.Fullname.Trim().Split(' ')[^1]
+                @if (!string.IsNullOrEmpty(child.School))
+                {
+                    <span style="font-size:.65rem;opacity:.7">· @child.School</span>
+                }
+            </a>
+        }
+    </div>
+}
+
+@* ── KPI STRIP ── *@
+<div class="att-kpi">
+    <div class="kpi-card kc-o">
+        <div class="kpi-card-row"><div class="kpi-card-lbl">Tổng buổi học</div><div class="kpi-card-icon"><i class="fas fa-calendar-alt"></i></div></div>
+        <div class="kpi-card-val">@Model.Statistics.TotalSessions</div>
+        <div class="kpi-card-foot"><i class="fas fa-filter" style="color:var(--c-primary);font-size:9px"></i> Theo bộ lọc</div>
+    </div>
+    <div class="kpi-card kc-g">
+        <div class="kpi-card-row"><div class="kpi-card-lbl">Có mặt</div><div class="kpi-card-icon"><i class="fas fa-user-check"></i></div></div>
+        <div class="kpi-card-val">@Model.Statistics.PresentCount</div>
+        <div class="kpi-card-foot">
+            <span class="pos">@(Model.Statistics.TotalSessions > 0 ? $"{100 * Model.Statistics.PresentCount / Model.Statistics.TotalSessions}%" : "—")</span>
+            trong kỳ
+        </div>
+    </div>
+    <div class="kpi-card kc-r">
+        <div class="kpi-card-row"><div class="kpi-card-lbl">Vắng mặt</div><div class="kpi-card-icon"><i class="fas fa-user-xmark"></i></div></div>
+        <div class="kpi-card-val">@Model.Statistics.AbsentCount</div>
+        <div class="kpi-card-foot">
+            <span class="neg">@(Model.Statistics.TotalSessions > 0 ? $"{100 * Model.Statistics.AbsentCount / Model.Statistics.TotalSessions}%" : "—")</span>
+            trong kỳ
+        </div>
+    </div>
+    <div class="kpi-card kc-p">
+        <div class="kpi-card-row"><div class="kpi-card-lbl">Tỉ lệ chuyên cần</div><div class="kpi-card-icon"><i class="fas fa-chart-pie"></i></div></div>
+        <div class="kpi-card-val" style="color:@rc">@Model.Statistics.AttendanceRate<small>%</small></div>
+        <div class="kpi-card-foot">
+            <i class="fas fa-circle" style="font-size:7px;color:@rc"></i>
+            @(Model.Statistics.AttendanceRate >= 80 ? "Đạt yêu cầu" : Model.Statistics.AttendanceRate >= 60 ? "Trung bình" : "Cần cải thiện")
+        </div>
+    </div>
+</div>
+
+@* ── RATE BAR ── *@
+<div class="rate-bar">
+    <div class="card-ico" style="flex-shrink:0"><i class="fas fa-chart-bar"></i></div>
+    <span class="rate-bar-label">Chuyên cần — <em style="font-weight:500;font-style:normal">@Model.PeriodLabel</em></span>
+    <div class="rate-bar-track">
+        <div class="rate-bar-fill" style="width:@(Model.Statistics.AttendanceRate)%;background:@rc"></div>
+    </div>
+    <div class="rate-bar-pct" style="color:@rc">@Model.Statistics.AttendanceRate%</div>
+    <div class="rate-bar-sub">@Model.Statistics.PresentCount có mặt · @Model.Statistics.TotalSessions buổi</div>
+</div>
+
+@* ── CHART ── *@
+<div class="att-chart">
+    <div class="card-hd">
+        <div class="card-hd-l">
+            <div class="card-ico"><i class="fas fa-chart-column"></i></div>
+            <div>
+                <div class="card-title">Biểu đồ chuyên cần</div>
+                <div class="card-sub">
+                    @(Model.ChartMode == "months"
+                                        ? $"Theo tháng — {Model.ActiveYear}"
+                                        : $"Theo ngày — {Model.PeriodLabel}")
+                </div>
+            </div>
+        </div>
+        <div class="chart-lgd">
+            <span class="lgd-item"><span class="lgd-dot" style="background:#10b981"></span>Có mặt</span>
+            <span class="lgd-item"><span class="lgd-dot" style="background:#f43f5e"></span>Vắng mặt</span>
+        </div>
+    </div>
+    <div class="card-body">
+        <canvas id="attChart" style="max-height:185px"></canvas>
+    </div>
+</div>
+
+@* ── MAIN 2-COL ── *@
+<div class="att-layout">
+
+    @* ── TABLE ── *@
+    <div>
+        <div class="tbl-card">
+            <div class="tbl-hd">
+                <div class="tbl-hd-l">
+                    <div class="card-ico"><i class="fas fa-clipboard-list"></i></div>
+                    Chi tiết điểm danh
+                </div>
+                <span class="tbl-count"><strong>@Model.AttendanceList.Count</strong> bản ghi · @Model.PeriodLabel</span>
+            </div>
+            <div style="overflow-x:auto">
+                <table class="att-tbl">
+                    <thead>
+                        <tr>
+                            <th style="width:110px">Ngày</th>
+                            <th class="col-student" style="width:140px">Học sinh</th>
+                            <th style="width:90px">Lớp</th>
+                            <th class="col-shift" style="width:150px">Ca học</th>
+                            <th class="col-room" style="width:80px;text-align:center">Phòng</th>
+                            <th class="col-teach" style="min-width:140px">Giáo viên</th>
+                            <th style="width:116px;text-align:center">Điểm danh</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @if (Model.AttendanceList.Any())
+                        {
+                            @foreach (var att in Model.AttendanceList)
+                            {
+                                var isToday = att.SessionDate == today;
+                                <tr class="@(att.IsPresent ? "rp" : "ra")">
+                                    <td>
+                                        <div class="d-main">@att.SessionDate.ToString("dd/MM/yyyy")@if(isToday){
+                                        <span class="today-dot" title="Hôm nay"></span>
+                                    }
+    </div>
+                                    <div class="d-sub">@DowVi(att.SessionDate.DayOfWeek)</div>
+                                </td>
+                                <td class="col-student">
+                                    @if (!string.IsNullOrEmpty(att.StudentName))
+                                    {
+                                        <span class="pill-std"><i class="fas fa-user" style="font-size:8px"></i>@att.StudentName</span>
+                                    }
+                                    else
+                                    {
+
+                                        <span style="color:var(--text-3);font-size:.75rem">—</span>
+                                    }
+                                </td>
+                                <td><span class="pill-cls"><i class="fas fa-chalkboard" style="font-size:9px"></i>@att.ClassName</span></td>
+                                <td class="col-shift">
+                                    <div style="font-size:.81rem;font-weight:600;color:var(--text-1)">@att.ShiftName</div>
+                                    <div style="font-size:.7rem;color:var(--text-3)">@att.ShiftTime</div>
+                                </td>
+                                <td class="col-room" style="text-align:center"><span class="pill-room"><i class="fas fa-door-open" style="font-size:9px"></i>@att.RoomCode</span></td>
+                                <td class="col-teach">
+                                    <div class="tcell-name">@att.TeacherName</div>
+                                    @if (!string.IsNullOrEmpty(att.AssistantName))
+                                    {
+                                        <div class="tcell-asst"><i class="fas fa-user-gear" style="font-size:8px"></i> @att.AssistantName</div>
+                                    }
+                                </td>
+                                <td style="text-align:center">
+                                    @if (att.IsPresent)
+                                    {
+                                        <span class="att-badge p"><i class="fas fa-check"></i> Có mặt</span>
+                                    }
+                                    else
+                                    {
+
+                                        <span class="att-badge a"><i class="fas fa-times"></i> Vắng mặt</span>
+                                    }
+                                </td>
+                            </tr>
+                        }
+                                                }
+                                                else
+                        {
+                            <tr>
+                                <td colspan="7" class="empty-cell">
+                                    <div class="empty-ico"><i class="fas fa-clipboard"></i></div>
+                                    <div style="font-size:.9rem;font-weight:700;color:var(--text-1);margin-bottom:5px">Không có dữ liệu</div>
+                                    <div style="font-size:.76rem;color:var(--text-3)">Thử thay đổi bộ lọc để xem dữ liệu khác</div>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+            @if (Model.AttendanceList.Count >= 200)
+            {
+                <div class="tbl-foot">
+                    <span class="tbl-foot-info">Hiển thị <strong>200</strong> bản ghi gần nhất</span>
+                    <span style="font-size:.7rem;color:var(--text-3)"><i class="fas fa-circle-info"></i> Thu hẹp bộ lọc để xem chi tiết hơn</span>
+                </div>
+            }
+        </div>
+    </div>
+
+    @* ── SIDEBAR ── *@
+    <div>
+        @* Donut *@
+        <div class="sb-card">
+            <div class="sb-hd">
+                <div class="sb-ico"><i class="fas fa-chart-pie"></i></div>
+                <span class="sb-title">Tổng quan</span>
+            </div>
+            <div class="sb-body">
+                @{
+                    double circ = 2 * Math.PI * 42;
+                    double pPct = Model.Statistics.TotalSessions > 0 ? (double)Model.Statistics.PresentCount / Model.Statistics.TotalSessions : 0;
+                    double aPct = Model.Statistics.TotalSessions > 0 ? (double)Model.Statistics.AbsentCount / Model.Statistics.TotalSessions : 0;
+                    double lenP = circ * pPct; double lenA = circ * aPct;
+                }
+                <div class="donut-wrap">
+                    <div class="donut-box">
+                        <svg class="donut-svg" width="110" height="110" viewBox="0 0 110 110">
+                            <circle cx="55" cy="55" r="42" fill="none" stroke="#eef1f8" stroke-width="14" />
+                            <circle cx="55" cy="55" r="42" fill="none" stroke="#10b981" stroke-width="14"
+                                    stroke-dasharray="@(lenP.ToString("F1")) @(circ.ToString("F1"))" stroke-dashoffset="0" />
+                            <circle cx="55" cy="55" r="42" fill="none" stroke="#f43f5e" stroke-width="14"
+                                    stroke-dasharray="@(lenA.ToString("F1")) @(circ.ToString("F1"))"
+                                    stroke-dashoffset="-@(lenP.ToString("F1"))" />
+                        </svg>
+                        <div class="donut-mid">
+                            <span class="donut-num" style="color:@rc">@Model.Statistics.AttendanceRate%</span>
+                            <span class="donut-lbl">chuyên cần</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="stat-row"><span class="stat-label"><span class="stat-dot" style="background:#10b981"></span>Có mặt</span><span class="stat-val">@Model.Statistics.PresentCount</span></div>
+                <div class="stat-row"><span class="stat-label"><span class="stat-dot" style="background:#f43f5e"></span>Vắng mặt</span><span class="stat-val">@Model.Statistics.AbsentCount</span></div>
+                <div class="stat-row"><span class="stat-label"><span class="stat-dot" style="background:var(--c-primary)"></span>Tổng buổi</span><span class="stat-val">@Model.Statistics.TotalSessions</span></div>
+            </div>
+        </div>
+
+        @* Streak *@
+        <div class="sb-card">
+            <div class="sb-hd">
+                <div class="sb-ico"><i class="fas fa-fire-flame-curved"></i></div>
+                <span class="sb-title">10 buổi gần nhất</span>
+            </div>
+            <div class="sb-body">
+                @if (streak > 0 && Model.RecentList.Any())
+                {
+                    <div class="streak-badge on"><i class="fas fa-fire"></i> @streak buổi có mặt liên tiếp</div>
+                }
+                else if (Model.RecentList.Any())
+                {
+
+                    <div class="streak-badge off"><i class="fas fa-circle-xmark"></i> Buổi gần nhất: vắng</div>
+                }
+                <div class="streak-grid">
+                    @foreach (var r in Model.RecentList)
+                    {
+                        var cls = r.IsPresent ? "p" : "a";
+                        var tip = $"{r.SessionDate:dd/MM} · {r.ClassName} · {(r.IsPresent ? "Có mặt" : "Vắng")}";
+                        <div class="s-dot @cls" title="@tip">@(r.IsPresent ? "✓" : "✗")</div>
+                    }
+                    @for (int i = Model.RecentList.Count; i < 10; i++)
+                    {
+                        <div class="s-dot e">–</div>
+                    }
+                </div>
+                <div class="streak-cap">← Gần nhất &nbsp;·&nbsp; Cũ hơn →</div>
+            </div>
+        </div>
+
+        @* Theo lớp *@
+        @if (Model.ClassStatsList.Any())
+        {
+            <div class="sb-card">
+                <div class="sb-hd">
+                    <div class="sb-ico"><i class="fas fa-chalkboard"></i></div>
+                    <span class="sb-title">Theo từng lớp</span>
+                </div>
+                <div class="sb-body">
+                    @foreach (var cs in Model.ClassStatsList)
+                    {
+                        var bc = cs.Rate >= 80 ? "#10b981" : cs.Rate >= 60 ? "#f59f00" : "#f43f5e";
+                        <div class="cls-row">
+                            <div class="cls-top">
+                                <span class="cls-name">@cs.ClassCode</span>
+                                <span class="cls-rate" style="color:@bc">@cs.Rate%</span>
+                            </div>
+                            <div class="cls-bar"><div class="cls-fill" style="width:@cs.Rate%;background:@bc"></div></div>
+                            <div class="cls-meta"><span>✓ @cs.PresentCount</span><span>✗ @cs.AbsentCount</span><span>/@cs.TotalSessions buổi</span></div>
+                        </div>
+                    }
+                </div>
+            </div>
+        }
+    </div>
+
+</div>
+
+@section Scripts {
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    <script>
+        // ── Chart ───────────────────────────────────────────────────
+        (function(){
+            var ctx = document.getElementById('attChart');
+            if (!ctx) return;
+            var font = { family:"'Plus Jakarta Sans',system-ui,sans-serif" };
+            new Chart(ctx, {
+                type:'bar',
+                data:{
+                    labels: @Html.Raw(Model.ChartLabelsJson),
+                    datasets:[
+                        { label:'Có mặt',   data:@Html.Raw(Model.ChartPresentJson), backgroundColor:'rgba(16,185,129,.75)',  borderRadius:4, borderSkipped:false },
+                        { label:'Vắng mặt', data:@Html.Raw(Model.ChartAbsentJson),  backgroundColor:'rgba(244,63,94,.65)',   borderRadius:4, borderSkipped:false }
+                    ]
+                },
+                options:{
+                    responsive:true, maintainAspectRatio:true,
+                    interaction:{ mode:'index', intersect:false },
+                    plugins:{
+                        legend:{ display:false },
+                        tooltip:{
+                            backgroundColor:'#fff', titleColor:'#181b27', bodyColor:'#5a6277',
+                            borderColor:'#e4e8f2', borderWidth:1, padding:10,
+                            titleFont:{...font,size:12,weight:'700'}, bodyFont:{...font,size:11},
+                            callbacks:{
+                                label:function(i){ return ' '+i.dataset.label+': '+i.raw+' buổi'; }
+                            }
+                        }
+                    },
+                    scales:{
+                        x:{ grid:{display:false}, ticks:{font:{...font,size:10},color:'#9aa0b4',maxRotation:0,maxTicksLimit:16} },
+                        y:{ beginAtZero:true, grid:{color:'#f0f2f8'}, ticks:{stepSize:1,font:{...font,size:10},color:'#9aa0b4'} }
+                    }
+                }
+            });
+        })();
+
+        // ── Mutual exclusion logic ───────────────────────────────────
+        // Chọn năm/tháng → xóa ngày rồi submit
+        function onPeriodChange() {
+            document.getElementById('inpFrom').value = '';
+            document.getElementById('inpTo').value   = '';
+            document.getElementById('ff').submit();
+        }
+
+        // Nhập ngày → xóa tháng (giữ năm cho context), rồi submit
+        function onDateChange() {
+            var from = document.getElementById('inpFrom').value;
+            var to   = document.getElementById('inpTo').value;
+            if (from || to) {
+                // Reset tháng về 0 (cả năm) để tránh conflict
+                document.getElementById('selMonth').value = '0';
+                document.getElementById('ff').submit();
+            }
+        }
+
+        // Nút "Xóa ngày" trong zone B
+        function clearDateRange() {
+            document.getElementById('inpFrom').value = '';
+            document.getElementById('inpTo').value   = '';
+            document.getElementById('ff').submit();
+        }
+    </script>
+}

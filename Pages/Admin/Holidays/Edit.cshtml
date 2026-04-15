@@ -1,0 +1,849 @@
+﻿@page
+@model TutoringCenterManagement.Pages.Admin.Holidays.EditModel
+@{
+    ViewData["Title"] = "Chỉnh sửa ngày nghỉ lễ";
+}
+
+@section Styles {
+    <style>
+        /* ════════════════════════════════════
+                   HOLIDAY EDIT — đồng bộ design system
+                ════════════════════════════════════ */
+
+        .edit-layout {
+            display: grid;
+            grid-template-columns: 1fr 340px;
+            gap: 20px;
+            align-items: start;
+        }
+
+        /* ── Form card ── */
+        .form-card {
+            background: var(--bg-card);
+            border-radius: var(--r-lg);
+            border: 1px solid var(--border);
+            box-shadow: var(--sh-sm);
+            overflow: hidden;
+        }
+
+        .form-card-hd {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 14px 20px;
+            border-bottom: 1px solid var(--border);
+            background: linear-gradient(to right, #fafbff, #fff);
+        }
+
+        .form-card-icon {
+            width: 32px;
+            height: 32px;
+            border-radius: 8px;
+            background: rgba(232,89,12,.1);
+            color: var(--c-primary);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 14px;
+            flex-shrink: 0;
+        }
+
+        .form-card-title {
+            font-size: .92rem;
+            font-weight: 700;
+            color: var(--text-1);
+        }
+
+        .form-card-subtitle {
+            font-size: .75rem;
+            color: var(--text-3);
+            margin-top: 2px;
+        }
+
+        .form-card-body {
+            padding: 24px;
+        }
+
+        .form-actions {
+            display: flex;
+            align-items: center;
+            justify-content: flex-end;
+            gap: 10px;
+            padding: 16px 24px;
+            border-top: 1px solid var(--border);
+            background: #f9fafd;
+        }
+
+        /* ── Section label ── */
+        .section-label {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: .68rem;
+            font-weight: 800;
+            color: var(--text-3);
+            text-transform: uppercase;
+            letter-spacing: .8px;
+            margin-bottom: 16px;
+            margin-top: 4px;
+        }
+
+            .section-label::after {
+                content: '';
+                flex: 1;
+                height: 1px;
+                background: var(--border);
+            }
+
+            .section-label .sl-icon {
+                width: 20px;
+                height: 20px;
+                border-radius: 5px;
+                background: rgba(232,89,12,.1);
+                color: var(--c-primary);
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                font-size: 9px;
+                flex-shrink: 0;
+            }
+
+        /* ── Form fields ── */
+        .form-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 16px;
+            margin-bottom: 18px;
+        }
+
+            .form-row.full {
+                grid-template-columns: 1fr;
+            }
+
+        .field-group {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+
+        .field-label {
+            font-size: .75rem;
+            font-weight: 700;
+            color: var(--text-2);
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+            .field-label .req {
+                color: #f43f5e;
+                font-size: .8rem;
+            }
+
+        .field-input,
+        .field-textarea {
+            padding: 9px 13px;
+            border: 1.5px solid var(--border);
+            border-radius: var(--r-sm);
+            background: var(--bg-page);
+            color: var(--text-1);
+            font-size: .85rem;
+            font-family: 'Plus Jakarta Sans', system-ui, sans-serif;
+            outline: none;
+            transition: border-color .15s, box-shadow .15s;
+            width: 100%;
+            box-sizing: border-box;
+        }
+
+            .field-input:focus,
+            .field-textarea:focus {
+                border-color: var(--c-primary);
+                box-shadow: 0 0 0 3px var(--c-glow);
+                background: #fff;
+            }
+
+            .field-input::placeholder,
+            .field-textarea::placeholder {
+                color: var(--text-3);
+            }
+
+            .field-input::-webkit-calendar-picker-indicator {
+                opacity: .5;
+                cursor: pointer;
+            }
+
+        .field-textarea {
+            resize: vertical;
+            min-height: 88px;
+            line-height: 1.6;
+        }
+
+        .field-hint {
+            font-size: .72rem;
+            color: var(--text-3);
+            margin-top: 2px;
+        }
+
+        /* ── Validation error — chỉ hiện khi có nội dung lỗi ── */
+        .field-error {
+            font-size: .72rem;
+            color: #e03131;
+            margin-top: 3px;
+            display: none; /* ẩn mặc định */
+            align-items: center;
+            gap: 4px;
+        }
+
+            /* Hiện span khi ASP.NET inject text lỗi vào */
+            .field-error:not(:empty) {
+                display: flex;
+            }
+
+                /* Icon exclamation thêm bằng CSS — không cần đặt cứng trong HTML */
+                .field-error:not(:empty)::before {
+                    font-family: "Font Awesome 6 Free";
+                    font-weight: 900;
+                    content: "\f06a"; /* fa-circle-exclamation */
+                    flex-shrink: 0;
+                }
+
+        /* ── Date range connector ── */
+        .date-range-wrap {
+            display: grid;
+            grid-template-columns: 1fr 28px 1fr;
+            align-items: end;
+            gap: 0;
+            margin-bottom: 18px;
+        }
+
+        .date-range-sep {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding-bottom: 9px;
+            color: var(--text-3);
+            font-size: .75rem;
+            font-weight: 600;
+        }
+
+        /* ── Duration preview ── */
+        .dur-preview {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 12px 16px;
+            background: rgba(232,89,12,.06);
+            border: 1px solid rgba(232,89,12,.15);
+            border-radius: var(--r-md);
+            margin-bottom: 18px;
+        }
+
+        .dur-preview-icon {
+            width: 36px;
+            height: 36px;
+            border-radius: 9px;
+            background: rgba(232,89,12,.1);
+            color: var(--c-primary);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 15px;
+            flex-shrink: 0;
+        }
+
+        .dur-preview-label {
+            font-size: .75rem;
+            color: var(--text-3);
+        }
+
+        .dur-preview-val {
+            font-size: 1.1rem;
+            font-weight: 800;
+            color: var(--c-primary);
+            margin-top: 1px;
+        }
+
+        /* ── Side panel ── */
+        .side-card {
+            background: var(--bg-card);
+            border-radius: var(--r-lg);
+            border: 1px solid var(--border);
+            box-shadow: var(--sh-sm);
+            overflow: hidden;
+        }
+
+        .side-card-hd {
+            display: flex;
+            align-items: center;
+            gap: 9px;
+            padding: 13px 18px;
+            border-bottom: 1px solid var(--border);
+            background: linear-gradient(to right, #fafbff, #fff);
+        }
+
+        .side-card-icon {
+            width: 28px;
+            height: 28px;
+            border-radius: 7px;
+            background: rgba(232,89,12,.1);
+            color: var(--c-primary);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 12px;
+            flex-shrink: 0;
+        }
+
+        .side-card-title {
+            font-size: .85rem;
+            font-weight: 700;
+            color: var(--text-1);
+        }
+
+        .side-card-body {
+            padding: 18px;
+        }
+
+        /* ── Preview card ── */
+        .preview-badge {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 14px 16px;
+            border-radius: var(--r-md);
+            background: var(--bg-page);
+            border: 1px solid var(--border);
+            margin-bottom: 14px;
+        }
+
+        .preview-avatar {
+            width: 44px;
+            height: 44px;
+            border-radius: 11px;
+            background: linear-gradient(135deg, var(--c-primary), #f59f00);
+            box-shadow: 0 3px 10px var(--c-glow);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 18px;
+            color: #fff;
+            flex-shrink: 0;
+            transition: background .3s;
+        }
+
+        .preview-name {
+            font-size: .88rem;
+            font-weight: 700;
+            color: var(--text-1);
+            word-break: break-word;
+        }
+
+        .preview-sub {
+            font-size: .72rem;
+            color: var(--text-3);
+            margin-top: 2px;
+        }
+
+        .preview-row {
+            display: flex;
+            align-items: flex-start;
+            justify-content: space-between;
+            padding: 9px 0;
+            border-bottom: 1px solid #f0f2f8;
+            font-size: .8rem;
+        }
+
+            .preview-row:last-child {
+                border-bottom: none;
+            }
+
+        .preview-row-label {
+            color: var(--text-3);
+            font-weight: 600;
+        }
+
+        .preview-row-val {
+            color: var(--text-1);
+            font-weight: 700;
+            text-align: right;
+            max-width: 160px;
+        }
+
+        /* ── Changed indicator ── */
+        .changed-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            padding: 3px 9px;
+            border-radius: 50px;
+            font-size: .68rem;
+            font-weight: 700;
+            background: #fffbeb;
+            color: #d97706;
+            border: 1px solid #fde68a;
+            margin-left: 6px;
+        }
+
+        /* ── ID chip ── */
+        .id-chip {
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            padding: 4px 10px;
+            border-radius: var(--r-sm);
+            background: rgba(232,89,12,.08);
+            border: 1px solid rgba(232,89,12,.2);
+            color: var(--c-primary);
+            font-size: .75rem;
+            font-weight: 800;
+            font-family: 'Courier New', monospace;
+            letter-spacing: .5px;
+        }
+
+        /* ── Tip items ── */
+        .tip-item {
+            display: flex;
+            align-items: flex-start;
+            gap: 10px;
+            padding: 10px 0;
+            border-bottom: 1px solid #f0f2f8;
+            font-size: .78rem;
+            color: var(--text-2);
+            line-height: 1.5;
+        }
+
+            .tip-item:last-child {
+                border-bottom: none;
+            }
+
+        .tip-icon {
+            width: 24px;
+            height: 24px;
+            border-radius: 6px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 10px;
+            flex-shrink: 0;
+            margin-top: 1px;
+        }
+
+            .tip-icon.orange {
+                background: rgba(232,89,12,.1);
+                color: #e8590c;
+            }
+
+            .tip-icon.blue {
+                background: rgba(59,130,246,.1);
+                color: #3b82f6;
+            }
+
+            .tip-icon.yellow {
+                background: rgba(245,159,0,.1);
+                color: #f59f00;
+            }
+
+        /* ── Inline date error ── */
+        .date-err-msg {
+            font-size: .72rem;
+            color: #e03131;
+            display: none;
+            align-items: center;
+            gap: 4px;
+            margin-top: -10px;
+            margin-bottom: 14px;
+        }
+
+            .date-err-msg.visible {
+                display: flex;
+            }
+
+        /* ── Responsive ── */
+        @@media (max-width: 900px) {
+            .edit-layout {
+                grid-template-columns: 1fr;
+            }
+
+            .date-range-wrap {
+                grid-template-columns: 1fr 24px 1fr;
+            }
+        }
+
+        @@media (max-width: 540px) {
+            .form-row {
+                grid-template-columns: 1fr;
+            }
+
+            .date-range-wrap {
+                grid-template-columns: 1fr;
+            }
+
+            .date-range-sep {
+                display: none;
+            }
+        }
+    </style>
+}
+
+<!-- ════════════════════════════════════════
+     PAGE HEADER
+════════════════════════════════════════ -->
+<div class="page-header">
+    <div>
+        <h1 class="page-heading">Chỉnh sửa <span>ngày nghỉ lễ</span></h1>
+        <p class="page-subheading">
+            <i class="fas fa-circle-info" style="color:var(--c-primary)"></i>
+            Cập nhật thông tin kỳ nghỉ &nbsp;
+            <span class="id-chip"><i class="fas fa-hashtag"></i> @Model.Input.HolidayId</span>
+        </p>
+    </div>
+    <div class="page-actions">
+        <a href="/Admin/Holidays" class="btn-outline">
+            <i class="fas fa-arrow-left"></i> Quay lại
+        </a>
+    </div>
+</div>
+
+<!-- ════════════════════════════════════════
+     LAYOUT
+════════════════════════════════════════ -->
+<div class="edit-layout">
+
+    <!-- ══════════════════════════
+         CỘT TRÁI — FORM
+    ══════════════════════════ -->
+    <form method="post" id="editForm" novalidate>
+        @Html.AntiForgeryToken()
+        <input type="hidden" asp-for="Input.HolidayId" />
+
+        <!-- Card: Thông tin cơ bản -->
+        <div class="form-card" style="margin-bottom:20px">
+            <div class="form-card-hd">
+                <div class="form-card-icon"><i class="fas fa-tag"></i></div>
+                <div>
+                    <div class="form-card-title">Thông tin cơ bản</div>
+                    <div class="form-card-subtitle">Tên và mô tả kỳ nghỉ</div>
+                </div>
+            </div>
+            <div class="form-card-body">
+
+                <div class="section-label">
+                    <span class="sl-icon"><i class="fas fa-pen"></i></span>
+                    Tên ngày nghỉ
+                </div>
+
+                <div class="form-row full">
+                    <div class="field-group">
+                        <label class="field-label">
+                            Tên ngày lễ <span class="req">*</span>
+                        </label>
+                        <input asp-for="Input.HolidayName"
+                               class="field-input"
+                               id="inputName"
+                               autocomplete="off"
+                               required />
+                        <span asp-validation-for="Input.HolidayName" class="field-error"></span>
+                    </div>
+                </div>
+
+                <div class="section-label" style="margin-top:8px">
+                    <span class="sl-icon"><i class="fas fa-align-left"></i></span>
+                    Mô tả
+                </div>
+
+                <div class="form-row full" style="margin-bottom:0">
+                    <div class="field-group">
+                        <label class="field-label">Mô tả <span style="color:var(--text-3);font-weight:500">(tuỳ chọn)</span></label>
+                        <textarea asp-for="Input.Description"
+                                  class="field-textarea"
+                                  id="inputDesc"
+                                  placeholder="Mô tả ngắn về kỳ nghỉ này..."></textarea>
+                        <span class="field-hint">Không bắt buộc — giúp nhận diện kỳ nghỉ dễ hơn</span>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+
+        <!-- Card: Thời gian -->
+        <div class="form-card">
+            <div class="form-card-hd">
+                <div class="form-card-icon"><i class="fas fa-calendar-days"></i></div>
+                <div>
+                    <div class="form-card-title">Thời gian nghỉ</div>
+                    <div class="form-card-subtitle">Cập nhật ngày bắt đầu và kết thúc</div>
+                </div>
+            </div>
+            <div class="form-card-body">
+
+                <div class="section-label">
+                    <span class="sl-icon"><i class="fas fa-calendar"></i></span>
+                    Khoảng thời gian
+                </div>
+
+                <div class="date-range-wrap">
+                    <div class="field-group">
+                        <label class="field-label">
+                            Từ ngày <span class="req">*</span>
+                        </label>
+                        <input asp-for="Input.StartDate"
+                               type="date"
+                               class="field-input"
+                               id="inputStart"
+                               required />
+                        <span asp-validation-for="Input.StartDate" class="field-error"></span>
+                    </div>
+                    <div class="date-range-sep">
+                        <i class="fas fa-arrow-right"></i>
+                    </div>
+                    <div class="field-group">
+                        <label class="field-label">
+                            Đến ngày <span class="req">*</span>
+                        </label>
+                        <input asp-for="Input.EndDate"
+                               type="date"
+                               class="field-input"
+                               id="inputEnd"
+                               required />
+                        <span asp-validation-for="Input.EndDate" class="field-error"></span>
+                    </div>
+                </div>
+
+                <!-- Duration preview -->
+                <div class="dur-preview" id="durPreview">
+                    <div class="dur-preview-icon"><i class="fas fa-sun"></i></div>
+                    <div>
+                        <div class="dur-preview-label">Tổng thời gian nghỉ</div>
+                        <div class="dur-preview-val" id="durVal">—</div>
+                    </div>
+                </div>
+
+                <div id="dateErrMsg" class="date-err-msg">
+                    <i class="fas fa-circle-exclamation"></i>
+                    <span>Ngày kết thúc phải sau hoặc bằng ngày bắt đầu</span>
+                </div>
+
+            </div>
+            <div class="form-actions">
+                <a href="/Admin/Holidays" class="btn-outline">
+                    <i class="fas fa-times"></i> Hủy
+                </a>
+                <button type="submit" class="btn-brand" id="btnSubmit">
+                    <i class="fas fa-floppy-disk"></i> Lưu thay đổi
+                </button>
+            </div>
+        </div>
+
+    </form>
+
+    <!-- ══════════════════════════
+         CỘT PHẢI — SIDE PANEL
+    ══════════════════════════ -->
+    <div>
+
+        <!-- Preview card -->
+        <div class="side-card" style="margin-bottom:16px">
+            <div class="side-card-hd">
+                <div class="side-card-icon"><i class="fas fa-eye"></i></div>
+                <span class="side-card-title">
+                    Xem trước
+                    <span class="changed-badge" id="changedBadge" style="display:none">
+                        <i class="fas fa-pen"></i> Đã chỉnh sửa
+                    </span>
+                </span>
+            </div>
+            <div class="side-card-body">
+                <div class="preview-badge">
+                    <div class="preview-avatar" id="previewAvatar">
+                        <i class="fas fa-umbrella-beach"></i>
+                    </div>
+                    <div>
+                        <div class="preview-name" id="previewName">@Model.Input.HolidayName</div>
+                        <div class="preview-sub" id="previewSub">Ngày nghỉ lễ</div>
+                    </div>
+                </div>
+
+                <div class="preview-row">
+                    <span class="preview-row-label"><i class="fas fa-calendar-check" style="margin-right:5px;color:var(--c-primary)"></i>Từ ngày</span>
+                    <span class="preview-row-val" id="previewStart">—</span>
+                </div>
+                <div class="preview-row">
+                    <span class="preview-row-label"><i class="fas fa-calendar-xmark" style="margin-right:5px;color:#f43f5e"></i>Đến ngày</span>
+                    <span class="preview-row-val" id="previewEnd">—</span>
+                </div>
+                <div class="preview-row">
+                    <span class="preview-row-label"><i class="fas fa-sun" style="margin-right:5px;color:#f59f00"></i>Số ngày nghỉ</span>
+                    <span class="preview-row-val" id="previewDur">—</span>
+                </div>
+                <div class="preview-row" style="border-bottom:none">
+                    <span class="preview-row-label"><i class="fas fa-info-circle" style="margin-right:5px;color:#3b82f6"></i>Mô tả</span>
+                    <span class="preview-row-val" id="previewDesc">—</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Meta info card -->
+        <div class="side-card" style="margin-bottom:16px">
+            <div class="side-card-hd">
+                <div class="side-card-icon" style="background:rgba(59,130,246,.1);color:#3b82f6">
+                    <i class="fas fa-circle-info"></i>
+                </div>
+                <span class="side-card-title">Thông tin bản ghi</span>
+            </div>
+            <div class="side-card-body">
+                <div class="preview-row">
+                    <span class="preview-row-label">Mã kỳ nghỉ</span>
+                    <span class="id-chip"><i class="fas fa-hashtag"></i> @Model.Input.HolidayId</span>
+                </div>
+                <div class="preview-row" style="border-bottom:none">
+                    <span class="preview-row-label">Hành động</span>
+                    <span class="preview-row-val" style="color:#d97706">Chỉnh sửa</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Tips card -->
+        <div class="side-card">
+            <div class="side-card-hd">
+                <div class="side-card-icon" style="background:rgba(245,159,0,.1);color:#f59f00">
+                    <i class="fas fa-triangle-exclamation"></i>
+                </div>
+                <span class="side-card-title">Lưu ý khi chỉnh sửa</span>
+            </div>
+            <div class="side-card-body">
+                <div class="tip-item">
+                    <div class="tip-icon yellow"><i class="fas fa-exclamation"></i></div>
+                    <span>Thay đổi ngày nghỉ có thể ảnh hưởng đến các lịch dạy đã được xếp</span>
+                </div>
+                <div class="tip-item">
+                    <div class="tip-icon orange"><i class="fas fa-rotate-left"></i></div>
+                    <span>Bấm <strong>Hủy</strong> để quay lại mà không lưu bất kỳ thay đổi nào</span>
+                </div>
+                <div class="tip-item">
+                    <div class="tip-icon blue"><i class="fas fa-check"></i></div>
+                    <span>Hệ thống tự động tính lại số ngày nghỉ khi bạn thay đổi ngày bắt đầu hoặc kết thúc</span>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+</div>
+
+@section Scripts {
+    <script>
+        (function () {
+
+            var inputName  = document.getElementById('inputName');
+            var inputStart = document.getElementById('inputStart');
+            var inputEnd   = document.getElementById('inputEnd');
+            var inputDesc  = document.getElementById('inputDesc');
+
+            var previewName   = document.getElementById('previewName');
+            var previewStart  = document.getElementById('previewStart');
+            var previewEnd    = document.getElementById('previewEnd');
+            var previewDur    = document.getElementById('previewDur');
+            var previewDesc   = document.getElementById('previewDesc');
+            var previewSub    = document.getElementById('previewSub');
+            var previewAvatar = document.getElementById('previewAvatar');
+            var changedBadge  = document.getElementById('changedBadge');
+
+            var durPreview  = document.getElementById('durPreview');
+            var durVal      = document.getElementById('durVal');
+            var dateErrMsg  = document.getElementById('dateErrMsg');
+            var btnSubmit   = document.getElementById('btnSubmit');
+
+            /* Snapshot giá trị ban đầu để detect thay đổi */
+            var origName  = inputName  ? inputName.value  : '';
+            var origStart = inputStart ? inputStart.value : '';
+            var origEnd   = inputEnd   ? inputEnd.value   : '';
+            var origDesc  = inputDesc  ? inputDesc.value  : '';
+
+            var dow = ['CN','T2','T3','T4','T5','T6','T7'];
+
+            function fmtDate(val) {
+                if (!val) return '—';
+                var d = new Date(val + 'T00:00:00');
+                return dow[d.getDay()] + ', ' + d.toLocaleDateString('vi-VN', { day:'2-digit', month:'2-digit', year:'numeric' });
+            }
+
+            function calcDays(s, e) {
+                if (!s || !e) return null;
+                var ms = new Date(e + 'T00:00:00') - new Date(s + 'T00:00:00');
+                if (ms < 0) return null;
+                return Math.round(ms / 86400000) + 1;
+            }
+
+            function updatePreview() {
+                var name  = inputName  ? inputName.value.trim()  : '';
+                var start = inputStart ? inputStart.value        : '';
+                var end   = inputEnd   ? inputEnd.value          : '';
+                var desc  = inputDesc  ? inputDesc.value.trim()  : '';
+                var days  = calcDays(start, end);
+
+                /* Changed badge */
+                var hasChanged = (name !== origName || start !== origStart || end !== origEnd || desc !== origDesc);
+                if (changedBadge) changedBadge.style.display = hasChanged ? 'inline-flex' : 'none';
+
+                /* Name */
+                previewName.textContent = name || 'Chưa nhập tên...';
+
+                /* Dates */
+                previewStart.textContent = fmtDate(start);
+                previewEnd.textContent   = fmtDate(end);
+
+                /* Duration */
+                var dateErr = (start && end && days === null);
+                if (dateErr) {
+                    dateErrMsg.classList.add('visible');
+                } else {
+                    dateErrMsg.classList.remove('visible');
+                }
+                btnSubmit.disabled = dateErr;
+
+                if (days !== null) {
+                    durPreview.style.display = 'flex';
+                    durVal.textContent       = days + ' ngày';
+                    previewDur.textContent   = days + ' ngày';
+                    previewSub.textContent   = days + ' ngày nghỉ';
+                } else {
+                    durPreview.style.display = 'none';
+                    previewDur.textContent   = '—';
+                    previewSub.textContent   = 'Ngày nghỉ lễ';
+                }
+
+                /* Avatar gradient by status */
+                if (start) {
+                    var today = new Date(); today.setHours(0,0,0,0);
+                    var s  = new Date(start + 'T00:00:00');
+                    var e2 = end ? new Date(end + 'T00:00:00') : s;
+                    if (s <= today && e2 >= today)
+                        previewAvatar.style.background = 'linear-gradient(135deg,#f43f5e,#fb7185)';
+                    else if (s > today)
+                        previewAvatar.style.background = 'linear-gradient(135deg,#10b981,#34d399)';
+                    else
+                        previewAvatar.style.background = 'linear-gradient(135deg,#9ca3af,#d1d5db)';
+                }
+
+                /* Description */
+                if (desc) {
+                    previewDesc.textContent   = desc;
+                    previewDesc.style.color   = 'var(--text-1)';
+                    previewDesc.style.fontStyle = 'normal';
+                } else {
+                    previewDesc.textContent   = 'Chưa có';
+                    previewDesc.style.color   = 'var(--text-3)';
+                    previewDesc.style.fontStyle = 'italic';
+                }
+            }
+
+            if (inputName)  inputName.addEventListener('input',  updatePreview);
+            if (inputStart) inputStart.addEventListener('change', updatePreview);
+            if (inputEnd)   inputEnd.addEventListener('change',   updatePreview);
+            if (inputDesc)  inputDesc.addEventListener('input',   updatePreview);
+
+            updatePreview();
+
+        })();
+    </script>
+}

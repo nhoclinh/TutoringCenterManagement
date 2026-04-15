@@ -1,0 +1,1108 @@
+﻿@page
+@model TutoringCenterManagement.Pages.Teacher.Attendance.CreateModel
+@{
+    ViewData["Title"] = "Điểm danh buổi học";
+    var allStudents = Model.ActiveStudents.Count + Model.SuspendedStudents.Count;
+    var canAttend = Model.IsWithinAllowedTime;
+}
+
+@section Styles {
+    <style>
+        /* ════════════════════════════════════
+                           ATTENDANCE CREATE v2 — 3-state toggle + suspended
+                        ════════════════════════════════════ */
+
+        .create-layout {
+            display: grid;
+            grid-template-columns: 1fr 280px;
+            gap: 20px;
+            align-items: start;
+        }
+
+        .form-card {
+            background: var(--bg-card);
+            border-radius: var(--r-lg);
+            border: 1px solid var(--border);
+            box-shadow: var(--sh-sm);
+            overflow: hidden;
+            margin-bottom: 16px;
+        }
+
+            .form-card:last-child {
+                margin-bottom: 0;
+            }
+
+        .form-card-hd {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 14px 20px;
+            border-bottom: 1px solid var(--border);
+            background: linear-gradient(to right, #fafbff, #fff);
+        }
+
+        .form-card-icon {
+            width: 30px;
+            height: 30px;
+            border-radius: 8px;
+            background: rgba(232,89,12,.1);
+            color: var(--c-primary);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 13px;
+            flex-shrink: 0;
+        }
+
+        .form-card-title {
+            font-size: .92rem;
+            font-weight: 700;
+            color: var(--text-1);
+        }
+
+        .form-card-subtitle {
+            font-size: .75rem;
+            color: var(--text-3);
+            margin-top: 1px;
+        }
+
+        /* ── Session info bar ── */
+        .session-info-bar {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 12px;
+            padding: 12px 20px;
+            background: rgba(232,89,12,.03);
+            border-bottom: 1px solid var(--border);
+        }
+
+        .si-item {
+            display: flex;
+            align-items: center;
+            gap: 7px;
+            font-size: .8rem;
+            font-weight: 600;
+            color: var(--text-2);
+        }
+
+            .si-item i {
+                width: 22px;
+                height: 22px;
+                border-radius: 6px;
+                background: rgba(232,89,12,.1);
+                color: var(--c-primary);
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                font-size: 10px;
+                flex-shrink: 0;
+            }
+
+        /* ── Toolbar ── */
+        .att-toolbar {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 10px 20px;
+            border-bottom: 1px solid var(--border);
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
+        .att-toolbar-left {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
+        .counter-chip {
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            padding: 3px 9px;
+            border-radius: 20px;
+            font-size: .74rem;
+            font-weight: 700;
+            border: 1px solid transparent;
+        }
+
+            .counter-chip.present {
+                background: #ecfdf5;
+                color: #059669;
+                border-color: #a7f3d0;
+            }
+
+            .counter-chip.absent {
+                background: #fff1f2;
+                color: #e03131;
+                border-color: #fecdd3;
+            }
+
+            .counter-chip.unknown {
+                background: #f3f4f6;
+                color: #6b7280;
+                border-color: #e5e7eb;
+            }
+
+            .counter-chip .dot {
+                width: 6px;
+                height: 6px;
+                border-radius: 50%;
+                background: currentColor;
+            }
+
+        .att-toolbar-right {
+            display: flex;
+            gap: 6px;
+        }
+
+        /* ── Attendance table ── */
+        .att-table {
+            width: 100%;
+            border-collapse: separate;
+            border-spacing: 0;
+        }
+
+            .att-table thead th {
+                padding: 10px 16px;
+                font-size: .7rem;
+                font-weight: 700;
+                text-transform: uppercase;
+                letter-spacing: .7px;
+                color: var(--text-2);
+                background: #f4f6fc;
+                border-bottom: 2px solid var(--border);
+                white-space: nowrap;
+            }
+
+                .att-table thead th:first-child {
+                    padding-left: 20px;
+                }
+
+                .att-table thead th:last-child {
+                    padding-right: 20px;
+                    text-align: center;
+                }
+
+            .att-table tbody td {
+                padding: 12px 16px;
+                font-size: .83rem;
+                color: var(--text-1);
+                border-bottom: 1px solid #f0f2f8;
+                vertical-align: middle;
+            }
+
+                .att-table tbody td:first-child {
+                    padding-left: 20px;
+                }
+
+                .att-table tbody td:last-child {
+                    padding-right: 20px;
+                    text-align: center;
+                }
+
+            .att-table tbody tr:last-child td {
+                border-bottom: none;
+            }
+
+            /* ── Row states ── */
+            .att-table tbody tr:hover td {
+                background: #f8faff;
+            }
+
+            .att-table tbody tr.row-present td {
+                background: #f0fdf4;
+            }
+
+            .att-table tbody tr.row-absent td {
+                background: #fff5f5;
+            }
+
+            .att-table tbody tr.row-unknown td {
+                background: #fafafa;
+            }
+
+            .att-table tbody tr.row-suspended td {
+                background: #f9fafb;
+                opacity: .55;
+                pointer-events: none;
+            }
+
+        /* ── Student cell ── */
+        .student-cell {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .s-avatar {
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            color: #fff;
+            font-size: 12px;
+            font-weight: 800;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+            transition: background .2s, box-shadow .2s;
+        }
+
+            .s-avatar.av-present {
+                background: linear-gradient(135deg,#10b981,#34d399);
+                box-shadow: 0 2px 6px rgba(16,185,129,.25);
+            }
+
+            .s-avatar.av-absent {
+                background: linear-gradient(135deg,#f43f5e,#fb7185);
+                box-shadow: 0 2px 6px rgba(244,63,94,.25);
+            }
+
+            .s-avatar.av-unknown {
+                background: linear-gradient(135deg,#9ca3af,#d1d5db);
+                box-shadow: none;
+            }
+
+            .s-avatar.av-suspended {
+                background: #d1d5db;
+                box-shadow: none;
+            }
+
+        .s-name {
+            font-weight: 700;
+            font-size: .85rem;
+            color: var(--text-1);
+        }
+
+        .s-meta {
+            font-size: .72rem;
+            color: var(--text-3);
+            margin-top: 1px;
+        }
+
+        /* ── 3-state selector ── */
+        .state-selector {
+            display: inline-flex;
+            border-radius: 8px;
+            border: 1.5px solid var(--border);
+            overflow: hidden;
+            background: var(--bg-page);
+        }
+
+        .state-btn {
+            width: 34px;
+            height: 30px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 11px;
+            cursor: pointer;
+            border: none;
+            background: transparent;
+            color: var(--text-3);
+            transition: all .15s;
+            position: relative;
+        }
+
+            .state-btn + .state-btn {
+                border-left: 1px solid var(--border);
+            }
+
+            .state-btn:hover {
+                background: var(--bg-card);
+            }
+
+            .state-btn.active-present {
+                background: #ecfdf5;
+                color: #059669;
+                font-weight: 700;
+            }
+
+            .state-btn.active-absent {
+                background: #fff1f2;
+                color: #e03131;
+                font-weight: 700;
+            }
+
+            .state-btn.active-unknown {
+                background: #f3f4f6;
+                color: #6b7280;
+                font-weight: 700;
+            }
+
+        /* ── Suspended badge ── */
+        .suspended-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            padding: 3px 8px;
+            border-radius: 6px;
+            background: #f3f4f6;
+            color: #9ca3af;
+            font-size: .68rem;
+            font-weight: 700;
+            border: 1px solid #e5e7eb;
+        }
+
+        /* ── Suspended section header ── */
+        .suspended-section-hd {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 10px 20px;
+            background: #f9fafb;
+            border-top: 2px dashed #e5e7eb;
+            border-bottom: 1px solid #f0f2f8;
+        }
+
+            .suspended-section-hd span {
+                font-size: .72rem;
+                font-weight: 700;
+                color: #9ca3af;
+                text-transform: uppercase;
+                letter-spacing: .6px;
+            }
+
+            .suspended-section-hd i {
+                color: #9ca3af;
+                font-size: 11px;
+            }
+
+        /* ── Form actions ── */
+        .form-actions {
+            display: flex;
+            align-items: center;
+            justify-content: flex-end;
+            gap: 10px;
+            padding: 14px 20px;
+            border-top: 1px solid var(--border);
+            background: #f9fafd;
+        }
+
+        /* ── Sidebar ── */
+        .sidebar-card {
+            background: var(--bg-card);
+            border-radius: var(--r-lg);
+            border: 1px solid var(--border);
+            box-shadow: var(--sh-sm);
+            overflow: hidden;
+            position: sticky;
+            top: 20px;
+            margin-bottom: 16px;
+        }
+
+            .sidebar-card:last-child {
+                margin-bottom: 0;
+            }
+
+        .sidebar-hd {
+            display: flex;
+            align-items: center;
+            gap: 9px;
+            padding: 14px 16px;
+            border-bottom: 1px solid var(--border);
+            background: linear-gradient(to right, #fafbff, #fff);
+        }
+
+        .sidebar-hd-icon {
+            width: 28px;
+            height: 28px;
+            border-radius: 7px;
+            background: rgba(232,89,12,.1);
+            color: var(--c-primary);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 12px;
+        }
+
+        .sidebar-hd-title {
+            font-size: .88rem;
+            font-weight: 700;
+            color: var(--text-1);
+        }
+
+        .sidebar-body {
+            padding: 16px;
+        }
+
+        /* ── Donut ── */
+        .donut-wrap {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 12px 0;
+        }
+
+        .donut-svg {
+            transform: rotate(-90deg);
+        }
+
+        .donut-container {
+            position: relative;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 110px;
+            height: 110px;
+        }
+
+        .donut-center {
+            position: absolute;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .donut-num {
+            font-size: 1.6rem;
+            font-weight: 800;
+            color: var(--text-1);
+            line-height: 1;
+        }
+
+        .donut-sub {
+            font-size: .68rem;
+            font-weight: 600;
+            color: var(--text-3);
+        }
+
+        /* ── Stat rows ── */
+        .stat-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 8px 0;
+            border-bottom: 1px solid #f0f2f8;
+            font-size: .82rem;
+        }
+
+            .stat-row:last-child {
+                border-bottom: none;
+            }
+
+        .stat-label {
+            display: flex;
+            align-items: center;
+            gap: 7px;
+            font-weight: 600;
+            color: var(--text-2);
+        }
+
+        .stat-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            flex-shrink: 0;
+        }
+
+            .stat-dot.green {
+                background: #10b981;
+            }
+
+            .stat-dot.red {
+                background: #f43f5e;
+            }
+
+            .stat-dot.gray {
+                background: #9ca3af;
+            }
+
+            .stat-dot.orange {
+                background: #e8590c;
+            }
+
+        .stat-val {
+            font-weight: 800;
+            color: var(--text-1);
+        }
+
+        /* ── Legend ── */
+        .legend-card {
+            background: var(--bg-card);
+            border-radius: var(--r-lg);
+            border: 1px solid var(--border);
+            box-shadow: var(--sh-sm);
+            overflow: hidden;
+        }
+
+        .legend-body {
+            padding: 14px 16px;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-size: .78rem;
+        }
+
+        .legend-icon {
+            width: 28px;
+            height: 28px;
+            border-radius: 7px;
+            flex-shrink: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 11px;
+        }
+
+            .legend-icon.present {
+                background: #ecfdf5;
+                color: #059669;
+            }
+
+            .legend-icon.absent {
+                background: #fff1f2;
+                color: #e03131;
+            }
+
+            .legend-icon.unknown {
+                background: #f3f4f6;
+                color: #6b7280;
+            }
+
+            .legend-icon.suspended {
+                background: #f3f4f6;
+                color: #9ca3af;
+            }
+
+        .legend-text strong {
+            display: block;
+            font-weight: 700;
+            color: var(--text-1);
+            font-size: .78rem;
+        }
+
+        .legend-text span {
+            color: var(--text-3);
+            font-size: .7rem;
+        }
+
+        /* ── Warn card ── */
+        .warn-card {
+            background: var(--bg-card);
+            border-radius: var(--r-lg);
+            border: 1px solid #fde68a;
+            box-shadow: var(--sh-sm);
+            padding: 36px 24px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 12px;
+            text-align: center;
+        }
+
+        .warn-icon {
+            width: 52px;
+            height: 52px;
+            border-radius: 14px;
+            background: rgba(245,159,0,.1);
+            color: #d97706;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 22px;
+        }
+
+        .warn-title {
+            font-size: .95rem;
+            font-weight: 700;
+            color: var(--text-1);
+            margin: 0;
+        }
+
+        .warn-desc {
+            font-size: .82rem;
+            color: var(--text-3);
+            margin: 0;
+        }
+
+        .warn-list {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+
+            .warn-list li {
+                font-size: .8rem;
+                color: var(--text-3);
+                display: flex;
+                align-items: center;
+                gap: 6px;
+            }
+
+                .warn-list li::before {
+                    content: '•';
+                    color: #d97706;
+                    font-weight: 800;
+                }
+
+        /* ── Lock notice ── */
+        .lock-notice-bar {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 12px 20px;
+            background: #fef2f2;
+            border-bottom: 1.5px solid #fecdd3;
+            color: #be123c;
+            font-size: .82rem;
+            font-weight: 600;
+        }
+
+            .lock-notice-bar i {
+                font-size: 16px;
+                flex-shrink: 0;
+            }
+
+        .state-selector.is-locked {
+            opacity: .45;
+            pointer-events: none;
+            filter: grayscale(.5);
+        }
+
+        @@media (max-width: 900px) {
+            .create-layout {
+                grid-template-columns: 1fr;
+            }
+
+            .sidebar-card {
+                position: static;
+            }
+        }
+    </style>
+}
+
+<!-- PAGE HEADER -->
+<div class="page-header">
+    <div>
+        <h1 class="page-heading">Điểm danh <span>buổi học</span></h1>
+        <p class="page-subheading">
+            <i class="fas fa-circle-info" style="color:var(--c-primary)"></i>
+            Ghi nhận trạng thái có mặt / vắng mặt cho từng học sinh
+        </p>
+    </div>
+    <div class="page-actions">
+        <a href="/Teacher/Attendance"
+           class="btn-outline" style="height:38px;display:inline-flex;align-items:center;box-sizing:border-box;">
+            <i class="fas fa-arrow-left"></i> Quay lại
+        </a>
+    </div>
+</div>
+
+@if (Model.ActiveStudents.Any() || Model.SuspendedStudents.Any())
+{
+    <form method="post" id="attendanceForm" asp-page="Create">
+        @Html.AntiForgeryToken()
+        <input type="hidden" asp-for="Input.SessionId" />
+
+        <div class="create-layout">
+
+            <!-- ── LEFT: bảng học sinh ── -->
+            <div>
+                <div class="form-card">
+
+                    <!-- Session info -->
+                    <div class="session-info-bar">
+                        <div class="si-item">
+                            <i class="fas fa-chalkboard"></i>
+                            Lớp <strong>@Model.SessionInfo.ClassName</strong>
+                        </div>
+                        <div class="si-item">
+                            <i class="fas fa-calendar-day"></i>
+                            @Model.SessionInfo.SessionDate.ToString("dd/MM/yyyy")
+                        </div>
+                        <div class="si-item">
+                            <i class="fas fa-clock"></i>
+                            @Model.SessionInfo.ShiftName
+                        </div>
+                    </div>
+
+                    @* Chỉ teacher bị ràng buộc thời gian *@
+                    @if (!canAttend)
+                    {
+                        <div class="lock-notice-bar">
+                            <i class="fas fa-lock"></i>
+                            <span>Ngoài thời gian điểm danh — Chỉ có thể điểm danh từ khi buổi học bắt đầu đến 3 giờ sau khi kết thúc.</span>
+                        </div>
+                    }
+
+                    <!-- Toolbar -->
+                    <div class="att-toolbar">
+                        <div class="att-toolbar-left">
+                            <span class="counter-chip present"><span class="dot"></span> Có mặt: <strong id="cntPresent">0</strong></span>
+                            <span class="counter-chip absent"><span class="dot"></span> Vắng: <strong id="cntAbsent">0</strong></span>
+                            <span class="counter-chip unknown"><span class="dot"></span> Chưa GN: <strong id="cntUnknown">@Model.ActiveStudents.Count</strong></span>
+                        </div>
+                        @if (canAttend)
+                        {
+                            <div class="att-toolbar-right">
+                                <button type="button" class="btn-outline" style="padding:6px 12px;font-size:.78rem" onclick="markAll('present')" title="Đánh dấu tất cả có mặt">
+                                    <i class="fas fa-check-double" style="color:#10b981"></i> Có mặt
+                                </button>
+                                <button type="button" class="btn-outline" style="padding:6px 12px;font-size:.78rem" onclick="markAll('absent')" title="Đánh dấu tất cả vắng mặt">
+                                    <i class="fas fa-times" style="color:#e03131"></i> Vắng
+                                </button>
+                                <button type="button" class="btn-outline" style="padding:6px 12px;font-size:.78rem" onclick="markAll('not_recorded')" title="Đặt lại tất cả về chưa ghi nhận">
+                                    <i class="fas fa-rotate-left" style="color:#6b7280"></i> Đặt lại
+                                </button>
+                            </div>
+                        }
+                    </div>
+
+                    <!-- Table -->
+                    <div style="overflow-x:auto">
+                        <table class="att-table">
+                            <thead>
+                                <tr>
+                                    <th style="width:44px">#</th>
+                                    <th>Học sinh</th>
+                                    <th>Trường học</th>
+                                    <th>Bắt đầu học</th>
+                                    <th style="width:120px">Trạng thái</th>
+                                </tr>
+                            </thead>
+                            <tbody id="studentTableBody">
+
+                                <!-- Active students -->
+                                @for (int i = 0; i < Model.ActiveStudents.Count; i++)
+                                {
+                                    var student = Model.ActiveStudents[i];
+                                    var initial = !string.IsNullOrEmpty(student.Fullname)
+                                    ? student.Fullname.Trim().Split(' ')[^1].Substring(0, 1).ToUpper()
+                                    : "?";
+
+                                    <tr id="row_@student.StudentId" class="row-unknown" data-active="true">
+                                        <td style="color:var(--text-3);font-weight:600">@(i + 1)</td>
+                                        <td>
+                                            <div class="student-cell">
+                                                <div class="s-avatar av-unknown" id="avatar_@student.StudentId">@initial</div>
+                                                <div>
+                                                    <div class="s-name">@student.Fullname</div>
+                                                    <div class="s-meta">#HS@student.StudentId</div>
+                                                </div>
+                                            </div>
+                                        </td>
+                                        <td style="color:var(--text-2)">@student.CurrentSchool</td>
+                                        <td style="color:var(--text-3);font-size:.78rem">@student.StartedAt.ToString("dd/MM/yyyy")</td>
+                                        <td>
+                                            <input type="hidden" name="Input.StudentIds[@i]" value="@student.StudentId" />
+                                            <input type="hidden" name="Input.AttendanceStatuses[@i]"
+                                                   id="status_@student.StudentId" value="not_recorded" />
+
+                                            <div class="state-selector @(!canAttend ? "is-locked" : "")" id="selector_@student.StudentId">
+                                                <!-- Có mặt -->
+                                                <button type="button" class="state-btn"
+                                                        id="btn_present_@student.StudentId"
+                                                        onclick="setState(@student.StudentId, 'present')"
+                                                        title="Có mặt">
+                                                    <i class="fas fa-check"></i>
+                                                </button>
+                                                <!-- Vắng mặt -->
+                                                <button type="button" class="state-btn"
+                                                        id="btn_absent_@student.StudentId"
+                                                        onclick="setState(@student.StudentId, 'absent')"
+                                                        title="Vắng mặt">
+                                                    <i class="fas fa-times"></i>
+                                                </button>
+                                                <!-- Chưa ghi nhận -->
+                                                <button type="button" class="state-btn active-unknown"
+                                                        id="btn_unknown_@student.StudentId"
+                                                        onclick="setState(@student.StudentId, 'not_recorded')"
+                                                        title="Chưa ghi nhận">
+                                                    <i class="fas fa-minus"></i>
+                                                </button>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                }
+
+                                <!-- Suspended students header (nếu có) -->
+                                @if (Model.SuspendedStudents.Any())
+                                {
+                                    <tr>
+                                        <td colspan="5" style="padding:0">
+                                            <div class="suspended-section-hd">
+                                                <i class="fas fa-pause-circle"></i>
+                                                <span>Học sinh đang tạm nghỉ (@Model.SuspendedStudents.Count) — không thể điểm danh</span>
+                                            </div>
+                                        </td>
+                                    </tr>
+
+                                    @for (int i = 0; i < Model.SuspendedStudents.Count; i++)
+                                    {
+                                        var student = Model.SuspendedStudents[i];
+                                        var initial = !string.IsNullOrEmpty(student.Fullname)
+                                        ? student.Fullname.Trim().Split(' ')[^1].Substring(0, 1).ToUpper()
+                                        : "?";
+                                        var suspIdx = Model.ActiveStudents.Count + i;
+
+                                        <tr class="row-suspended">
+                                            <td style="color:var(--text-3);font-weight:600">@(suspIdx + 1)</td>
+                                            <td>
+                                                <div class="student-cell">
+                                                    <div class="s-avatar av-suspended">@initial</div>
+                                                    <div>
+                                                        <div class="s-name">@student.Fullname</div>
+                                                        <div class="s-meta">#HS@student.StudentId</div>
+                                                    </div>
+                                                </div>
+                                            </td>
+                                            <td style="color:var(--text-3)">@student.CurrentSchool</td>
+                                            <td style="color:var(--text-3);font-size:.78rem">@student.StartedAt.ToString("dd/MM/yyyy")</td>
+                                            <td>
+                                                <span class="suspended-badge">
+                                                    <i class="fas fa-pause"></i> Tạm nghỉ
+                                                </span>
+                                            </td>
+                                        </tr>
+                                    }
+                                }
+
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <!-- Actions -->
+                    <div class="form-actions">
+                        <a href="/Teacher/Attendance" class="btn-outline" style="padding:8px 16px;font-size:.83rem">
+                            <i class="fas fa-times"></i> Hủy
+                        </a>
+                        @if (canAttend)
+                        {
+                            <button type="submit" class="btn-brand" style="padding:8px 20px;font-size:.83rem">
+                                <i class="fas fa-floppy-disk"></i> Lưu điểm danh
+                            </button>
+                        }
+                    </div>
+                </div>
+            </div>
+
+            <!-- ── RIGHT: Sidebar ── -->
+            <div>
+                <!-- Summary -->
+                <div class="sidebar-card">
+                    <div class="sidebar-hd">
+                        <div class="sidebar-hd-icon"><i class="fas fa-chart-pie"></i></div>
+                        <span class="sidebar-hd-title">Tóm tắt điểm danh</span>
+                    </div>
+                    <div class="sidebar-body">
+
+                        <div class="donut-wrap">
+                            <div class="donut-container">
+                                <svg class="donut-svg" width="110" height="110" viewBox="0 0 110 110">
+                                    <circle cx="55" cy="55" r="42" fill="none" stroke="#f0f2f8" stroke-width="12" />
+                                    <!-- Present arc -->
+                                    <circle cx="55" cy="55" r="42" fill="none" stroke="#10b981" stroke-width="12"
+                                            stroke-dasharray="264" stroke-dashoffset="264"
+                                            id="arcPresent" stroke-linecap="butt" />
+                                    <!-- Absent arc -->
+                                    <circle cx="55" cy="55" r="42" fill="none" stroke="#f43f5e" stroke-width="12"
+                                            stroke-dasharray="264" stroke-dashoffset="264"
+                                            id="arcAbsent" stroke-linecap="butt" />
+                                </svg>
+                                <div class="donut-center">
+                                    <span class="donut-num" id="donutNum">—</span>
+                                    <span class="donut-sub">ghi nhận</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div style="margin-top:4px">
+                            <div class="stat-row">
+                                <span class="stat-label"><span class="stat-dot green"></span> Có mặt</span>
+                                <span class="stat-val" id="sidePresent">0</span>
+                            </div>
+                            <div class="stat-row">
+                                <span class="stat-label"><span class="stat-dot red"></span> Vắng mặt</span>
+                                <span class="stat-val" id="sideAbsent">0</span>
+                            </div>
+                            <div class="stat-row">
+                                <span class="stat-label"><span class="stat-dot gray"></span> Chưa ghi nhận</span>
+                                <span class="stat-val" id="sideUnknown">@Model.ActiveStudents.Count</span>
+                            </div>
+                            <div class="stat-row">
+                                <span class="stat-label"><span class="stat-dot orange"></span> Active / Tổng</span>
+                                <span class="stat-val">@Model.ActiveStudents.Count / @allStudents</span>
+                            </div>
+                        </div>
+
+                        <div style="margin-top:16px;padding-top:14px;border-top:1px solid var(--border)">
+                            <div class="stat-row" style="border:none;padding:4px 0">
+                                <span class="stat-label" style="font-size:.75rem"><i class="fas fa-chalkboard" style="color:var(--c-primary);margin-right:2px"></i> Lớp</span>
+                                <span style="font-size:.8rem;font-weight:700;color:var(--text-1)">@Model.SessionInfo.ClassName</span>
+                            </div>
+                            <div class="stat-row" style="border:none;padding:4px 0">
+                                <span class="stat-label" style="font-size:.75rem"><i class="fas fa-calendar" style="color:var(--c-primary);margin-right:2px"></i> Ngày</span>
+                                <span style="font-size:.8rem;font-weight:700;color:var(--text-1)">@Model.SessionInfo.SessionDate.ToString("dd/MM/yyyy")</span>
+                            </div>
+                        </div>
+
+                    </div>
+                </div>
+
+                <!-- Legend -->
+                <div class="legend-card">
+                    <div class="sidebar-hd">
+                        <div class="sidebar-hd-icon"><i class="fas fa-circle-info"></i></div>
+                        <span class="sidebar-hd-title">Chú thích</span>
+                    </div>
+                    <div class="legend-body">
+                        <div class="legend-item">
+                            <div class="legend-icon present"><i class="fas fa-check"></i></div>
+                            <div class="legend-text">
+                                <strong>Có mặt</strong>
+                                <span>Tạo bản ghi Present</span>
+                            </div>
+                        </div>
+                        <div class="legend-item">
+                            <div class="legend-icon absent"><i class="fas fa-times"></i></div>
+                            <div class="legend-text">
+                                <strong>Vắng mặt</strong>
+                                <span>Tạo bản ghi Absent</span>
+                            </div>
+                        </div>
+                        <div class="legend-item">
+                            <div class="legend-icon unknown"><i class="fas fa-minus"></i></div>
+                            <div class="legend-text">
+                                <strong>Chưa ghi nhận</strong>
+                                <span>Không tạo bản ghi nào</span>
+                            </div>
+                        </div>
+                        <div class="legend-item">
+                            <div class="legend-icon suspended"><i class="fas fa-pause"></i></div>
+                            <div class="legend-text">
+                                <strong>Tạm nghỉ</strong>
+                                <span>Không thể điểm danh</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </form>
+}
+else
+{
+    <div class="warn-card">
+        <div class="warn-icon"><i class="fas fa-triangle-exclamation"></i></div>
+        <p class="warn-title">Không có học sinh trong lớp</p>
+        <p class="warn-desc">Có thể do một trong những nguyên nhân sau:</p>
+        <ul class="warn-list">
+            <li>Chưa có học sinh nào được đăng ký trong lớp</li>
+            <li>Tất cả học sinh đã nghỉ học (LeftAt đã qua)</li>
+        </ul>
+        <a href="/Teacher/Attendance" class="btn-outline" style="margin-top:8px;padding:8px 16px;font-size:.83rem">
+            <i class="fas fa-arrow-left"></i> Quay lại danh sách
+        </a>
+    </div>
+}
+
+@section Scripts {
+    <script>
+        var ACTIVE_TOTAL = @Model.ActiveStudents.Count;
+        var CIRCUMFERENCE = 2 * Math.PI * 42; // ~264
+
+        // state map: studentId -> 'present' | 'absent' | 'not_recorded'
+        var stateMap = {};
+
+        // Init all active students as not_recorded
+        document.querySelectorAll('tr[data-active="true"]').forEach(function(row) {
+            var sid = row.id.replace('row_', '');
+            stateMap[sid] = 'not_recorded';
+        });
+
+        function setState(studentId, state) {
+            var sid = String(studentId);
+            stateMap[sid] = state;
+
+            // Update hidden input
+            var hiddenInput = document.getElementById('status_' + sid);
+            if (hiddenInput) hiddenInput.value = state;
+
+            // Update row class
+            var row = document.getElementById('row_' + sid);
+            if (row) {
+                row.className = state === 'present' ? 'row-present'
+                              : state === 'absent'  ? 'row-absent'
+                              : 'row-unknown';
+            }
+
+            // Update avatar
+            var avatar = document.getElementById('avatar_' + sid);
+            if (avatar) {
+                avatar.className = state === 'present' ? 's-avatar av-present'
+                                 : state === 'absent'  ? 's-avatar av-absent'
+                                 : 's-avatar av-unknown';
+            }
+
+            // Update 3 buttons
+            var btnP = document.getElementById('btn_present_' + sid);
+            var btnA = document.getElementById('btn_absent_'  + sid);
+            var btnU = document.getElementById('btn_unknown_' + sid);
+
+            if (btnP) btnP.className = 'state-btn' + (state === 'present'      ? ' active-present' : '');
+            if (btnA) btnA.className = 'state-btn' + (state === 'absent'       ? ' active-absent'  : '');
+            if (btnU) btnU.className = 'state-btn' + (state === 'not_recorded' ? ' active-unknown' : '');
+
+            updateCounters();
+        }
+
+        function markAll(state) {
+            Object.keys(stateMap).forEach(function(sid) {
+                setState(parseInt(sid), state);
+            });
+        }
+
+        function updateCounters() {
+            var present = 0, absent = 0, unknown = 0;
+            Object.values(stateMap).forEach(function(s) {
+                if (s === 'present')      present++;
+                else if (s === 'absent')  absent++;
+                else                      unknown++;
+            });
+
+            document.getElementById('cntPresent').textContent = present;
+            document.getElementById('cntAbsent').textContent  = absent;
+            document.getElementById('cntUnknown').textContent = unknown;
+            document.getElementById('sidePresent').textContent = present;
+            document.getElementById('sideAbsent').textContent  = absent;
+            document.getElementById('sideUnknown').textContent = unknown;
+
+            var recorded = present + absent;
+            document.getElementById('donutNum').textContent = recorded > 0 ? recorded : '—';
+
+            // Donut: present arc then absent arc
+            var pctP = ACTIVE_TOTAL > 0 ? present / ACTIVE_TOTAL : 0;
+            var pctA = ACTIVE_TOTAL > 0 ? absent  / ACTIVE_TOTAL : 0;
+            var lenP = CIRCUMFERENCE * pctP;
+            var lenA = CIRCUMFERENCE * pctA;
+
+            var arcP = document.getElementById('arcPresent');
+            var arcA = document.getElementById('arcAbsent');
+
+            if (arcP) {
+                arcP.setAttribute('stroke-dasharray',  lenP + ' ' + CIRCUMFERENCE);
+                arcP.setAttribute('stroke-dashoffset', '0');
+            }
+            if (arcA) {
+                arcA.setAttribute('stroke-dasharray',  lenA + ' ' + CIRCUMFERENCE);
+                arcA.setAttribute('stroke-dashoffset', -(lenP).toFixed(1));
+            }
+        }
+
+        updateCounters();
+    </script>
+}

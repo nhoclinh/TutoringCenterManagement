@@ -1,0 +1,1194 @@
+﻿@page
+@model TutoringCenterManagement.Pages.Admin.Attendance.EditModel
+@{
+    ViewData["Title"] = "Chỉnh sửa điểm danh";
+    var initPresent = Model.AttendanceList.Count(a => a.CurrentStatus == "present");
+    var initAbsent = Model.AttendanceList.Count(a => a.CurrentStatus == "absent");
+    var initUnknown = Model.AttendanceList.Count(a => a.CurrentStatus == "not_recorded");
+    var activeTotal = Model.AttendanceList.Count;
+    var allTotal = activeTotal + Model.SuspendedStudents.Count;
+}
+
+@section Styles {
+    <style>
+        /* ════════════════════════════════════
+                   ATTENDANCE EDIT v2 — 3-state toggle + suspended
+                ════════════════════════════════════ */
+        .edit-layout {
+            display: grid;
+            grid-template-columns: 1fr 280px;
+            gap: 20px;
+            align-items: start;
+        }
+
+        .form-card {
+            background: var(--bg-card);
+            border-radius: var(--r-lg);
+            border: 1px solid var(--border);
+            box-shadow: var(--sh-sm);
+            overflow: hidden;
+            margin-bottom: 16px;
+        }
+
+            .form-card:last-child {
+                margin-bottom: 0;
+            }
+
+        .form-card-hd {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 14px 20px;
+            border-bottom: 1px solid var(--border);
+            background: linear-gradient(to right, #fafbff, #fff);
+        }
+
+        .form-card-icon {
+            width: 30px;
+            height: 30px;
+            border-radius: 8px;
+            background: rgba(232,89,12,.1);
+            color: var(--c-primary);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 13px;
+            flex-shrink: 0;
+        }
+
+        .form-card-title {
+            font-size: .92rem;
+            font-weight: 700;
+            color: var(--text-1);
+        }
+
+        .form-card-subtitle {
+            font-size: .75rem;
+            color: var(--text-3);
+            margin-top: 1px;
+        }
+
+        /* ── Audit bar ── */
+        .audit-bar {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 20px;
+            padding: 12px 20px;
+            background: rgba(59,130,246,.03);
+            border-bottom: 1px solid var(--border);
+        }
+
+        .audit-item {
+            display: flex;
+            flex-direction: column;
+            gap: 2px;
+        }
+
+        .audit-label {
+            font-size: .65rem;
+            font-weight: 700;
+            color: var(--text-3);
+            text-transform: uppercase;
+            letter-spacing: .5px;
+        }
+
+        .audit-val {
+            font-size: .8rem;
+            font-weight: 600;
+            color: var(--text-1);
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+            .audit-val i {
+                color: var(--c-primary);
+                font-size: 11px;
+            }
+
+        /* ── Session info bar ── */
+        .session-info-bar {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 12px;
+            padding: 12px 20px;
+            background: rgba(232,89,12,.03);
+            border-bottom: 1px solid var(--border);
+        }
+
+        .si-item {
+            display: flex;
+            align-items: center;
+            gap: 7px;
+            font-size: .8rem;
+            font-weight: 600;
+            color: var(--text-2);
+        }
+
+            .si-item i {
+                width: 22px;
+                height: 22px;
+                border-radius: 6px;
+                background: rgba(232,89,12,.1);
+                color: var(--c-primary);
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                font-size: 10px;
+                flex-shrink: 0;
+            }
+
+        /* ── Toolbar ── */
+        .att-toolbar {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 10px 20px;
+            border-bottom: 1px solid var(--border);
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
+        .att-toolbar-left {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
+        .att-toolbar-right {
+            display: flex;
+            gap: 6px;
+        }
+
+        .counter-chip {
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            padding: 3px 9px;
+            border-radius: 20px;
+            font-size: .74rem;
+            font-weight: 700;
+            border: 1px solid transparent;
+        }
+
+            .counter-chip.present {
+                background: #ecfdf5;
+                color: #059669;
+                border-color: #a7f3d0;
+            }
+
+            .counter-chip.absent {
+                background: #fff1f2;
+                color: #e03131;
+                border-color: #fecdd3;
+            }
+
+            .counter-chip.unknown {
+                background: #f3f4f6;
+                color: #6b7280;
+                border-color: #e5e7eb;
+            }
+
+            .counter-chip .dot {
+                width: 6px;
+                height: 6px;
+                border-radius: 50%;
+                background: currentColor;
+            }
+
+        /* ── Attendance table ── */
+        .att-table {
+            width: 100%;
+            border-collapse: separate;
+            border-spacing: 0;
+        }
+
+            .att-table thead th {
+                padding: 10px 16px;
+                font-size: .7rem;
+                font-weight: 700;
+                text-transform: uppercase;
+                letter-spacing: .7px;
+                color: var(--text-2);
+                background: #f4f6fc;
+                border-bottom: 2px solid var(--border);
+                white-space: nowrap;
+            }
+
+                .att-table thead th:first-child {
+                    padding-left: 20px;
+                }
+
+                .att-table thead th:last-child {
+                    padding-right: 20px;
+                    text-align: center;
+                }
+
+            .att-table tbody td {
+                padding: 12px 16px;
+                font-size: .83rem;
+                color: var(--text-1);
+                border-bottom: 1px solid #f0f2f8;
+                vertical-align: middle;
+            }
+
+                .att-table tbody td:first-child {
+                    padding-left: 20px;
+                }
+
+                .att-table tbody td:last-child {
+                    padding-right: 20px;
+                    text-align: center;
+                }
+
+            .att-table tbody tr:last-child td {
+                border-bottom: none;
+            }
+
+            /* ── Row states ── */
+            .att-table tbody tr:hover td {
+                background: #f8faff;
+            }
+
+            .att-table tbody tr.row-present td {
+                background: #f0fdf4;
+            }
+
+            .att-table tbody tr.row-absent td {
+                background: #fff5f5;
+            }
+
+            .att-table tbody tr.row-unknown td {
+                background: #fafafa;
+            }
+
+            .att-table tbody tr.row-suspended td {
+                background: #f9fafb;
+                opacity: .55;
+                pointer-events: none;
+            }
+
+        /* ── "Mới" badge ── */
+        .new-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 3px;
+            font-size: .65rem;
+            font-weight: 700;
+            padding: 2px 6px;
+            border-radius: 5px;
+            background: rgba(59,130,246,.08);
+            color: #2563eb;
+            border: 1px solid rgba(59,130,246,.2);
+            vertical-align: middle;
+            margin-left: 4px;
+        }
+
+        /* ── Student cell ── */
+        .student-cell {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .s-avatar {
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            color: #fff;
+            font-size: 12px;
+            font-weight: 800;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+            transition: background .2s, box-shadow .2s;
+        }
+
+            .s-avatar.av-present {
+                background: linear-gradient(135deg,#10b981,#34d399);
+                box-shadow: 0 2px 6px rgba(16,185,129,.25);
+            }
+
+            .s-avatar.av-absent {
+                background: linear-gradient(135deg,#f43f5e,#fb7185);
+                box-shadow: 0 2px 6px rgba(244,63,94,.25);
+            }
+
+            .s-avatar.av-unknown {
+                background: linear-gradient(135deg,#9ca3af,#d1d5db);
+                box-shadow: none;
+            }
+
+            .s-avatar.av-suspended {
+                background: #d1d5db;
+                box-shadow: none;
+            }
+
+        .s-name {
+            font-weight: 700;
+            font-size: .85rem;
+            color: var(--text-1);
+        }
+
+        .s-meta {
+            font-size: .72rem;
+            color: var(--text-3);
+            margin-top: 1px;
+        }
+
+        /* ── 3-state selector ── */
+        .state-selector {
+            display: inline-flex;
+            border-radius: 8px;
+            border: 1.5px solid var(--border);
+            overflow: hidden;
+            background: var(--bg-page);
+        }
+
+        .state-btn {
+            width: 34px;
+            height: 30px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 11px;
+            cursor: pointer;
+            border: none;
+            background: transparent;
+            color: var(--text-3);
+            transition: all .15s;
+        }
+
+            .state-btn + .state-btn {
+                border-left: 1px solid var(--border);
+            }
+
+            .state-btn:hover {
+                background: var(--bg-card);
+            }
+
+            .state-btn.active-present {
+                background: #ecfdf5;
+                color: #059669;
+                font-weight: 700;
+            }
+
+            .state-btn.active-absent {
+                background: #fff1f2;
+                color: #e03131;
+                font-weight: 700;
+            }
+
+            .state-btn.active-unknown {
+                background: #f3f4f6;
+                color: #6b7280;
+                font-weight: 700;
+            }
+
+        /* ── Suspended badge & section header ── */
+        .suspended-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            padding: 3px 8px;
+            border-radius: 6px;
+            background: #f3f4f6;
+            color: #9ca3af;
+            font-size: .68rem;
+            font-weight: 700;
+            border: 1px solid #e5e7eb;
+        }
+
+        .suspended-section-hd {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 10px 20px;
+            background: #f9fafb;
+            border-top: 2px dashed #e5e7eb;
+            border-bottom: 1px solid #f0f2f8;
+        }
+
+            .suspended-section-hd span {
+                font-size: .72rem;
+                font-weight: 700;
+                color: #9ca3af;
+                text-transform: uppercase;
+                letter-spacing: .6px;
+            }
+
+            .suspended-section-hd i {
+                color: #9ca3af;
+                font-size: 11px;
+            }
+
+        /* ── Form actions ── */
+        .form-actions {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 14px 20px;
+            border-top: 1px solid var(--border);
+            background: #f9fafd;
+        }
+
+        .form-actions-right {
+            display: flex;
+            gap: 10px;
+        }
+
+        /* ── Sidebar ── */
+        .sidebar-card {
+            background: var(--bg-card);
+            border-radius: var(--r-lg);
+            border: 1px solid var(--border);
+            box-shadow: var(--sh-sm);
+            overflow: hidden;
+            position: sticky;
+            top: 20px;
+            margin-bottom: 16px;
+        }
+
+            .sidebar-card:last-child {
+                margin-bottom: 0;
+            }
+
+        .sidebar-hd {
+            display: flex;
+            align-items: center;
+            gap: 9px;
+            padding: 14px 16px;
+            border-bottom: 1px solid var(--border);
+            background: linear-gradient(to right, #fafbff, #fff);
+        }
+
+        .sidebar-hd-icon {
+            width: 28px;
+            height: 28px;
+            border-radius: 7px;
+            background: rgba(232,89,12,.1);
+            color: var(--c-primary);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 12px;
+        }
+
+        .sidebar-hd-title {
+            font-size: .88rem;
+            font-weight: 700;
+            color: var(--text-1);
+        }
+
+        .sidebar-body {
+            padding: 16px;
+        }
+
+        /* ── Donut ── */
+        .donut-wrap {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 12px 0;
+        }
+
+        .donut-svg {
+            transform: rotate(-90deg);
+        }
+
+        .donut-container {
+            position: relative;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 110px;
+            height: 110px;
+        }
+
+        .donut-center {
+            position: absolute;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .donut-num {
+            font-size: 1.6rem;
+            font-weight: 800;
+            color: var(--text-1);
+            line-height: 1;
+        }
+
+        .donut-sub {
+            font-size: .68rem;
+            font-weight: 600;
+            color: var(--text-3);
+        }
+
+        /* ── Stat rows ── */
+        .stat-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 8px 0;
+            border-bottom: 1px solid #f0f2f8;
+            font-size: .82rem;
+        }
+
+            .stat-row:last-child {
+                border-bottom: none;
+            }
+
+        .stat-label {
+            display: flex;
+            align-items: center;
+            gap: 7px;
+            font-weight: 600;
+            color: var(--text-2);
+        }
+
+        .stat-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            flex-shrink: 0;
+        }
+
+            .stat-dot.green {
+                background: #10b981;
+            }
+
+            .stat-dot.red {
+                background: #f43f5e;
+            }
+
+            .stat-dot.gray {
+                background: #9ca3af;
+            }
+
+            .stat-dot.orange {
+                background: #e8590c;
+            }
+
+        .stat-val {
+            font-weight: 800;
+            color: var(--text-1);
+        }
+
+        /* ── Legend ── */
+        .legend-body {
+            padding: 14px 16px;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-size: .78rem;
+        }
+
+        .legend-icon {
+            width: 28px;
+            height: 28px;
+            border-radius: 7px;
+            flex-shrink: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 11px;
+        }
+
+            .legend-icon.present {
+                background: #ecfdf5;
+                color: #059669;
+            }
+
+            .legend-icon.absent {
+                background: #fff1f2;
+                color: #e03131;
+            }
+
+            .legend-icon.unknown {
+                background: #f3f4f6;
+                color: #6b7280;
+            }
+
+            .legend-icon.suspended {
+                background: #f3f4f6;
+                color: #9ca3af;
+            }
+
+        .legend-text strong {
+            display: block;
+            font-weight: 700;
+            color: var(--text-1);
+            font-size: .78rem;
+        }
+
+        .legend-text span {
+            color: var(--text-3);
+            font-size: .7rem;
+        }
+
+        /* ── Confirm modal ── */
+        .cm-backdrop {
+            visibility: hidden;
+            opacity: 0;
+            position: fixed;
+            inset: 0;
+            z-index: 9990;
+            background: rgba(15,17,23,.52);
+            backdrop-filter: blur(3px);
+            transition: opacity .2s, visibility .2s;
+        }
+
+        .cm-modal {
+            visibility: hidden;
+            opacity: 0;
+            position: fixed;
+            inset: 0;
+            z-index: 9991;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 16px;
+            transition: opacity .2s, visibility .2s;
+            pointer-events: none;
+        }
+
+            .cm-backdrop.cm-open, .cm-modal.cm-open {
+                visibility: visible;
+                opacity: 1;
+                pointer-events: all;
+            }
+
+        .cm-box {
+            background: var(--bg-card);
+            border-radius: var(--r-lg);
+            box-shadow: 0 20px 60px rgba(0,0,0,.18);
+            padding: 24px;
+            width: 100%;
+            max-width: 420px;
+        }
+
+        .cm-head {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+            margin-bottom: 16px;
+        }
+
+        .cm-icon-wrap {
+            width: 44px;
+            height: 44px;
+            border-radius: 12px;
+            flex-shrink: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 18px;
+        }
+
+            .cm-icon-wrap.danger {
+                background: rgba(244,63,94,.1);
+                color: #f43f5e;
+            }
+
+        .cm-head-text h6 {
+            font-size: .95rem;
+            font-weight: 700;
+            color: var(--text-1);
+            margin: 0 0 3px;
+        }
+
+        .cm-head-text p {
+            font-size: .78rem;
+            color: var(--text-3);
+            margin: 0;
+        }
+
+        .cm-body-msg {
+            font-size: .83rem;
+            color: var(--text-2);
+            margin-bottom: 20px;
+            line-height: 1.55;
+        }
+
+        .cm-foot {
+            display: flex;
+            justify-content: flex-end;
+            gap: 8px;
+        }
+
+        @@media (max-width: 900px) {
+            .edit-layout {
+                grid-template-columns: 1fr;
+            }
+
+            .sidebar-card {
+                position: static;
+            }
+        }
+    </style>
+}
+
+<!-- PAGE HEADER -->
+<div class="page-header">
+    <div>
+        <h1 class="page-heading">Chỉnh sửa <span>điểm danh</span></h1>
+        <p class="page-subheading">
+            <i class="fas fa-circle-info" style="color:var(--c-primary)"></i>
+            Cập nhật trạng thái điểm danh cho buổi học
+        </p>
+    </div>
+    <div class="page-actions">
+        <a href="/Admin/Attendance?classId=@Model.SessionInfo.ClassId"
+           class="btn-outline" style="height:38px;display:inline-flex;align-items:center;box-sizing:border-box;">
+            <i class="fas fa-arrow-left"></i> Quay lại
+        </a>
+    </div>
+</div>
+
+<form method="post" id="editForm" asp-page="Edit">
+    @Html.AntiForgeryToken()
+    <input type="hidden" asp-for="Input.SessionId" />
+
+    <div class="edit-layout">
+
+        <!-- ── LEFT ── -->
+        <div>
+            <div class="form-card">
+
+                <!-- Session info -->
+                <div class="session-info-bar">
+                    <div class="si-item">
+                        <i class="fas fa-chalkboard"></i>
+                        Lớp <strong>@Model.SessionInfo.ClassName</strong>
+                    </div>
+                    <div class="si-item">
+                        <i class="fas fa-calendar-day"></i>
+                        @Model.SessionInfo.SessionDate.ToString("dd/MM/yyyy")
+                    </div>
+                    <div class="si-item">
+                        <i class="fas fa-clock"></i>
+                        @Model.SessionInfo.ShiftName
+                    </div>
+                </div>
+
+                <!-- Audit info -->
+                <div class="audit-bar">
+                    <div class="audit-item">
+                        <span class="audit-label">Tạo bởi</span>
+                        <span class="audit-val"><i class="fas fa-user-pen"></i> @Model.CreatedByInfo</span>
+                    </div>
+                    <div class="audit-item">
+                        <span class="audit-label">Thời gian tạo</span>
+                        <span class="audit-val"><i class="fas fa-calendar-check"></i> @Model.CreatedAt.ToString("dd/MM/yyyy HH:mm")</span>
+                    </div>
+                    @if (!string.IsNullOrEmpty(Model.LastUpdatedByInfo))
+                    {
+                        <div class="audit-item">
+                            <span class="audit-label">Sửa lần cuối</span>
+                            <span class="audit-val"><i class="fas fa-pen-to-square"></i> @Model.LastUpdatedByInfo — @Model.LastUpdatedAt?.ToString("dd/MM/yyyy HH:mm")</span>
+                        </div>
+                    }
+                </div>
+
+                <!-- Toolbar -->
+                <div class="att-toolbar">
+                    <div class="att-toolbar-left">
+                        <span class="counter-chip present"><span class="dot"></span> Có mặt: <strong id="cntPresent">@initPresent</strong></span>
+                        <span class="counter-chip absent"><span class="dot"></span> Vắng: <strong id="cntAbsent">@initAbsent</strong></span>
+                        <span class="counter-chip unknown"><span class="dot"></span> Chưa GN: <strong id="cntUnknown">@initUnknown</strong></span>
+                    </div>
+                    <div class="att-toolbar-right">
+                        <button type="button" class="btn-outline" style="padding:6px 12px;font-size:.78rem" onclick="markAll('present')" title="Đánh dấu tất cả có mặt">
+                            <i class="fas fa-check-double" style="color:#10b981"></i> Có mặt
+                        </button>
+                        <button type="button" class="btn-outline" style="padding:6px 12px;font-size:.78rem" onclick="markAll('absent')" title="Đánh dấu tất cả vắng mặt">
+                            <i class="fas fa-times" style="color:#e03131"></i> Vắng
+                        </button>
+                        <button type="button" class="btn-outline" style="padding:6px 12px;font-size:.78rem" onclick="markAll('not_recorded')" title="Đặt lại tất cả">
+                            <i class="fas fa-rotate-left" style="color:#6b7280"></i> Đặt lại
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Table -->
+                <div style="overflow-x:auto">
+                    <table class="att-table">
+                        <thead>
+                            <tr>
+                                <th style="width:44px">#</th>
+                                <th>Học sinh</th>
+                                <th>Trường học</th>
+                                <th style="width:120px">Trạng thái</th>
+                            </tr>
+                        </thead>
+                        <tbody id="editTableBody">
+
+                            @for (int i = 0; i < Model.AttendanceList.Count; i++)
+                            {
+                                var att = Model.AttendanceList[i];
+                                var initial = !string.IsNullOrEmpty(att.StudentName)
+                                ? att.StudentName.Trim().Split(' ')[^1].Substring(0, 1).ToUpper()
+                                : "?";
+                                var rowClass = att.CurrentStatus == "present" ? "row-present"
+                                : att.CurrentStatus == "absent" ? "row-absent"
+                                : "row-unknown";
+                                var avatarClass = att.CurrentStatus == "present" ? "av-present"
+                                : att.CurrentStatus == "absent" ? "av-absent"
+                                : "av-unknown";
+                                var rowKey = att.AttendanceId > 0 ? att.AttendanceId.ToString() : $"new_{att.StudentId}";
+
+                                <tr id="row_@rowKey" class="@rowClass">
+                                    <td style="color:var(--text-3);font-weight:600">@(i + 1)</td>
+                                    <td>
+                                        <div class="student-cell">
+                                            <div class="s-avatar @avatarClass" id="avatar_@rowKey">@initial</div>
+                                            <div>
+                                                <div class="s-name">
+                                                    @att.StudentName
+                                                    @if (att.IsNew)
+                                                    {
+                                                        <span class="new-badge"><i class="fas fa-plus"></i> Mới</span>
+                                                    }
+                                                </div>
+                                                <div class="s-meta">#HS@att.StudentId</div>
+                                            </div>
+                                        </div>
+                                    </td>
+                                    <td style="color:var(--text-2)">@att.CurrentSchool</td>
+                                    <td>
+                                        <input type="hidden" name="Input.AttendanceIds[@i]" value="@att.AttendanceId" />
+                                        <input type="hidden" name="Input.StudentIds[@i]" value="@att.StudentId" />
+                                        <input type="hidden" name="Input.AttendanceStatuses[@i]"
+                                               id="status_@rowKey" value="@att.CurrentStatus" />
+
+                                        <div class="state-selector">
+                                            <button type="button" class="state-btn @(att.CurrentStatus == "present" ? "active-present" : "")"
+                                                    id="btn_present_@rowKey"
+                                                    onclick="setState('@rowKey', 'present')" title="Có mặt">
+                                                <i class="fas fa-check"></i>
+                                            </button>
+                                            <button type="button" class="state-btn @(att.CurrentStatus == "absent" ? "active-absent" : "")"
+                                                    id="btn_absent_@rowKey"
+                                                    onclick="setState('@rowKey', 'absent')" title="Vắng mặt">
+                                                <i class="fas fa-times"></i>
+                                            </button>
+                                            <button type="button" class="state-btn @(att.CurrentStatus == "not_recorded" ? "active-unknown" : "")"
+                                                    id="btn_unknown_@rowKey"
+                                                    onclick="setState('@rowKey', 'not_recorded')" title="Chưa ghi nhận">
+                                                <i class="fas fa-minus"></i>
+                                            </button>
+                                        </div>
+                                    </td>
+                                </tr>
+                            }
+
+                            <!-- Suspended section -->
+                            @if (Model.SuspendedStudents.Any())
+                            {
+                                <tr>
+                                    <td colspan="4" style="padding:0">
+                                        <div class="suspended-section-hd">
+                                            <i class="fas fa-pause-circle"></i>
+                                            <span>Học sinh đang tạm nghỉ (@Model.SuspendedStudents.Count) — không thể điểm danh</span>
+                                        </div>
+                                    </td>
+                                </tr>
+                                @foreach (var s in Model.SuspendedStudents)
+                                {
+                                    var initial = !string.IsNullOrEmpty(s.StudentName)
+                                    ? s.StudentName.Trim().Split(' ')[^1].Substring(0, 1).ToUpper()
+                                    : "?";
+                                    <tr class="row-suspended">
+                                        <td style="color:var(--text-3);font-weight:600">—</td>
+                                        <td>
+                                            <div class="student-cell">
+                                                <div class="s-avatar av-suspended">@initial</div>
+                                                <div>
+                                                    <div class="s-name">@s.StudentName</div>
+                                                    <div class="s-meta">#HS@s.StudentId</div>
+                                                </div>
+                                            </div>
+                                        </td>
+                                        <td style="color:var(--text-3)">@s.CurrentSchool</td>
+                                        <td>
+                                            <span class="suspended-badge"><i class="fas fa-pause"></i> Tạm nghỉ</span>
+                                        </td>
+                                    </tr>
+                                }
+                            }
+
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- Actions -->
+                <div class="form-actions">
+                    <button type="button" class="btn-outline"
+                            style="padding:8px 16px;font-size:.83rem;color:#e03131;border-color:#fecdd3"
+                            onclick="openDeleteModal()">
+                        <i class="fas fa-trash-can"></i> Xóa điểm danh
+                    </button>
+                    <div class="form-actions-right">
+                        <a href="/Admin/Attendance?classId=@Model.SessionInfo.ClassId"
+                           class="btn-outline" style="padding:8px 16px;font-size:.83rem">
+                            <i class="fas fa-times"></i> Hủy
+                        </a>
+                        <button type="submit" class="btn-brand" style="padding:8px 20px;font-size:.83rem">
+                            <i class="fas fa-floppy-disk"></i> Lưu thay đổi
+                        </button>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+
+        <!-- ── RIGHT: Sidebar ── -->
+        <div>
+            <div class="sidebar-card">
+                <div class="sidebar-hd">
+                    <div class="sidebar-hd-icon"><i class="fas fa-chart-pie"></i></div>
+                    <span class="sidebar-hd-title">Tóm tắt điểm danh</span>
+                </div>
+                <div class="sidebar-body">
+
+                    <div class="donut-wrap">
+                        <div class="donut-container">
+                            <svg class="donut-svg" width="110" height="110" viewBox="0 0 110 110">
+                                <circle cx="55" cy="55" r="42" fill="none" stroke="#f0f2f8" stroke-width="12" />
+                                <circle cx="55" cy="55" r="42" fill="none" stroke="#10b981" stroke-width="12"
+                                        stroke-dasharray="264" stroke-dashoffset="264"
+                                        id="arcPresent" stroke-linecap="butt" />
+                                <circle cx="55" cy="55" r="42" fill="none" stroke="#f43f5e" stroke-width="12"
+                                        stroke-dasharray="264" stroke-dashoffset="264"
+                                        id="arcAbsent" stroke-linecap="butt" />
+                            </svg>
+                            <div class="donut-center">
+                                <span class="donut-num" id="donutNum">—</span>
+                                <span class="donut-sub">ghi nhận</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div style="margin-top:4px">
+                        <div class="stat-row">
+                            <span class="stat-label"><span class="stat-dot green"></span> Có mặt</span>
+                            <span class="stat-val" id="sidePresent">@initPresent</span>
+                        </div>
+                        <div class="stat-row">
+                            <span class="stat-label"><span class="stat-dot red"></span> Vắng mặt</span>
+                            <span class="stat-val" id="sideAbsent">@initAbsent</span>
+                        </div>
+                        <div class="stat-row">
+                            <span class="stat-label"><span class="stat-dot gray"></span> Chưa ghi nhận</span>
+                            <span class="stat-val" id="sideUnknown">@initUnknown</span>
+                        </div>
+                        <div class="stat-row">
+                            <span class="stat-label"><span class="stat-dot orange"></span> Tổng active</span>
+                            <span class="stat-val">@activeTotal / @allTotal</span>
+                        </div>
+                    </div>
+
+                    <div style="margin-top:16px;padding-top:14px;border-top:1px solid var(--border)">
+                        <div class="stat-row" style="border:none;padding:4px 0">
+                            <span class="stat-label" style="font-size:.75rem"><i class="fas fa-chalkboard" style="color:var(--c-primary);margin-right:2px"></i> Lớp</span>
+                            <span style="font-size:.8rem;font-weight:700;color:var(--text-1)">@Model.SessionInfo.ClassName</span>
+                        </div>
+                        <div class="stat-row" style="border:none;padding:4px 0">
+                            <span class="stat-label" style="font-size:.75rem"><i class="fas fa-calendar" style="color:var(--c-primary);margin-right:2px"></i> Ngày</span>
+                            <span style="font-size:.8rem;font-weight:700;color:var(--text-1)">@Model.SessionInfo.SessionDate.ToString("dd/MM/yyyy")</span>
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+
+            <!-- Legend -->
+            <div class="sidebar-card">
+                <div class="sidebar-hd">
+                    <div class="sidebar-hd-icon"><i class="fas fa-circle-info"></i></div>
+                    <span class="sidebar-hd-title">Chú thích</span>
+                </div>
+                <div class="legend-body">
+                    <div class="legend-item">
+                        <div class="legend-icon present"><i class="fas fa-check"></i></div>
+                        <div class="legend-text">
+                            <strong>Có mặt</strong>
+                            <span>Cập nhật / tạo bản ghi Present</span>
+                        </div>
+                    </div>
+                    <div class="legend-item">
+                        <div class="legend-icon absent"><i class="fas fa-times"></i></div>
+                        <div class="legend-text">
+                            <strong>Vắng mặt</strong>
+                            <span>Cập nhật / tạo bản ghi Absent</span>
+                        </div>
+                    </div>
+                    <div class="legend-item">
+                        <div class="legend-icon unknown"><i class="fas fa-minus"></i></div>
+                        <div class="legend-text">
+                            <strong>Chưa ghi nhận</strong>
+                            <span>Xóa bản ghi nếu đã có</span>
+                        </div>
+                    </div>
+                    <div class="legend-item">
+                        <div class="legend-icon suspended"><i class="fas fa-pause"></i></div>
+                        <div class="legend-text">
+                            <strong>Tạm nghỉ</strong>
+                            <span>Không thể điểm danh</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    </div>
+</form>
+
+<!-- Delete form -->
+<form id="deleteForm" method="post" asp-page="Edit" asp-page-handler="Delete" style="display:none">
+    @Html.AntiForgeryToken()
+    <input type="hidden" name="sessionId" value="@Model.SessionInfo.SessionId" />
+</form>
+
+<!-- Confirm modal -->
+<div class="cm-backdrop" id="cmBackdrop"></div>
+<div class="cm-modal" id="cmModal" role="dialog" aria-modal="true">
+    <div class="cm-box">
+        <div class="cm-head">
+            <div class="cm-icon-wrap danger"><i class="fas fa-trash-can"></i></div>
+            <div class="cm-head-text">
+                <h6>Xóa toàn bộ điểm danh</h6>
+                <p>Hành động này không thể hoàn tác</p>
+            </div>
+        </div>
+        <div class="cm-body-msg">
+            Bạn có chắc muốn xóa toàn bộ dữ liệu điểm danh của lớp
+            <strong>@Model.SessionInfo.ClassName</strong> ngày
+            <strong>@Model.SessionInfo.SessionDate.ToString("dd/MM/yyyy")</strong>?
+            <br /><br />
+            Tất cả <strong>@Model.AttendanceList.Count(a => a.AttendanceId > 0)</strong> bản ghi sẽ bị xóa vĩnh viễn.
+        </div>
+        <div class="cm-foot">
+            <button type="button" class="btn-outline" id="cmCancel" style="padding:7px 16px;font-size:.82rem">
+                <i class="fas fa-times"></i> Hủy
+            </button>
+            <button type="button" class="btn-brand" id="cmConfirm"
+                    style="padding:7px 18px;font-size:.82rem;background:linear-gradient(135deg,#f43f5e,#e03131)">
+                <i class="fas fa-trash-can"></i> Xóa vĩnh viễn
+            </button>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+
+            /* ── Portal modal ── */
+            ['cmBackdrop', 'cmModal'].forEach(function (id) {
+                var el = document.getElementById(id);
+                if (el && el.parentNode !== document.body) document.body.appendChild(el);
+            });
+
+            var ACTIVE_TOTAL  = @activeTotal;
+            var CIRCUMFERENCE = 2 * Math.PI * 42;
+
+            /* ── State map: key -> 'present'|'absent'|'not_recorded' ── */
+            var stateMap = {};
+
+            @foreach (var att in Model.AttendanceList)
+            {
+                    var key = att.AttendanceId > 0 ? att.AttendanceId.ToString() : $"new_{att.StudentId}";
+                    @:stateMap['@key'] = '@att.CurrentStatus';
+            }
+
+            window.setState = function (key, state) {
+                stateMap[key] = state;
+
+                var hidden = document.getElementById('status_' + key);
+                if (hidden) hidden.value = state;
+
+                var row    = document.getElementById('row_'    + key);
+                var avatar = document.getElementById('avatar_' + key);
+                var btnP   = document.getElementById('btn_present_' + key);
+                var btnA   = document.getElementById('btn_absent_'  + key);
+                var btnU   = document.getElementById('btn_unknown_' + key);
+
+                if (row)    row.className = state === 'present' ? 'row-present' : state === 'absent' ? 'row-absent' : 'row-unknown';
+                if (avatar) avatar.className = 's-avatar ' + (state === 'present' ? 'av-present' : state === 'absent' ? 'av-absent' : 'av-unknown');
+                if (btnP)   btnP.className = 'state-btn' + (state === 'present'      ? ' active-present' : '');
+                if (btnA)   btnA.className = 'state-btn' + (state === 'absent'       ? ' active-absent'  : '');
+                if (btnU)   btnU.className = 'state-btn' + (state === 'not_recorded' ? ' active-unknown' : '');
+
+                updateCounters();
+            };
+
+            window.markAll = function (state) {
+                Object.keys(stateMap).forEach(function (key) { setState(key, state); });
+            };
+
+            function updateCounters() {
+                var present = 0, absent = 0, unknown = 0;
+                Object.values(stateMap).forEach(function (s) {
+                    if (s === 'present')     present++;
+                    else if (s === 'absent') absent++;
+                    else                     unknown++;
+                });
+
+                document.getElementById('cntPresent').textContent  = present;
+                document.getElementById('cntAbsent').textContent   = absent;
+                document.getElementById('cntUnknown').textContent  = unknown;
+                document.getElementById('sidePresent').textContent = present;
+                document.getElementById('sideAbsent').textContent  = absent;
+                document.getElementById('sideUnknown').textContent = unknown;
+
+                var recorded = present + absent;
+                document.getElementById('donutNum').textContent = recorded > 0 ? recorded : '—';
+
+                var pctP = ACTIVE_TOTAL > 0 ? present / ACTIVE_TOTAL : 0;
+                var pctA = ACTIVE_TOTAL > 0 ? absent  / ACTIVE_TOTAL : 0;
+                var lenP = CIRCUMFERENCE * pctP;
+                var lenA = CIRCUMFERENCE * pctA;
+
+                var arcP = document.getElementById('arcPresent');
+                var arcA = document.getElementById('arcAbsent');
+                if (arcP) { arcP.setAttribute('stroke-dasharray', lenP + ' ' + CIRCUMFERENCE); arcP.setAttribute('stroke-dashoffset', '0'); }
+                if (arcA) { arcA.setAttribute('stroke-dasharray', lenA + ' ' + CIRCUMFERENCE); arcA.setAttribute('stroke-dashoffset', -(lenP).toFixed(1)); }
+            }
+
+            updateCounters();
+
+            /* ── Delete modal ── */
+            var backdrop = document.getElementById('cmBackdrop');
+            var modal    = document.getElementById('cmModal');
+
+            window.openDeleteModal = function () {
+                backdrop.classList.add('cm-open');
+                modal.classList.add('cm-open');
+            };
+
+            function closeModal() {
+                backdrop.classList.remove('cm-open');
+                modal.classList.remove('cm-open');
+            }
+
+            document.getElementById('cmCancel').addEventListener('click', closeModal);
+            backdrop.addEventListener('click', closeModal);
+            document.addEventListener('keydown', function (e) { if (e.key === 'Escape') closeModal(); });
+
+            document.getElementById('cmConfirm').addEventListener('click', function () {
+                document.getElementById('deleteForm').submit();
+            });
+        });
+    </script>
+}

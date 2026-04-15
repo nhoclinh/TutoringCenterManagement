@@ -1,0 +1,1074 @@
+﻿@page
+@model TutoringCenterManagement.Pages.Admin.DashboardModel
+@{
+    ViewData["Title"] = "Dashboard";
+}
+
+@section Styles {
+    <style>
+        /* ── Page header ── */
+        .dash-header {
+            display: flex;
+            align-items: flex-start;
+            justify-content: space-between;
+            flex-wrap: wrap;
+            gap: 12px;
+            margin-bottom: 24px;
+        }
+
+        .dash-heading {
+            font-size: 1.45rem;
+            font-weight: 800;
+            color: var(--text-1);
+            letter-spacing: -.4px;
+            line-height: 1.2;
+        }
+
+        .dash-subheading {
+            font-size: .82rem;
+            color: var(--text-2);
+            margin-top: 3px;
+        }
+
+        .dash-date {
+            display: flex;
+            align-items: center;
+            gap: 7px;
+            font-size: .8rem;
+            font-weight: 600;
+            color: var(--text-2);
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: var(--r-sm);
+            padding: 7px 13px;
+            box-shadow: var(--sh-xs);
+        }
+
+            .dash-date i {
+                color: var(--c-primary);
+            }
+
+        /* ── KPI cards ── */
+        .kpi-grid {
+            display: grid;
+            grid-template-columns: repeat(4,1fr);
+            gap: 16px;
+            margin-bottom: 24px;
+        }
+
+        .kpi-card {
+            background: var(--bg-card);
+            border-radius: var(--r-lg);
+            border: 1px solid var(--border);
+            padding: 20px;
+            box-shadow: var(--sh-sm);
+            position: relative;
+            overflow: hidden;
+            transition: box-shadow .2s,transform .2s;
+        }
+
+            .kpi-card:hover {
+                box-shadow: var(--sh-md);
+                transform: translateY(-2px);
+            }
+
+            .kpi-card::after {
+                content: '';
+                position: absolute;
+                bottom: 0;
+                left: 0;
+                right: 0;
+                height: 3px;
+                border-radius: 0 0 var(--r-lg) var(--r-lg);
+            }
+
+            .kpi-card.c-orange::after {
+                background: linear-gradient(90deg,#e8590c,#f59f00);
+            }
+
+            .kpi-card.c-green::after {
+                background: linear-gradient(90deg,#10b981,#34d399);
+            }
+
+            .kpi-card.c-blue::after {
+                background: linear-gradient(90deg,#3b82f6,#60a5fa);
+            }
+
+            .kpi-card.c-purple::after {
+                background: linear-gradient(90deg,#8b5cf6,#a78bfa);
+            }
+
+        .kpi-top {
+            display: flex;
+            align-items: flex-start;
+            justify-content: space-between;
+            margin-bottom: 14px;
+        }
+
+        .kpi-label {
+            font-size: .73rem;
+            font-weight: 700;
+            color: var(--text-2);
+            text-transform: uppercase;
+            letter-spacing: .6px;
+        }
+
+        .kpi-icon {
+            width: 42px;
+            height: 42px;
+            border-radius: var(--r-md);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 17px;
+            flex-shrink: 0;
+        }
+
+            .kpi-icon.orange {
+                background: rgba(232,89,12,.1);
+                color: #e8590c;
+            }
+
+            .kpi-icon.green {
+                background: rgba(16,185,129,.1);
+                color: #10b981;
+            }
+
+            .kpi-icon.blue {
+                background: rgba(59,130,246,.1);
+                color: #3b82f6;
+            }
+
+            .kpi-icon.purple {
+                background: rgba(139,92,246,.1);
+                color: #8b5cf6;
+            }
+
+        .kpi-value {
+            font-size: 2rem;
+            font-weight: 800;
+            color: var(--text-1);
+            line-height: 1;
+            margin-bottom: 4px;
+        }
+
+        .kpi-meta {
+            font-size: .74rem;
+            color: var(--text-3);
+            font-weight: 500;
+        }
+
+        /* ── Quick actions ── */
+        .quick-strip {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 24px;
+            flex-wrap: wrap;
+        }
+
+        .quick-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 7px;
+            padding: 8px 16px;
+            border-radius: var(--r-sm);
+            font-size: .82rem;
+            font-weight: 600;
+            text-decoration: none !important;
+            transition: all .15s;
+            border: 1.5px solid transparent;
+        }
+
+            .quick-btn.primary {
+                background: var(--c-gradient);
+                color: #fff !important;
+                box-shadow: 0 3px 10px var(--c-glow);
+            }
+
+                .quick-btn.primary:hover {
+                    filter: brightness(1.08);
+                    transform: translateY(-1px);
+                }
+
+            .quick-btn.outline {
+                background: var(--bg-card);
+                color: var(--text-2) !important;
+                border-color: var(--border);
+            }
+
+                .quick-btn.outline:hover {
+                    border-color: var(--c-primary);
+                    color: var(--c-primary) !important;
+                    background: #fff9f5;
+                }
+
+        /* ── Main 2-col grid ── */
+        .dash-grid {
+            display: grid;
+            grid-template-columns: 1fr 360px;
+            gap: 20px;
+            margin-bottom: 20px;
+        }
+
+        .right-col {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        /* ── Cards ── */
+        .dash-card {
+            background: var(--bg-card);
+            border-radius: var(--r-lg);
+            border: 1px solid var(--border);
+            box-shadow: var(--sh-sm);
+            overflow: hidden;
+        }
+
+        .dash-card-hd {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 15px 20px;
+            border-bottom: 1px solid var(--border);
+            background: linear-gradient(to right,#fafbff,#fff);
+        }
+
+        .dash-card-title {
+            display: flex;
+            align-items: center;
+            gap: 9px;
+            font-size: .92rem;
+            font-weight: 700;
+            color: var(--text-1);
+        }
+
+            .dash-card-title .ct-icon {
+                width: 28px;
+                height: 28px;
+                border-radius: 7px;
+                background: rgba(232,89,12,.1);
+                color: var(--c-primary);
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                font-size: 12px;
+            }
+
+        .dash-card-bd {
+            padding: 20px;
+        }
+
+        /* ── FullCalendar overrides ── */
+        .fc {
+            font-family: 'Plus Jakarta Sans',system-ui,sans-serif !important;
+            font-size: .82rem !important;
+        }
+
+            .fc .fc-toolbar-title {
+                font-size: 1rem !important;
+                font-weight: 700 !important;
+                color: var(--text-1) !important;
+            }
+
+            .fc .fc-button {
+                background: var(--bg-page) !important;
+                border: 1px solid var(--border) !important;
+                color: var(--text-2) !important;
+                font-size: .78rem !important;
+                font-weight: 600 !important;
+                padding: 5px 11px !important;
+                border-radius: var(--r-sm) !important;
+                box-shadow: none !important;
+                transition: all .15s !important;
+            }
+
+                .fc .fc-button:hover {
+                    background: #fff9f5 !important;
+                    border-color: var(--c-primary) !important;
+                    color: var(--c-primary) !important;
+                }
+
+            .fc .fc-button-active,
+            .fc .fc-button-primary:not(:disabled).fc-button-active {
+                background: var(--c-gradient) !important;
+                border-color: transparent !important;
+                color: #fff !important;
+            }
+
+            .fc .fc-col-header-cell {
+                background: #f4f6fc !important;
+                font-size: .72rem !important;
+                font-weight: 700 !important;
+                text-transform: uppercase !important;
+                letter-spacing: .5px !important;
+                color: var(--text-2) !important;
+            }
+
+            .fc .fc-daygrid-day-number {
+                font-size: .78rem !important;
+                font-weight: 600 !important;
+                color: var(--text-2) !important;
+            }
+
+            .fc .fc-day-today {
+                background: rgba(232,89,12,.04) !important;
+            }
+
+                .fc .fc-day-today .fc-daygrid-day-number {
+                    color: var(--c-primary) !important;
+                    font-weight: 800 !important;
+                }
+
+            .fc .fc-event {
+                border-radius: 5px !important;
+                border: none !important;
+                font-size: .72rem !important;
+                font-weight: 600 !important;
+                padding: 1px 5px !important;
+                background: var(--c-gradient) !important;
+                box-shadow: 0 1px 4px var(--c-glow) !important;
+                cursor: pointer !important;
+            }
+
+            .fc th, .fc td {
+                border-color: var(--border) !important;
+            }
+
+            .fc .fc-toolbar.fc-header-toolbar {
+                margin-bottom: 16px !important;
+            }
+
+        /* ── Today sessions ── */
+        .session-list {
+            list-style: none;
+        }
+
+        .session-item {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 11px 0;
+            border-bottom: 1px solid #f0f2f8;
+        }
+
+            .session-item:last-child {
+                border-bottom: none;
+                padding-bottom: 0;
+            }
+
+        .session-time {
+            min-width: 54px;
+            text-align: center;
+            background: rgba(232,89,12,.07);
+            border-radius: var(--r-sm);
+            padding: 5px 6px;
+        }
+
+        .session-time-val {
+            display: block;
+            font-size: .72rem;
+            font-weight: 800;
+            color: var(--c-primary);
+            line-height: 1.2;
+        }
+
+        .session-time-label {
+            display: block;
+            font-size: .6rem;
+            color: var(--text-3);
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: .4px;
+        }
+
+        .session-info {
+            flex: 1;
+            min-width: 0;
+        }
+
+        .session-name {
+            font-size: .83rem;
+            font-weight: 700;
+            color: var(--text-1);
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .session-meta {
+            font-size: .72rem;
+            color: var(--text-3);
+            margin-top: 1px;
+        }
+
+        .session-badge {
+            display: inline-flex;
+            align-items: center;
+            padding: 2px 8px;
+            border-radius: 50px;
+            font-size: .68rem;
+            font-weight: 700;
+            white-space: nowrap;
+            flex-shrink: 0;
+        }
+
+            .session-badge.morning {
+                background: rgba(245,159,0,.12);
+                color: #b45309;
+            }
+
+            .session-badge.afternoon {
+                background: rgba(59,130,246,.12);
+                color: #1d4ed8;
+            }
+
+            .session-badge.evening {
+                background: rgba(139,92,246,.12);
+                color: #6d28d9;
+            }
+
+        .no-session {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 32px 16px;
+            text-align: center;
+        }
+
+            .no-session i {
+                font-size: 28px;
+                color: var(--text-3);
+                margin-bottom: 10px;
+            }
+
+            .no-session p {
+                font-size: .8rem;
+                color: var(--text-2);
+            }
+
+        /* ── Rate bars ── */
+        .rate-track {
+            flex: 1;
+            height: 6px;
+            background: var(--border);
+            border-radius: 3px;
+            overflow: hidden;
+        }
+
+        .rate-fill {
+            height: 100%;
+            border-radius: 3px;
+            transition: width .6s var(--ease);
+        }
+
+            .rate-fill.high {
+                background: linear-gradient(90deg,#10b981,#34d399);
+            }
+
+            .rate-fill.mid {
+                background: linear-gradient(90deg,#f59f00,#fbbf24);
+            }
+
+            .rate-fill.low {
+                background: linear-gradient(90deg,#f43f5e,#fb7185);
+            }
+
+        /* ── Charts ── */
+        .charts-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+        }
+
+        .chart-wrap {
+            position: relative;
+            height: 240px;
+        }
+
+        /* ══════════════════════════════════════
+               CUSTOM MODAL — đảm bảo ẩn hoàn toàn
+            ══════════════════════════════════════ */
+
+        /* Backdrop — che nền */
+        .cm-backdrop {
+            visibility: hidden;
+            opacity: 0;
+            position: fixed;
+            inset: 0;
+            z-index: 9990;
+            background: rgba(15,17,23,.55);
+            backdrop-filter: blur(3px);
+            -webkit-backdrop-filter: blur(3px);
+            transition: opacity .2s, visibility .2s;
+        }
+
+        /* Modal wrapper — canh giữa màn hình */
+        .cm-modal {
+            visibility: hidden;
+            opacity: 0;
+            position: fixed;
+            inset: 0;
+            z-index: 9991;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 16px;
+            transition: opacity .2s, visibility .2s;
+            pointer-events: none;
+        }
+
+            /* Trạng thái mở */
+            .cm-backdrop.cm-open,
+            .cm-modal.cm-open {
+                visibility: visible;
+                opacity: 1;
+                pointer-events: all;
+            }
+
+        /* Hộp nội dung */
+        .cm-box {
+            background: #fff;
+            border-radius: var(--r-xl);
+            box-shadow: 0 24px 56px rgba(0,0,0,.18), 0 8px 20px rgba(0,0,0,.08);
+            width: 100%;
+            max-width: 400px;
+            overflow: hidden;
+            transform: scale(.94) translateY(10px);
+            transition: transform .22s cubic-bezier(.34,1.4,.64,1);
+        }
+
+        .cm-modal.cm-open .cm-box {
+            transform: scale(1) translateY(0);
+        }
+
+        .cm-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 16px 20px;
+            background: linear-gradient(to right,#f7f8fc,#fff);
+            border-bottom: 1px solid var(--border);
+        }
+
+        .cm-title {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: .95rem;
+            font-weight: 700;
+            color: var(--text-1);
+        }
+
+            .cm-title i {
+                color: var(--c-primary);
+            }
+
+        .cm-close {
+            width: 28px;
+            height: 28px;
+            border-radius: var(--r-sm);
+            border: none;
+            background: transparent;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 13px;
+            color: var(--text-3);
+            transition: background .15s, color .15s;
+        }
+
+            .cm-close:hover {
+                background: var(--bg-page);
+                color: var(--text-1);
+            }
+
+        .cm-body {
+            padding: 4px 20px 8px;
+        }
+
+        .cm-row {
+            display: flex;
+            gap: 12px;
+            align-items: flex-start;
+            padding: 11px 0;
+            border-bottom: 1px solid #f0f2f8;
+        }
+
+            .cm-row:last-child {
+                border-bottom: none;
+            }
+
+        .cm-row-icon {
+            width: 34px;
+            height: 34px;
+            border-radius: var(--r-sm);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 13px;
+            flex-shrink: 0;
+        }
+
+        .cm-row-label {
+            font-size: .68rem;
+            font-weight: 700;
+            color: var(--text-3);
+            text-transform: uppercase;
+            letter-spacing: .5px;
+            margin-bottom: 3px;
+        }
+
+        .cm-row-val {
+            font-size: .9rem;
+            font-weight: 700;
+            color: var(--text-1);
+        }
+
+        .cm-footer {
+            display: flex;
+            justify-content: flex-end;
+            gap: 8px;
+            padding: 12px 20px 16px;
+            border-top: 1px solid var(--border);
+        }
+
+        /* ── Responsive ── */
+        @@media (max-width:1100px) {
+            .kpi-grid {
+                grid-template-columns: repeat(2,1fr);
+            }
+
+            .dash-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .right-col {
+                display: grid;
+                grid-template-columns: 1fr 1fr;
+            }
+        }
+
+        @@media (max-width:640px) {
+            .kpi-grid {
+                grid-template-columns: 1fr 1fr;
+            }
+
+            .charts-row {
+                grid-template-columns: 1fr;
+            }
+
+            .right-col {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        @@media (max-width:400px) {
+            .kpi-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+}
+
+<!-- ════════ PAGE HEADER ════════ -->
+<div class="dash-header">
+    <div>
+        <h1 class="dash-heading">Dashboard</h1>
+        <p class="dash-subheading">Tổng quan hệ thống quản lý trung tâm</p>
+    </div>
+    <div class="dash-date">
+        <i class="fas fa-calendar-day"></i>
+        <span id="todayLabel"></span>
+    </div>
+</div>
+
+<!-- ════════ KPI CARDS ════════ -->
+<div class="kpi-grid">
+    <div class="kpi-card c-orange">
+        <div class="kpi-top">
+            <span class="kpi-label">Tổng học sinh</span>
+            <div class="kpi-icon orange"><i class="fas fa-user-graduate"></i></div>
+        </div>
+        <div class="kpi-value">@Model.TotalStudents</div>
+        <div class="kpi-meta">Đang theo học tại trung tâm</div>
+    </div>
+    <div class="kpi-card c-green">
+        <div class="kpi-top">
+            <span class="kpi-label">Giáo viên</span>
+            <div class="kpi-icon green"><i class="fas fa-chalkboard-teacher"></i></div>
+        </div>
+        <div class="kpi-value">@Model.TotalTeachers</div>
+        <div class="kpi-meta">Giáo viên đang hoạt động</div>
+    </div>
+    <div class="kpi-card c-blue">
+        <div class="kpi-top">
+            <span class="kpi-label">Lớp học</span>
+            <div class="kpi-icon blue"><i class="fas fa-chalkboard"></i></div>
+        </div>
+        <div class="kpi-value">@Model.TotalClasses</div>
+        <div class="kpi-meta">Lớp đang mở tại trung tâm</div>
+    </div>
+    <div class="kpi-card c-purple">
+        <div class="kpi-top">
+            <span class="kpi-label">Buổi hôm nay</span>
+            <div class="kpi-icon purple"><i class="fas fa-clock"></i></div>
+        </div>
+        <div class="kpi-value">@Model.TodaySessions</div>
+        <div class="kpi-meta">Buổi học diễn ra hôm nay</div>
+    </div>
+</div>
+
+<!-- ════════ QUICK ACTIONS ════════ -->
+<div class="quick-strip">
+    <a href="/Admin/Attendance" class="quick-btn primary"><i class="fas fa-clipboard-check"></i> Điểm danh hôm nay</a>
+    <a href="/Admin/Sessions" class="quick-btn outline"><i class="fas fa-clock"></i> Buổi học</a>
+    <a href="/Admin/Classes" class="quick-btn outline"><i class="fas fa-chalkboard"></i> Lớp học</a>
+    <a href="/Admin/Users" class="quick-btn outline"><i class="fas fa-users"></i> Người dùng</a>
+    <a href="/Admin/Reports" class="quick-btn outline"><i class="fas fa-chart-bar"></i> Báo cáo</a>
+</div>
+
+<!-- ════════ MAIN GRID ════════ -->
+<div class="dash-grid">
+
+    <!-- Calendar -->
+    <div class="dash-card">
+        <div class="dash-card-hd">
+            <div class="dash-card-title">
+                <div class="ct-icon"><i class="fas fa-calendar-alt"></i></div>
+                Lịch học tổng quan
+            </div>
+        </div>
+        <div class="dash-card-bd">
+            <div id="calendar"></div>
+        </div>
+    </div>
+
+    <!-- Right col -->
+    <div class="right-col">
+
+        <!-- Today sessions -->
+        <div class="dash-card">
+            <div class="dash-card-hd">
+                <div class="dash-card-title">
+                    <div class="ct-icon"><i class="fas fa-clock"></i></div>
+                    Buổi học hôm nay
+                </div>
+                <span class="bdg info" style="font-size:.68rem">
+                    <span class="dot"></span>@Model.TodaySessions buổi
+                </span>
+            </div>
+            <div class="dash-card-bd" style="padding:16px 20px">
+                @if (Model.TodaySessions == 0)
+                {
+                    <div class="no-session">
+                        <i class="fas fa-calendar-xmark"></i>
+                        <p>Không có buổi học nào hôm nay</p>
+                    </div>
+                }
+                else
+                {
+                    <ul class="session-list">
+                        <li class="session-item">
+                            <div class="session-time">
+                                <span class="session-time-val">Sáng</span>
+                                <span class="session-time-label">7:30</span>
+                            </div>
+                            <div class="session-info">
+                                <div class="session-name">Lớp Toán 10A</div>
+                                <div class="session-meta"><i class="fas fa-door-open" style="font-size:10px"></i> Phòng 101</div>
+                            </div>
+                            <span class="session-badge morning">Sáng</span>
+                        </li>
+                        <li class="session-item">
+                            <div class="session-time">
+                                <span class="session-time-val">Chiều</span>
+                                <span class="session-time-label">13:30</span>
+                            </div>
+                            <div class="session-info">
+                                <div class="session-name">Lớp Văn 11B</div>
+                                <div class="session-meta"><i class="fas fa-door-open" style="font-size:10px"></i> Phòng 102</div>
+                            </div>
+                            <span class="session-badge afternoon">Chiều</span>
+                        </li>
+                        <li class="session-item">
+                            <div class="session-time">
+                                <span class="session-time-val">Tối</span>
+                                <span class="session-time-label">18:00</span>
+                            </div>
+                            <div class="session-info">
+                                <div class="session-name">Lớp Anh 12C</div>
+                                <div class="session-meta"><i class="fas fa-door-open" style="font-size:10px"></i> Phòng 201</div>
+                            </div>
+                            <span class="session-badge evening">Tối</span>
+                        </li>
+                    </ul>
+                }
+            </div>
+        </div>
+
+        <!-- Attendance rate -->
+        <div class="dash-card">
+            <div class="dash-card-hd">
+                <div class="dash-card-title">
+                    <div class="ct-icon"><i class="fas fa-chart-pie"></i></div>
+                    Tỷ lệ chuyên cần
+                </div>
+                <span style="font-size:.72rem;color:var(--text-3);font-weight:600">7 ngày qua</span>
+            </div>
+            <div class="dash-card-bd" style="padding:16px 20px">
+                <div style="display:flex;flex-direction:column;gap:12px">
+                    <div>
+                        <div style="display:flex;justify-content:space-between;margin-bottom:5px">
+                            <span style="font-size:.78rem;font-weight:600;color:var(--text-1)">Có mặt</span>
+                            <span style="font-size:.78rem;font-weight:700;color:#10b981">87%</span>
+                        </div>
+                        <div class="rate-track"><div class="rate-fill high" style="width:87%"></div></div>
+                    </div>
+                    <div>
+                        <div style="display:flex;justify-content:space-between;margin-bottom:5px">
+                            <span style="font-size:.78rem;font-weight:600;color:var(--text-1)">Nghỉ có phép</span>
+                            <span style="font-size:.78rem;font-weight:700;color:#f59f00">8%</span>
+                        </div>
+                        <div class="rate-track"><div class="rate-fill mid" style="width:8%"></div></div>
+                    </div>
+                    <div>
+                        <div style="display:flex;justify-content:space-between;margin-bottom:5px">
+                            <span style="font-size:.78rem;font-weight:600;color:var(--text-1)">Vắng không phép</span>
+                            <span style="font-size:.78rem;font-weight:700;color:#f43f5e">5%</span>
+                        </div>
+                        <div class="rate-track"><div class="rate-fill low" style="width:5%"></div></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    </div>
+</div>
+
+<!-- ════════ CHARTS ROW ════════ -->
+<div class="charts-row">
+    <div class="dash-card">
+        <div class="dash-card-hd">
+            <div class="dash-card-title">
+                <div class="ct-icon"><i class="fas fa-chart-bar"></i></div>
+                Điểm danh 7 ngày qua
+            </div>
+        </div>
+        <div class="dash-card-bd">
+            <div class="chart-wrap"><canvas id="attendanceChart"></canvas></div>
+        </div>
+    </div>
+    <div class="dash-card">
+        <div class="dash-card-hd">
+            <div class="dash-card-title">
+                <div class="ct-icon"><i class="fas fa-users"></i></div>
+                Học sinh theo lớp
+            </div>
+        </div>
+        <div class="dash-card-bd">
+            <div class="chart-wrap"><canvas id="classChart"></canvas></div>
+        </div>
+    </div>
+</div>
+
+<!-- ════════════════════════════════════════
+     CUSTOM MODAL — vanilla JS
+     Dùng position:fixed trực tiếp, KHÔNG phụ thuộc Bootstrap Modal JS
+════════════════════════════════════════ -->
+<div class="cm-backdrop" id="cmBackdrop"></div>
+<div class="cm-modal" id="cmModal" role="dialog" aria-modal="true" aria-labelledby="cmTitle">
+    <div class="cm-box">
+        <div class="cm-header">
+            <div class="cm-title" id="cmTitle">
+                <i class="fas fa-calendar-day"></i>
+                Chi tiết buổi học
+            </div>
+            <button class="cm-close" id="cmClose" aria-label="Đóng">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
+        <div class="cm-body">
+            <div class="cm-row">
+                <div class="cm-row-icon" style="background:rgba(232,89,12,.1);color:var(--c-primary)">
+                    <i class="fas fa-chalkboard"></i>
+                </div>
+                <div>
+                    <div class="cm-row-label">Lớp học</div>
+                    <div class="cm-row-val" id="cm-class">—</div>
+                </div>
+            </div>
+            <div class="cm-row">
+                <div class="cm-row-icon" style="background:rgba(59,130,246,.1);color:#3b82f6">
+                    <i class="fas fa-clock"></i>
+                </div>
+                <div>
+                    <div class="cm-row-label">Ca học</div>
+                    <div class="cm-row-val" id="cm-shift">—</div>
+                </div>
+            </div>
+            <div class="cm-row">
+                <div class="cm-row-icon" style="background:rgba(16,185,129,.1);color:#10b981">
+                    <i class="fas fa-door-open"></i>
+                </div>
+                <div>
+                    <div class="cm-row-label">Phòng học</div>
+                    <div class="cm-row-val" id="cm-room">—</div>
+                </div>
+            </div>
+        </div>
+        <div class="cm-footer">
+            <button class="btn-outline" id="cmClose2" style="font-size:.82rem;padding:7px 16px">
+                <i class="fas fa-times"></i> Đóng
+            </button>
+            <a id="cm-attend-link" href="/Admin/Attendance" class="btn-brand" style="font-size:.82rem;padding:7px 18px">
+                <i class="fas fa-clipboard-check"></i> Điểm danh
+            </a>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <link href="~/lib/fullcalendar/index.global.min.css" rel="stylesheet" />
+    <script src="~/lib/fullcalendar/index.global.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+
+            /* ── Đưa modal ra thẳng body để thoát khỏi mọi overflow container ── */
+            var backdrop = document.getElementById('cmBackdrop');
+            var modal    = document.getElementById('cmModal');
+            if (backdrop && backdrop.parentNode !== document.body) document.body.appendChild(backdrop);
+            if (modal    && modal.parentNode    !== document.body) document.body.appendChild(modal);
+
+            /* ── Today label ── */
+            var now  = new Date();
+            var days = ['Chủ nhật','Thứ hai','Thứ ba','Thứ tư','Thứ năm','Thứ sáu','Thứ bảy'];
+            var el   = document.getElementById('todayLabel');
+            if (el) {
+                el.textContent = days[now.getDay()] + ', ' +
+                    String(now.getDate()).padStart(2,'0') + '/' +
+                    String(now.getMonth()+1).padStart(2,'0') + '/' +
+                    now.getFullYear();
+            }
+
+            /* ── Custom modal open/close ── */
+            function openModal(cls, shift, room, sessionId) {
+                document.getElementById('cm-class').textContent = cls   || '—';
+                document.getElementById('cm-shift').textContent = shift || '—';
+                document.getElementById('cm-room').textContent  = room  || '—';
+                var link = document.getElementById('cm-attend-link');
+                if (link) link.href = sessionId ? '/Admin/Attendance?sessionId=' + sessionId : '/Admin/Attendance';
+                backdrop.classList.add('cm-open');
+                modal.classList.add('cm-open');
+            }
+
+            function closeModal() {
+                backdrop.classList.remove('cm-open');
+                modal.classList.remove('cm-open');
+            }
+
+            document.getElementById('cmClose').addEventListener('click',  closeModal);
+            document.getElementById('cmClose2').addEventListener('click', closeModal);
+            backdrop.addEventListener('click', closeModal);
+            document.addEventListener('keydown', function(e) {
+                if (e.key === 'Escape') closeModal();
+            });
+
+            /* ── FullCalendar ── */
+            var calendarEl = document.getElementById('calendar');
+            if (calendarEl) {
+                var calendar = new FullCalendar.Calendar(calendarEl, {
+                    initialView: 'dayGridMonth',
+                    locale: 'vi',
+                    headerToolbar: {
+                        left:   'prev,next today',
+                        center: 'title',
+                        right:  'dayGridMonth,timeGridWeek,timeGridDay'
+                    },
+                    events:    '/Admin/Dashboard?handler=GetEvents',
+                    eventClick: function (info) {
+                        openModal(
+                            info.event.title,
+                            info.event.extendedProps.shift,
+                            info.event.extendedProps.room,
+                            info.event.extendedProps.sessionId
+                        );
+                    },
+                    eventColor:   '#e8590c',
+                    dayMaxEvents: 3,
+                    height:       'auto'
+                });
+                calendar.render();
+            }
+
+            /* ── Chart defaults ── */
+            Chart.defaults.font.family = "'Plus Jakarta Sans', system-ui, sans-serif";
+            Chart.defaults.font.size   = 12;
+            Chart.defaults.color       = '#5a6277';
+
+            /* ── Attendance bar chart ── */
+            var attCtx = document.getElementById('attendanceChart');
+            if (attCtx) {
+                new Chart(attCtx, {
+                    type: 'bar',
+                    data: {
+                        labels: @Html.Raw(Model.Last7Days),
+                        datasets: [
+                            {
+                                label: 'Có mặt',
+                                data:  @Html.Raw(Model.AttendancePresentData),
+                                backgroundColor: '#10b981',
+                                borderRadius: 5, borderSkipped: false
+                            },
+                            {
+                                label: 'Vắng mặt',
+                                data:  @Html.Raw(Model.AttendanceAbsentData),
+                                backgroundColor: '#f43f5e',
+                                borderRadius: 5, borderSkipped: false
+                            }
+                        ]
+                    },
+                    options: {
+                        responsive: true, maintainAspectRatio: false,
+                        plugins: {
+                            legend: { position:'top', labels:{ padding:16, usePointStyle:true, pointStyleWidth:8 } },
+                            tooltip: { backgroundColor:'#181b27', padding:10, cornerRadius:8, titleFont:{ weight:'700' } }
+                        },
+                        scales: {
+                            x: { grid:{ display:false }, border:{ display:false }, ticks:{ font:{ size:11 } } },
+                            y: { beginAtZero:true, grid:{ color:'#f0f2f8' }, border:{ display:false }, ticks:{ font:{ size:11 }, stepSize:1 } }
+                        }
+                    }
+                });
+            }
+
+            /* ── Class doughnut chart ── */
+            var clsCtx = document.getElementById('classChart');
+            if (clsCtx) {
+                new Chart(clsCtx, {
+                    type: 'doughnut',
+                    data: {
+                        labels: @Html.Raw(Model.ClassNames),
+                        datasets: [{
+                            data: @Html.Raw(Model.ClassStudentCounts),
+                            backgroundColor: ['#e8590c','#f59f00','#10b981','#3b82f6','#8b5cf6','#f43f5e'],
+                            borderWidth: 0, hoverOffset: 8
+                        }]
+                    },
+                    options: {
+                        responsive: true, maintainAspectRatio: false, cutout: '68%',
+                        plugins: {
+                            legend: { position:'right', labels:{ padding:14, usePointStyle:true, pointStyleWidth:8, font:{ size:11 } } },
+                            tooltip: { backgroundColor:'#181b27', padding:10, cornerRadius:8, titleFont:{ weight:'700' } }
+                        }
+                    }
+                });
+            }
+
+        });
+    </script>
+}

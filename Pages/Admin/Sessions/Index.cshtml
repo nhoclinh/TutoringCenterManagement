@@ -1,0 +1,1405 @@
+﻿@page
+@model TutoringCenterManagement.Pages.Admin.Sessions.IndexModel
+@using TutoringCenterManagement.Data.Enums
+@{
+    ViewData["Title"] = "Quản lý buổi học";
+
+    var totalSessions = Model.Sessions.Count;
+    var scheduledCount = Model.Sessions.Count(s => s.Status == SessionStatus.Scheduled);
+    var ongoingCount = Model.Sessions.Count(s => s.Status == SessionStatus.Ongoing);
+    var completedCount = Model.Sessions.Count(s => s.Status == SessionStatus.Completed);
+    var cancelledCount = Model.Sessions.Count(s => s.Status == SessionStatus.Cancelled);
+}
+
+@functions {
+    static string GetStatusBadgeHtml(SessionStatus status) => status switch
+    {
+        SessionStatus.Scheduled => "<span class=\"sess-badge scheduled\"><i class=\"fas fa-calendar-check\"></i> Đã lên lịch</span>",
+        SessionStatus.Ongoing => "<span class=\"sess-badge ongoing\"><i class=\"fas fa-circle-dot\"></i> Đang diễn ra</span>",
+        SessionStatus.Completed => "<span class=\"sess-badge completed\"><i class=\"fas fa-check-circle\"></i> Hoàn thành</span>",
+        SessionStatus.Cancelled => "<span class=\"sess-badge cancelled\"><i class=\"fas fa-ban\"></i> Đã hủy</span>",
+        _ => "<span class=\"sess-badge\">—</span>"
+    };
+}
+
+@section Styles {
+    <style>
+        /* ════════════════════════════════════════
+                       SESSIONS PAGE — đồng bộ design system
+                    ════════════════════════════════════════ */
+
+        /* ── Filter card ── */
+        .filter-card {
+            background: var(--bg-card);
+            border-radius: var(--r-lg);
+            border: 1px solid var(--border);
+            box-shadow: var(--sh-sm);
+            padding: 16px 20px;
+            margin-bottom: 20px;
+        }
+
+        .filter-grid {
+            display: grid;
+            grid-template-columns: 2fr 1.2fr 1.2fr 1.2fr auto;
+            gap: 10px;
+            align-items: flex-end;
+        }
+
+            .filter-grid label {
+                font-size: .72rem;
+                font-weight: 700;
+                color: var(--text-2);
+                text-transform: uppercase;
+                letter-spacing: .5px;
+                display: block;
+                margin-bottom: 5px;
+            }
+
+        .filter-select, .filter-date {
+            width: 100%;
+            height: 36px;
+            padding: 0 10px;
+            border: 1.5px solid var(--border);
+            border-radius: var(--r-sm);
+            background: #f8f9fc;
+            color: var(--text-1);
+            font-size: .83rem;
+            font-family: 'Plus Jakarta Sans', system-ui, sans-serif;
+            outline: none;
+            cursor: pointer;
+            box-sizing: border-box;
+            transition: border-color .15s, box-shadow .15s;
+        }
+
+            .filter-select:focus, .filter-date:focus {
+                border-color: var(--c-primary);
+                background: #fff;
+                box-shadow: inset 0 0 0 2px rgba(232,89,12,.12);
+            }
+
+        .filter-select {
+            padding-right: 28px;
+            -webkit-appearance: none;
+            appearance: none;
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='10' viewBox='0 0 24 24' fill='none' stroke='%239aa0b4' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E");
+            background-repeat: no-repeat;
+            background-position: right 9px center;
+        }
+
+        .filter-btn-group {
+            display: flex;
+            gap: 6px;
+            align-items: flex-end;
+        }
+
+        /* ── View toggle ── */
+        .view-toggle {
+            display: flex;
+            border: 1.5px solid var(--border);
+            border-radius: var(--r-sm);
+            overflow: hidden;
+            background: var(--bg-page);
+        }
+
+        .vt-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 6px 14px;
+            font-size: .8rem;
+            font-weight: 600;
+            color: var(--text-2);
+            background: transparent;
+            border: none;
+            cursor: pointer;
+            transition: all .15s;
+        }
+
+            .vt-btn:not(:last-child) {
+                border-right: 1px solid var(--border);
+            }
+
+            .vt-btn.active {
+                background: var(--c-gradient);
+                color: #fff;
+            }
+
+            .vt-btn:not(.active):hover {
+                color: var(--c-primary);
+                background: #fff9f5;
+            }
+
+        /* ── Content top bar ── */
+        .content-topbar {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-bottom: 14px;
+        }
+
+        .topbar-left {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
+        /* ── Page size selector ── */
+        .pagesize-wrap {
+            display: flex;
+            align-items: center;
+            gap: 7px;
+            font-size: .78rem;
+            font-weight: 600;
+            color: var(--text-2);
+        }
+
+        .pagesize-select {
+            height: 30px;
+            padding: 0 22px 0 8px;
+            border: 1.5px solid var(--border);
+            border-radius: var(--r-sm);
+            background: #f8f9fc;
+            color: var(--text-1);
+            font-size: .78rem;
+            font-family: 'Plus Jakarta Sans', system-ui, sans-serif;
+            outline: none;
+            cursor: pointer;
+            -webkit-appearance: none;
+            appearance: none;
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='9' height='9' viewBox='0 0 24 24' fill='none' stroke='%239aa0b4' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E");
+            background-repeat: no-repeat;
+            background-position: right 7px center;
+            transition: border-color .15s;
+        }
+
+            .pagesize-select:focus {
+                border-color: var(--c-primary);
+            }
+
+        /* ── Table card ── */
+        .table-card {
+            background: var(--bg-card);
+            border-radius: var(--r-lg);
+            border: 1px solid var(--border);
+            box-shadow: var(--sh-sm);
+            overflow: hidden;
+        }
+
+        .table-card-hd {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 14px 20px;
+            border-bottom: 1px solid var(--border);
+            background: linear-gradient(to right, #fafbff, #fff);
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+
+        .table-card-title {
+            display: flex;
+            align-items: center;
+            gap: 9px;
+            font-size: .92rem;
+            font-weight: 700;
+            color: var(--text-1);
+        }
+
+        .ct-icon {
+            width: 28px;
+            height: 28px;
+            border-radius: 7px;
+            background: rgba(232,89,12,.1);
+            color: var(--c-primary);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 12px;
+        }
+
+        /* ── Sessions table ── */
+        .sessions-table {
+            width: 100%;
+            border-collapse: separate;
+            border-spacing: 0;
+            table-layout: fixed;
+        }
+
+            .sessions-table thead th {
+                padding: 11px 14px;
+                font-size: .7rem;
+                font-weight: 700;
+                text-transform: uppercase;
+                letter-spacing: .7px;
+                color: var(--text-2);
+                background: #f4f6fc;
+                border-bottom: 2px solid var(--border);
+                white-space: nowrap;
+            }
+
+                .sessions-table thead th:first-child {
+                    padding-left: 20px;
+                }
+
+                .sessions-table thead th:last-child {
+                    padding-right: 20px;
+                    text-align: right;
+                }
+
+            .sessions-table tbody td {
+                padding: 13px 14px;
+                font-size: .83rem;
+                color: var(--text-1);
+                border-bottom: 1px solid #f0f2f8;
+                vertical-align: middle;
+            }
+
+                .sessions-table tbody td:first-child {
+                    padding-left: 20px;
+                }
+
+                .sessions-table tbody td:last-child {
+                    padding-right: 20px;
+                }
+
+            .sessions-table tbody tr:last-child td {
+                border-bottom: none;
+            }
+
+            .sessions-table tbody tr {
+                transition: background .12s;
+                cursor: pointer;
+            }
+
+                .sessions-table tbody tr:hover td {
+                    background: #f8faff;
+                }
+
+                /* hidden rows by pagesize */
+                .sessions-table tbody tr.row-hidden {
+                    display: none;
+                }
+
+        /* Column widths */
+        .col-date {
+            width: 105px;
+        }
+
+        .col-class {
+            width: 130px;
+        }
+
+        .col-shift {
+            width: 160px;
+        }
+
+        .col-room {
+            width: 90px;
+        }
+
+        .col-teacher {
+            width: auto;
+        }
+
+        .col-type {
+            width: 110px;
+        }
+
+        .col-status {
+            width: 140px;
+        }
+
+        .col-actions {
+            width: 100px;
+        }
+
+        /* date cell */
+        .date-day {
+            font-size: .85rem;
+            font-weight: 800;
+            color: var(--text-1);
+        }
+
+        .date-dow {
+            font-size: .68rem;
+            font-weight: 600;
+            color: var(--text-3);
+            margin-top: 1px;
+        }
+
+        /* class pill */
+        .class-pill {
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            background: rgba(232,89,12,.08);
+            color: var(--c-primary);
+            font-weight: 700;
+            font-size: .78rem;
+            padding: 3px 9px;
+            border-radius: 20px;
+        }
+        /* room pill */
+        .room-pill {
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            background: rgba(59,130,246,.08);
+            color: #1d4ed8;
+            font-weight: 700;
+            font-size: .78rem;
+            padding: 3px 9px;
+            border-radius: 20px;
+        }
+        /* type pill */
+        .type-pill {
+            font-size: .72rem;
+            font-weight: 700;
+            padding: 3px 9px;
+            border-radius: 20px;
+            white-space: nowrap;
+        }
+
+            .type-pill.template {
+                background: rgba(16,185,129,.1);
+                color: #059669;
+            }
+
+            .type-pill.standalone {
+                background: rgba(245,159,0,.1);
+                color: #b45309;
+            }
+
+        /* status badges */
+        .sess-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            padding: 3px 10px;
+            border-radius: 20px;
+            font-size: .72rem;
+            font-weight: 700;
+            white-space: nowrap;
+        }
+
+            .sess-badge.scheduled {
+                background: rgba(59,130,246,.1);
+                color: #1d4ed8;
+            }
+
+            .sess-badge.ongoing {
+                background: rgba(16,185,129,.1);
+                color: #059669;
+            }
+
+            .sess-badge.completed {
+                background: rgba(109,40,217,.1);
+                color: #5b21b6;
+            }
+
+            .sess-badge.cancelled {
+                background: rgba(244,63,94,.1);
+                color: #be123c;
+            }
+
+        /* action buttons */
+        .act-btn {
+            width: 32px;
+            height: 32px;
+            border-radius: var(--r-sm);
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            border: 1.5px solid var(--border);
+            background: #fff;
+            font-size: 12px;
+            cursor: pointer;
+            text-decoration: none !important;
+            color: var(--text-2);
+            flex-shrink: 0;
+            transition: all .15s;
+        }
+
+            .act-btn:hover {
+                transform: translateY(-1px);
+                box-shadow: 0 4px 12px rgba(0,0,0,.1);
+            }
+
+            .act-btn.edit:hover {
+                border-color: #3b82f6;
+                color: #3b82f6;
+                background: #eff6ff;
+            }
+
+            .act-btn.attend:hover {
+                border-color: #10b981;
+                color: #10b981;
+                background: #f0fdf4;
+            }
+
+            .act-btn.delete:hover {
+                border-color: #f43f5e;
+                color: #e03131;
+                background: #fff1f2;
+            }
+
+        /* ── Table footer ── */
+        .table-foot {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 12px 20px;
+            border-top: 1px solid var(--border);
+            background: #f9fafd;
+            flex-wrap: wrap;
+            gap: 8px;
+        }
+
+        .foot-info {
+            font-size: .78rem;
+            color: var(--text-2);
+            font-weight: 500;
+        }
+
+        /* ── Empty state ── */
+        .empty-row td {
+            padding: 64px 20px !important;
+            text-align: center;
+            background: transparent !important;
+            border-bottom: none !important;
+        }
+
+        .empty-icon {
+            width: 64px;
+            height: 64px;
+            border-radius: 50%;
+            background: var(--bg-page);
+            margin: 0 auto 14px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
+            color: var(--text-3);
+        }
+
+        .empty-title {
+            font-size: .95rem;
+            font-weight: 700;
+            color: var(--text-1);
+            margin-bottom: 6px;
+        }
+
+        .empty-desc {
+            font-size: .8rem;
+            color: var(--text-2);
+        }
+
+        /* ── Calendar card ── */
+        .calendar-card {
+            background: var(--bg-card);
+            border-radius: var(--r-lg);
+            border: 1px solid var(--border);
+            box-shadow: var(--sh-sm);
+            padding: 20px;
+        }
+        /* FC overrides */
+        .fc {
+            font-family: 'Plus Jakarta Sans',system-ui,sans-serif !important;
+            font-size: .82rem !important;
+        }
+
+            .fc .fc-toolbar-title {
+                font-size: 1rem !important;
+                font-weight: 700 !important;
+                color: var(--text-1) !important;
+            }
+
+            .fc .fc-button {
+                background: var(--bg-page) !important;
+                border: 1px solid var(--border) !important;
+                color: var(--text-2) !important;
+                font-size: .78rem !important;
+                font-weight: 600 !important;
+                padding: 5px 11px !important;
+                border-radius: var(--r-sm) !important;
+                box-shadow: none !important;
+                transition: all .15s !important;
+            }
+
+                .fc .fc-button:hover {
+                    background: #fff9f5 !important;
+                    border-color: var(--c-primary) !important;
+                    color: var(--c-primary) !important;
+                }
+
+            .fc .fc-button-active,
+            .fc .fc-button-primary:not(:disabled).fc-button-active {
+                background: var(--c-gradient) !important;
+                border-color: transparent !important;
+                color: #fff !important;
+            }
+
+            .fc .fc-col-header-cell {
+                background: #f4f6fc !important;
+                font-size: .72rem !important;
+                font-weight: 700 !important;
+                text-transform: uppercase !important;
+                letter-spacing: .5px !important;
+                color: var(--text-2) !important;
+            }
+
+            .fc .fc-daygrid-day-number {
+                font-size: .78rem !important;
+                font-weight: 600 !important;
+                color: var(--text-2) !important;
+            }
+
+            .fc .fc-day-today {
+                background: rgba(232,89,12,.04) !important;
+            }
+
+                .fc .fc-day-today .fc-daygrid-day-number {
+                    color: var(--c-primary) !important;
+                    font-weight: 800 !important;
+                }
+
+            .fc th, .fc td {
+                border-color: var(--border) !important;
+            }
+
+            .fc .fc-toolbar.fc-header-toolbar {
+                margin-bottom: 16px !important;
+            }
+
+            .fc .fc-event {
+                border: none !important;
+                border-radius: 5px !important;
+                font-size: .72rem !important;
+                font-weight: 600 !important;
+                padding: 1px 5px !important;
+                box-shadow: 0 1px 4px rgba(0,0,0,.12) !important;
+                cursor: pointer !important;
+            }
+
+        .fc-event-scheduled {
+            background: linear-gradient(90deg,#3b82f6,#60a5fa) !important;
+        }
+
+        .fc-event-ongoing {
+            background: linear-gradient(90deg,#10b981,#34d399) !important;
+        }
+
+        .fc-event-completed {
+            background: linear-gradient(90deg,#6d28d9,#8b5cf6) !important;
+        }
+
+        .fc-event-cancelled {
+            background: linear-gradient(90deg,#9ca3af,#d1d5db) !important;
+        }
+
+        /* ── Toast ── */
+        .toast-wrap {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            z-index: 9999;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .toast-item {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 12px 16px;
+            border-radius: var(--r-md);
+            background: #fff;
+            border: 1px solid var(--border);
+            box-shadow: 0 8px 24px rgba(0,0,0,.12);
+            font-size: .83rem;
+            font-weight: 600;
+            color: var(--text-1);
+            min-width: 260px;
+            max-width: 360px;
+            animation: toastIn .3s cubic-bezier(.34,1.4,.64,1);
+        }
+
+            .toast-item.success {
+                border-left: 4px solid #10b981;
+            }
+
+            .toast-item.error {
+                border-left: 4px solid #f43f5e;
+            }
+
+        .toast-icon {
+            font-size: 16px;
+            flex-shrink: 0;
+        }
+
+        .toast-item.success .toast-icon {
+            color: #10b981;
+        }
+
+        .toast-item.error .toast-icon {
+            color: #f43f5e;
+        }
+
+        .toast-close {
+            margin-left: auto;
+            background: none;
+            border: none;
+            color: var(--text-3);
+            cursor: pointer;
+            font-size: 12px;
+            padding: 0 2px;
+            flex-shrink: 0;
+        }
+
+            .toast-close:hover {
+                color: var(--text-1);
+            }
+
+        @@keyframes toastIn {
+            from {
+                opacity: 0;
+                transform: translateX(20px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateX(0);
+            }
+        }
+
+        /* ── Detail modal ── */
+        .cm-backdrop {
+            visibility: hidden;
+            opacity: 0;
+            pointer-events: none;
+            position: fixed;
+            inset: 0;
+            z-index: 9990;
+            background: rgba(15,17,23,.52);
+            backdrop-filter: blur(3px);
+            -webkit-backdrop-filter: blur(3px);
+            transition: opacity .2s, visibility .2s;
+        }
+
+        .cm-modal {
+            visibility: hidden;
+            opacity: 0;
+            pointer-events: none;
+            position: fixed;
+            inset: 0;
+            z-index: 9991;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 16px;
+            transition: opacity .2s, visibility .2s;
+        }
+
+            .cm-backdrop.cm-open, .cm-modal.cm-open {
+                visibility: visible;
+                opacity: 1;
+                pointer-events: all;
+            }
+
+        .cm-box {
+            background: #fff;
+            border-radius: var(--r-xl);
+            box-shadow: 0 24px 56px rgba(0,0,0,.18), 0 8px 20px rgba(0,0,0,.08);
+            width: 100%;
+            max-width: 460px;
+            overflow: hidden;
+            transform: scale(.94) translateY(10px);
+            transition: transform .22s cubic-bezier(.34,1.4,.64,1);
+        }
+
+        .cm-modal.cm-open .cm-box {
+            transform: scale(1) translateY(0);
+        }
+
+        .cm-head {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 16px 20px;
+            background: linear-gradient(to right,#f7f8fc,#fff);
+            border-bottom: 1px solid var(--border);
+        }
+
+        .cm-icon-wrap {
+            width: 40px;
+            height: 40px;
+            border-radius: var(--r-md);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 17px;
+            flex-shrink: 0;
+            background: rgba(232,89,12,.1);
+            color: var(--c-primary);
+        }
+
+        .cm-head-text h6 {
+            font-size: .95rem;
+            font-weight: 800;
+            color: var(--text-1);
+            margin: 0 0 2px;
+        }
+
+        .cm-head-text p {
+            font-size: .8rem;
+            color: var(--text-2);
+            margin: 0;
+        }
+
+        .cm-close {
+            margin-left: auto;
+            width: 28px;
+            height: 28px;
+            border-radius: var(--r-sm);
+            border: none;
+            background: transparent;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 13px;
+            color: var(--text-3);
+            transition: background .15s, color .15s;
+        }
+
+            .cm-close:hover {
+                background: var(--bg-page);
+                color: var(--text-1);
+            }
+
+        .cm-body {
+            padding: 4px 20px 8px;
+        }
+
+        .cm-row {
+            display: flex;
+            gap: 12px;
+            align-items: flex-start;
+            padding: 10px 0;
+            border-bottom: 1px solid #f0f2f8;
+        }
+
+            .cm-row:last-child {
+                border-bottom: none;
+            }
+
+        .cm-row-icon {
+            width: 32px;
+            height: 32px;
+            border-radius: var(--r-sm);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 12px;
+            flex-shrink: 0;
+        }
+
+        .cm-row-label {
+            font-size: .67rem;
+            font-weight: 700;
+            color: var(--text-3);
+            text-transform: uppercase;
+            letter-spacing: .5px;
+            margin-bottom: 3px;
+        }
+
+        .cm-row-val {
+            font-size: .88rem;
+            font-weight: 700;
+            color: var(--text-1);
+        }
+
+        .cm-foot {
+            display: flex;
+            justify-content: flex-end;
+            gap: 8px;
+            padding: 12px 20px 16px;
+            border-top: 1px solid var(--border);
+            background: #f9fafd;
+            flex-wrap: wrap;
+        }
+
+        /* ── Responsive ── */
+        @@media (max-width: 900px) {
+            .filter-grid {
+                grid-template-columns: 1fr 1fr;
+            }
+
+            .filter-btn-group {
+                grid-column: span 2;
+            }
+
+            .col-teacher {
+                display: none;
+            }
+        }
+
+        @@media (max-width: 620px) {
+            .col-type {
+                display: none;
+            }
+
+            .col-shift {
+                width: 120px;
+            }
+        }
+    </style>
+}
+
+@* ── Toast container ────────────────────────────────────────── *@
+<div class="toast-wrap" id="toastWrap"></div>
+
+@* ── Page header — đồng bộ với Rooms ───────────────────────── *@
+<div class="page-header">
+    <div>
+        <h1 class="page-heading">Quản lý <span>buổi học</span></h1>
+        <p class="page-subheading">
+            <i class="fas fa-circle-info" style="color:var(--c-primary)"></i>
+            Đang hiển thị <strong style="color:var(--text-1)">@totalSessions</strong> buổi học ·
+            Đang diễn ra <strong style="color:var(--text-1)">@ongoingCount</strong> ·
+            Đã lên lịch <strong style="color:var(--text-1)">@scheduledCount</strong>
+        </p>
+    </div>
+    <div class="page-actions">
+        <a href="/Admin/Sessions/Create" class="btn-brand">
+            <i class="fas fa-plus"></i> Tạo buổi học lẻ
+        </a>
+    </div>
+</div>
+
+@* ── Filter card ─────────────────────────────────────────────── *@
+<div class="filter-card">
+    <form method="get" id="filterForm">
+        <div class="filter-grid">
+            <div>
+                <label>Lớp học</label>
+                <select name="classFilter" class="filter-select">
+                    <option value="">Tất cả lớp</option>
+                    @foreach (var c in Model.Classes)
+                    {
+                        <option value="@c.ClassId" selected="@(Model.ClassFilter == c.ClassId.ToString())">@c.ClassCode</option>
+                    }
+                </select>
+            </div>
+            <div>
+                <label>Trạng thái</label>
+                <select name="statusFilter" class="filter-select">
+                    <option value="">Tất cả</option>
+                    <option value="0" selected="@(Model.StatusFilter == "0")">Đã lên lịch</option>
+                    <option value="1" selected="@(Model.StatusFilter == "1")">Đang diễn ra</option>
+                    <option value="2" selected="@(Model.StatusFilter == "2")">Hoàn thành</option>
+                    <option value="3" selected="@(Model.StatusFilter == "3")">Đã hủy</option>
+                </select>
+            </div>
+            <div>
+                <label>Từ ngày</label>
+                <input type="date" name="fromDate" class="filter-date" value="@Model.FromDate" />
+            </div>
+            <div>
+                <label>Đến ngày</label>
+                <input type="date" name="toDate" class="filter-date" value="@Model.ToDate" />
+            </div>
+            <div class="filter-btn-group">
+                <button type="submit" class="btn-brand" style="height:36px;padding:0 16px;font-size:.82rem;white-space:nowrap">
+                    <i class="fas fa-search"></i> Lọc
+                </button>
+                <a href="/Admin/Sessions" class="btn-outline" style="height:36px;padding:0 12px;font-size:.82rem;display:inline-flex;align-items:center">
+                    <i class="fas fa-rotate-left"></i>
+                </a>
+            </div>
+        </div>
+    </form>
+</div>
+
+@* ── Content top bar ──────────────────────────────────────────── *@
+<div class="content-topbar">
+    <div class="topbar-left">
+        @* Pagesize selector — chỉ hiện khi ở view danh sách *@
+        <div class="pagesize-wrap" id="pagesizeWrap">
+            <span>Hiển thị</span>
+            <select class="pagesize-select" id="pagesizeSelect">
+                <option value="20">20</option>
+                <option value="50">50</option>
+                <option value="100" selected>100</option>
+                <option value="0">Tất cả</option>
+            </select>
+            <span>bản ghi</span>
+        </div>
+        <span style="font-size:.78rem;color:var(--text-3);font-weight:500" id="showingLabel"></span>
+    </div>
+    <div class="view-toggle">
+        <button class="vt-btn active" id="btnCalView" onclick="switchView('calendar')">
+            <i class="fas fa-calendar-days"></i> Lịch
+        </button>
+        <button class="vt-btn" id="btnTableView" onclick="switchView('table')">
+            <i class="fas fa-table-list"></i> Danh sách
+        </button>
+    </div>
+</div>
+
+@* ── Table view ───────────────────────────────────────────────── *@
+<div id="tableView" style="display:none">
+    <div class="table-card">
+        <div class="table-card-hd">
+            <div class="table-card-title">
+                <div class="ct-icon"><i class="fas fa-calendar-alt"></i></div>
+                Danh sách buổi học
+            </div>
+            <span style="font-size:.75rem;color:var(--text-3);font-weight:500">
+                Tổng: <strong style="color:var(--text-1)">@totalSessions buổi</strong>
+            </span>
+        </div>
+        <div style="overflow-x:auto">
+            <table class="sessions-table" id="sessionsTable">
+                <colgroup>
+                    <col class="col-date">
+                    <col class="col-class">
+                    <col class="col-shift">
+                    <col class="col-room">
+                    <col class="col-teacher">
+                    <col class="col-type">
+                    <col class="col-status">
+                    <col class="col-actions">
+                </colgroup>
+                <thead>
+                    <tr>
+                        <th class="col-date">Ngày</th>
+                        <th class="col-class">Lớp</th>
+                        <th class="col-shift">Ca học</th>
+                        <th class="col-room">Phòng</th>
+                        <th class="col-teacher">Giáo viên</th>
+                        <th class="col-type">Loại</th>
+                        <th class="col-status">Trạng thái</th>
+                        <th class="col-actions">Thao tác</th>
+                    </tr>
+                </thead>
+                <tbody id="sessionsTableBody">
+                    @if (Model.Sessions.Any())
+                    {
+                        @foreach (var s in Model.Sessions)
+                        {
+                            var safeName = s.ClassName.Replace("'", "\\'");
+                            var safeDate = s.SessionDate.ToString("dd/MM/yyyy");
+                            var safeShift = s.ShiftName.Replace("'", "\\'");
+                            var safeTime = s.ShiftTime.Replace("'", "\\'");
+                            var safeRoom = s.RoomCode.Replace("'", "\\'");
+                            var safeTeacher = s.TeacherName.Replace("'", "\\'");
+                            var statusCls = s.Status switch
+                            {
+                                SessionStatus.Scheduled => "scheduled",
+                                SessionStatus.Ongoing => "ongoing",
+                                SessionStatus.Completed => "completed",
+                                SessionStatus.Cancelled => "cancelled",
+                                _ => ""
+                            };
+                            var dow = s.SessionDate.DayOfWeek switch
+                            {
+                                DayOfWeek.Monday => "Thứ hai",
+                                DayOfWeek.Tuesday => "Thứ ba",
+                                DayOfWeek.Wednesday => "Thứ tư",
+                                DayOfWeek.Thursday => "Thứ năm",
+                                DayOfWeek.Friday => "Thứ sáu",
+                                DayOfWeek.Saturday => "Thứ bảy",
+                                _ => "Chủ nhật"
+                            };
+
+                            <tr onclick="openDetailModal(@s.SessionId, '@safeName', '@safeDate', '@dow', '@safeShift', '@safeTime', '@safeRoom', '@safeTeacher', '@statusCls', @(s.IsFromTemplate ? "true" : "false"), @(s.HasAttendance ? "true" : "false"))">
+                                <td>
+                                    <div class="date-day">@s.SessionDate.ToString("dd/MM/yyyy")</div>
+                                    <div class="date-dow">@dow</div>
+                                </td>
+                                <td><span class="class-pill"><i class="fas fa-chalkboard" style="font-size:10px"></i> @s.ClassName</span></td>
+                                <td style="color:var(--text-2)">
+                                    @s.ShiftName
+                                    <span style="color:var(--text-3);font-size:.76rem;display:block">@s.ShiftTime</span>
+                                </td>
+                                <td><span class="room-pill"><i class="fas fa-door-open" style="font-size:10px"></i> @s.RoomCode</span></td>
+                                <td style="color:var(--text-2);overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="@s.TeacherName">@s.TeacherName</td>
+                                <td>
+                                    @if (s.IsFromTemplate)
+                                    {
+                                        <span class="type-pill template"><i class="fas fa-calendar-week" style="font-size:10px"></i> Lịch mẫu</span>
+                                    }
+                                    else
+                                    {
+                                        <span class="type-pill standalone"><i class="fas fa-star" style="font-size:10px"></i> Buổi lẻ</span>
+                                    }
+                                </td>
+                                <td>@Html.Raw(GetStatusBadgeHtml(s.Status))</td>
+                                <td>
+                                    <div class="action-group" style="display:flex;align-items:center;justify-content:flex-end;gap:5px" onclick="event.stopPropagation()">
+                                        <a href="@s.AttendanceUrl" class="act-btn attend" title="@(s.HasAttendance ? "Sửa điểm danh" : "Điểm danh")">
+                                            <i class="fas fa-clipboard-check"></i>
+                                        </a>
+                                        <a href="/Admin/Sessions/Edit?id=@s.SessionId" class="act-btn edit" title="Chỉnh sửa">
+                                            <i class="fas fa-pen-to-square"></i>
+                                        </a>
+                                        <button type="button" class="act-btn delete" title="Xóa buổi học"
+                                                onclick="event.stopPropagation(); confirmDelete(@s.SessionId, '@safeName', '@safeDate')">
+                                            <i class="fas fa-trash-can"></i>
+                                        </button>
+                                    </div>
+                                </td>
+                            </tr>
+                        }
+                    }
+                    else
+                    {
+                        <tr class="empty-row">
+                            <td colspan="8">
+                                <div class="empty-icon"><i class="fas fa-calendar-xmark"></i></div>
+                                <div class="empty-title">Không có buổi học nào</div>
+                                <div class="empty-desc">Thử thay đổi bộ lọc hoặc tạo buổi học mới</div>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+        @if (Model.Sessions.Any())
+        {
+            <div class="table-foot">
+                <span class="foot-info" id="footInfo">
+                    Hiển thị <strong id="footShowing">@totalSessions</strong> / <strong>@totalSessions</strong> buổi học
+                </span>
+            </div>
+        }
+    </div>
+</div>
+
+@* ── Calendar view (default) ──────────────────────────────────── *@
+<div id="calendarView" style="display:block">
+    <div class="calendar-card">
+        <div id="sessionsCalendar"></div>
+    </div>
+</div>
+
+@* ── Detail modal ─────────────────────────────────────────────── *@
+<div class="cm-backdrop" id="cmBackdrop"></div>
+<div class="cm-modal" id="cmModal" role="dialog" aria-modal="true">
+    <div class="cm-box">
+        <div class="cm-head">
+            <div class="cm-icon-wrap"><i class="fas fa-calendar-day"></i></div>
+            <div class="cm-head-text">
+                <h6 id="cm-title">Chi tiết buổi học</h6>
+                <p id="cm-subtitle">—</p>
+            </div>
+            <button class="cm-close" id="cmClose" aria-label="Đóng"><i class="fas fa-times"></i></button>
+        </div>
+        <div class="cm-body">
+            <div class="cm-row">
+                <div class="cm-row-icon" style="background:rgba(232,89,12,.1);color:var(--c-primary)"><i class="fas fa-chalkboard"></i></div>
+                <div><div class="cm-row-label">Lớp học</div><div class="cm-row-val" id="cm-class">—</div></div>
+            </div>
+            <div class="cm-row">
+                <div class="cm-row-icon" style="background:rgba(59,130,246,.1);color:#3b82f6"><i class="fas fa-calendar-day"></i></div>
+                <div><div class="cm-row-label">Ngày học</div><div class="cm-row-val" id="cm-date">—</div></div>
+            </div>
+            <div class="cm-row">
+                <div class="cm-row-icon" style="background:rgba(245,159,0,.1);color:#b45309"><i class="fas fa-clock"></i></div>
+                <div><div class="cm-row-label">Ca học</div><div class="cm-row-val" id="cm-shift">—</div></div>
+            </div>
+            <div class="cm-row">
+                <div class="cm-row-icon" style="background:rgba(16,185,129,.1);color:#10b981"><i class="fas fa-door-open"></i></div>
+                <div><div class="cm-row-label">Phòng học</div><div class="cm-row-val" id="cm-room">—</div></div>
+            </div>
+            <div class="cm-row">
+                <div class="cm-row-icon" style="background:rgba(139,92,246,.1);color:#8b5cf6"><i class="fas fa-chalkboard-teacher"></i></div>
+                <div><div class="cm-row-label">Giáo viên</div><div class="cm-row-val" id="cm-teacher">—</div></div>
+            </div>
+            <div class="cm-row">
+                <div class="cm-row-icon" style="background:#f4f6fc;color:var(--text-2)"><i class="fas fa-circle-info"></i></div>
+                <div><div class="cm-row-label">Trạng thái</div><div class="cm-row-val" id="cm-status">—</div></div>
+            </div>
+        </div>
+        <div class="cm-foot">
+            <button class="btn-outline" id="cmClose2" style="font-size:.82rem;padding:7px 14px">
+                <i class="fas fa-times"></i> Đóng
+            </button>
+            <button class="btn-outline" id="cm-delete-btn"
+                    style="font-size:.82rem;padding:7px 14px;border-color:#f43f5e;color:#e03131;background:#fff1f2">
+                <i class="fas fa-trash-can"></i> Xóa
+            </button>
+            <a class="btn-outline" id="cm-edit-link" href="#"
+               style="font-size:.82rem;padding:7px 14px;border-color:#3b82f6;color:#3b82f6;background:#eff6ff">
+                <i class="fas fa-pen-to-square"></i> Sửa
+            </a>
+            <a class="btn-brand" id="cm-attend-link" href="#" style="font-size:.82rem;padding:7px 14px">
+                <i class="fas fa-clipboard-check"></i> Điểm danh
+            </a>
+        </div>
+    </div>
+</div>
+
+@* ── Hidden delete form ───────────────────────────────────────── *@
+<form id="deleteForm" method="post" action="/Admin/Sessions/Index?handler=Delete" style="display:none">
+    @Html.AntiForgeryToken()
+    <input type="hidden" name="sessionId" id="deleteSessionId" />
+</form>
+
+@section Scripts {
+    <link href="~/lib/fullcalendar/index.global.min.css" rel="stylesheet" />
+    <script src="~/lib/fullcalendar/index.global.min.js"></script>
+
+    <script>
+        (function () {
+
+            /* ═══════════════════════════════════════
+               Portal: đưa modal ra body
+            ═══════════════════════════════════════ */
+            document.addEventListener('DOMContentLoaded', function () {
+                ['cmBackdrop', 'cmModal'].forEach(function (id) {
+                    var el = document.getElementById(id);
+                    if (el && el.parentNode !== document.body) document.body.appendChild(el);
+                });
+            });
+
+            /* ═══════════════════════════════════════
+               Toast
+            ═══════════════════════════════════════ */
+            function showToast(msg, type) {
+                var wrap = document.getElementById('toastWrap');
+                var t = document.createElement('div');
+                t.className = 'toast-item ' + (type || 'success');
+                t.innerHTML =
+                    '<i class="fas ' + (type === 'error' ? 'fa-circle-xmark' : 'fa-circle-check') + ' toast-icon"></i>' +
+                    '<span>' + msg + '</span>' +
+                    '<button class="toast-close" onclick="this.parentElement.remove()"><i class="fas fa-times"></i></button>';
+                wrap.appendChild(t);
+                setTimeout(function () { if (t.parentElement) t.remove(); }, 4000);
+            }
+
+            @if (TempData["SuccessMessage"] != null)
+            {
+                        <text>
+                        document.addEventListener('DOMContentLoaded', function () {
+                            showToast('@Html.Raw(TempData["SuccessMessage"].ToString().Replace("'", "\\'"))', 'success');
+                        });
+                        </text>
+            }
+            @if (TempData["ErrorMessage"] != null)
+            {
+                        <text>
+                        document.addEventListener('DOMContentLoaded', function () {
+                            showToast('@Html.Raw(TempData["ErrorMessage"].ToString().Replace("'", "\\'"))', 'error');
+                        });
+                        </text>
+            }
+
+            /* ═══════════════════════════════════════
+               View toggle
+            ═══════════════════════════════════════ */
+            var calendarInitialized = false;
+            var fcCalendar;
+
+            window.switchView = function (view) {
+                var tableEl    = document.getElementById('tableView');
+                var calEl      = document.getElementById('calendarView');
+                var btnTable   = document.getElementById('btnTableView');
+                var btnCal     = document.getElementById('btnCalView');
+                var psWrap     = document.getElementById('pagesizeWrap');
+
+                if (view === 'table') {
+                    tableEl.style.display = 'block';
+                    calEl.style.display   = 'none';
+                    btnTable.classList.add('active');
+                    btnCal.classList.remove('active');
+                    psWrap.style.display  = 'flex';
+                    applyPageSize();
+                } else {
+                    tableEl.style.display = 'none';
+                    calEl.style.display   = 'block';
+                    btnCal.classList.add('active');
+                    btnTable.classList.remove('active');
+                    psWrap.style.display  = 'none';
+                    if (!calendarInitialized) initCalendar();
+                }
+            };
+
+            /* ═══════════════════════════════════════
+               Page size — chỉ áp dụng cho table view
+            ═══════════════════════════════════════ */
+            var allRows = [];
+            var totalRows = 0;
+
+            document.addEventListener('DOMContentLoaded', function () {
+                var tbody = document.getElementById('sessionsTableBody');
+                if (tbody) {
+                    allRows   = Array.from(tbody.querySelectorAll('tr[onclick]'));
+                    totalRows = allRows.length;
+                }
+
+                // ẩn pagesize wrap lúc đầu vì view mặc định là calendar
+                var psWrap = document.getElementById('pagesizeWrap');
+                if (psWrap) psWrap.style.display = 'none';
+
+                var sel = document.getElementById('pagesizeSelect');
+                if (sel) sel.addEventListener('change', applyPageSize);
+            });
+
+            function applyPageSize() {
+                var sel   = document.getElementById('pagesizeSelect');
+                var limit = sel ? parseInt(sel.value) : 100;
+                var shown = 0;
+
+                allRows.forEach(function (row, idx) {
+                    if (limit === 0 || idx < limit) {
+                        row.classList.remove('row-hidden');
+                        shown++;
+                    } else {
+                        row.classList.add('row-hidden');
+                    }
+                });
+
+                var footShowing = document.getElementById('footShowing');
+                if (footShowing) footShowing.textContent = shown;
+
+                var showingLabel = document.getElementById('showingLabel');
+                if (showingLabel && totalRows > 0) {
+                    showingLabel.textContent = shown + ' / ' + totalRows + ' bản ghi';
+                }
+            }
+
+            /* ═══════════════════════════════════════
+               Detail modal
+            ═══════════════════════════════════════ */
+            var currentSessionId = null;
+
+            var statusLabels = {
+                'scheduled': '<span class="sess-badge scheduled"><i class="fas fa-calendar-check"></i> Đã lên lịch</span>',
+                'ongoing':   '<span class="sess-badge ongoing"><i class="fas fa-circle-dot"></i> Đang diễn ra</span>',
+                'completed': '<span class="sess-badge completed"><i class="fas fa-check-circle"></i> Hoàn thành</span>',
+                'cancelled': '<span class="sess-badge cancelled"><i class="fas fa-ban"></i> Đã hủy</span>'
+            };
+
+            window.openDetailModal = function (sessionId, className, date, dow, shiftName, shiftTime, room, teacher, statusCls, isTemplate, hasAttendance) {
+                currentSessionId = sessionId;
+
+                document.getElementById('cm-title').textContent    = 'Buổi học — ' + className;
+                document.getElementById('cm-subtitle').textContent = date + ' · ' + dow;
+                document.getElementById('cm-class').textContent    = className;
+                document.getElementById('cm-date').textContent     = date + ' (' + dow + ')';
+                document.getElementById('cm-shift').textContent    = shiftName + ' (' + shiftTime + ')';
+                document.getElementById('cm-room').textContent     = room;
+                document.getElementById('cm-teacher').textContent  = teacher || '—';
+                document.getElementById('cm-status').innerHTML     = statusLabels[statusCls] || statusCls;
+
+                document.getElementById('cm-edit-link').href = '/Admin/Sessions/Edit?id=' + sessionId;
+
+                // Dẫn đúng trang: Create nếu chưa điểm danh, Edit nếu đã có bản ghi
+                var attendUrl = hasAttendance
+                    ? '/Admin/Attendance/Edit?sessionId='   + sessionId
+                    : '/Admin/Attendance/Create?sessionId=' + sessionId;
+                var attendLink = document.getElementById('cm-attend-link');
+                attendLink.href = attendUrl;
+                attendLink.innerHTML = hasAttendance
+                    ? '<i class="fas fa-pen-to-square"></i> Sửa điểm danh'
+                    : '<i class="fas fa-clipboard-check"></i> Điểm danh';
+
+                document.getElementById('cmBackdrop').classList.add('cm-open');
+                document.getElementById('cmModal').classList.add('cm-open');
+            };
+
+            function closeModal() {
+                document.getElementById('cmBackdrop').classList.remove('cm-open');
+                document.getElementById('cmModal').classList.remove('cm-open');
+                currentSessionId = null;
+            }
+
+            document.getElementById('cmClose').addEventListener('click', closeModal);
+            document.getElementById('cmClose2').addEventListener('click', closeModal);
+            document.getElementById('cmBackdrop').addEventListener('click', closeModal);
+            document.addEventListener('keydown', function (e) { if (e.key === 'Escape') closeModal(); });
+
+            document.getElementById('cm-delete-btn').addEventListener('click', function () {
+                var sid   = currentSessionId;
+                var cname = document.getElementById('cm-class').textContent;
+                var cdate = document.getElementById('cm-date').textContent;
+                closeModal();
+                confirmDelete(sid, cname, cdate);
+            });
+
+            /* ═══════════════════════════════════════
+               Delete confirm
+            ═══════════════════════════════════════ */
+            window.confirmDelete = function (sessionId, className, date) {
+                if (confirm('Xóa buổi học lớp "' + className + '" ngày ' + date + '?\n\nHành động này không thể hoàn tác.')) {
+                    document.getElementById('deleteSessionId').value = sessionId;
+                    document.getElementById('deleteForm').submit();
+                }
+            };
+
+            /* ═══════════════════════════════════════
+               FullCalendar — khởi tạo ngay vì là view mặc định
+            ═══════════════════════════════════════ */
+            document.addEventListener('DOMContentLoaded', function () {
+                initCalendar();
+            });
+
+            function initCalendar() {
+                if (calendarInitialized) return;
+                calendarInitialized = true;
+
+                var classFilter  = document.querySelector('[name="classFilter"]').value;
+                var statusFilter = document.querySelector('[name="statusFilter"]').value;
+
+                var calendarEl = document.getElementById('sessionsCalendar');
+                if (!calendarEl) return;
+
+                fcCalendar = new FullCalendar.Calendar(calendarEl, {
+                    initialView: 'dayGridMonth',
+                    locale: 'vi',
+                    headerToolbar: {
+                        left:   'prev,next today',
+                        center: 'title',
+                        right:  'dayGridMonth,timeGridWeek,timeGridDay'
+                    },
+                    events: function (fetchInfo, successCb, failureCb) {
+                        var url = '/Admin/Sessions/Index?handler=GetCalendarEvents'
+                            + '&start=' + fetchInfo.startStr
+                            + '&end='   + fetchInfo.endStr;
+                        if (classFilter)  url += '&classFilter='  + encodeURIComponent(classFilter);
+                        if (statusFilter) url += '&statusFilter=' + encodeURIComponent(statusFilter);
+                        fetch(url)
+                            .then(function (r) { return r.json(); })
+                            .then(successCb)
+                            .catch(failureCb);
+                    },
+                    eventClick: function (info) {
+                        var p = info.event.extendedProps;
+                        openDetailModal(
+                            p.sessionId, info.event.title,
+                            p.date, p.dow,
+                            p.shift, p.shiftTime,
+                            p.room, p.teacher,
+                            p.statusCls, p.isTemplate,
+                            p.hasAttendance
+                        );
+                    },
+                    eventClassNames: function (arg) {
+                        return ['fc-event-' + arg.event.extendedProps.statusCls];
+                    },
+                    dayMaxEvents: 4,
+                    height: 'auto'
+                });
+
+                fcCalendar.render();
+            }
+
+        })();
+    </script>
+}

@@ -1,0 +1,945 @@
+﻿@page
+@model TutoringCenterManagement.Pages.Teacher.Statistics.IndexModel
+@using TutoringCenterManagement.Data.Enums
+@{
+    ViewData["Title"] = "Thống kê của tôi";
+    var today       = DateOnly.FromDateTime(DateTime.Today);
+    var currentYear = DateTime.Today.Year;
+
+    string DowVi(DayOfWeek d) => d switch {
+        DayOfWeek.Monday    => "Thứ 2", DayOfWeek.Tuesday  => "Thứ 3",
+        DayOfWeek.Wednesday => "Thứ 4", DayOfWeek.Thursday => "Thứ 5",
+        DayOfWeek.Friday    => "Thứ 6", DayOfWeek.Saturday => "Thứ 7",
+        _ => "CN"
+    };
+    string RateClr(double r) => r >= 80 ? "#10b981" : r >= 60 ? "#f59f00" : "#f43f5e";
+
+    var mn = new[]{"","Tháng 1","Tháng 2","Tháng 3","Tháng 4","Tháng 5","Tháng 6",
+                   "Tháng 7","Tháng 8","Tháng 9","Tháng 10","Tháng 11","Tháng 12"};
+
+    var rc = RateClr(Model.AttendanceRate);
+    double totalRing = Model.TotalAttendanceRecords;
+
+    // Tỷ lệ hủy buổi
+    double cancelRate = Model.TotalSessions > 0
+        ? Math.Round((double)Model.CancelledSessions / Model.TotalSessions * 100, 1) : 0;
+    // Tỷ lệ hoàn thành
+    double completionRate = Model.TotalSessions > 0
+        ? Math.Round((double)Model.CompletedSessions / Model.TotalSessions * 100, 1) : 0;
+}
+
+@section Styles {
+<style>
+/* ══════════════════════════════════════════════════════════════
+   TEACHER STATISTICS  ·  Design v4  ·  no hero, meaningful KPIs
+══════════════════════════════════════════════════════════════ */
+
+/* page-header dùng class global từ layout */
+
+/* ── Filter card ── */
+.fc {
+    background: var(--bg-card); border-radius: var(--r-lg);
+    border: 1px solid var(--border); box-shadow: var(--sh-sm);
+    margin-bottom: 20px; overflow: hidden;
+}
+.fc-header {
+    display: flex; align-items: center; gap: 10px;
+    padding: 13px 20px; border-bottom: 1px solid var(--border);
+    background: linear-gradient(to right,#fafbff,#fff);
+}
+.fc-header-icon {
+    width: 30px; height: 30px; border-radius: 8px; flex-shrink: 0;
+    background: rgba(232,89,12,.1); color: var(--c-primary);
+    display: flex; align-items: center; justify-content: center; font-size: 12px;
+}
+.fc-header-title { font-size: .86rem; font-weight: 800; color: var(--text-1); }
+.fc-header-sub   { font-size: .68rem; color: var(--text-3); margin-top: 1px; }
+.fc-period-pill  {
+    margin-left: auto; display: inline-flex; align-items: center; gap: 6px;
+    padding: 4px 13px; border-radius: 50px;
+    background: rgba(232,89,12,.08); border: 1px solid rgba(232,89,12,.2);
+    font-size: .76rem; font-weight: 700; color: var(--c-primary); white-space: nowrap;
+}
+.fc-body {
+    padding: 14px 20px; display: flex; align-items: flex-end; gap: 8px; flex-wrap: wrap;
+}
+.fc-sep { width: 1px; height: 34px; background: var(--border); flex-shrink: 0; }
+.fc-sep-lbl {
+    display: flex; align-items: center; gap: 6px;
+    font-size: .65rem; font-weight: 700; color: var(--text-3);
+    text-transform: uppercase; letter-spacing: .4px;
+    white-space: nowrap; flex-shrink: 0; align-self: flex-end; height: 34px;
+}
+.fc-sep-lbl::before, .fc-sep-lbl::after {
+    content: ''; display: block; width: 1px; height: 20px; background: var(--border);
+}
+.fc-zone-col { display: flex; flex-direction: column; gap: 3px; }
+.fc-lbl { font-size: .62rem; font-weight: 700; color: var(--text-3); text-transform: uppercase; letter-spacing: .4px; }
+.fc-sel, .fc-date {
+    height: 34px; padding: 0 26px 0 9px;
+    border: 1.5px solid var(--border); border-radius: var(--r-sm);
+    background: #f8f9fc; color: var(--text-1);
+    font-size: .8rem; font-family: inherit; font-weight: 600;
+    outline: none; cursor: pointer; transition: border-color .15s, background .15s;
+    box-sizing: border-box;
+}
+.fc-sel {
+    -webkit-appearance: none; appearance: none;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='9' height='9' viewBox='0 0 24 24' fill='none' stroke='%239aa0b4' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E");
+    background-repeat: no-repeat; background-position: right 7px center;
+}
+.fc-date { padding: 0 9px; width: 136px; -webkit-appearance: none; }
+.fc-sel:focus, .fc-date:focus { border-color: var(--c-primary); background-color: #fff; }
+.fc-sel.has-val  { border-color: var(--c-primary); background-color: #fff9f5; color: var(--c-primary); }
+.fc-date.has-val { border-color: #3b82f6; background-color: #eff6ff; color: #1d4ed8; }
+.fc-date.disabled-look, .fc-sel.disabled-look { opacity: .4; pointer-events: none; }
+.fc-arrow { font-size: .68rem; font-weight: 700; color: var(--text-3); align-self: flex-end; height: 34px; display: flex; align-items: center; padding: 0 2px; }
+.fc-hint {
+    padding: 7px 20px; background: #f7f8fc;
+    border-top: 1px solid var(--border); display: flex; align-items: center; gap: 8px;
+    font-size: .71rem; color: var(--text-3); font-weight: 500;
+}
+.fc-hint i { color: var(--c-primary); }
+.fc-hint.mode-date { background: #eff6ff; }
+.fc-hint.mode-date i { color: #3b82f6; }
+@@media (max-width: 900px) { .fc-body { gap: 8px; } .fc-sep, .fc-sep-lbl { display: none; } }
+
+/* ── Alert banner (chưa điểm danh) ── */
+.alert-pending {
+    display: flex; align-items: center; gap: 12px;
+    padding: 11px 18px; border-radius: var(--r-lg);
+    background: #fffbeb; border: 1px solid #fde68a;
+    margin-bottom: 20px; font-size: .82rem; color: #92400e; font-weight: 600;
+}
+.alert-pending i { color: #d97706; font-size: 15px; flex-shrink: 0; }
+.alert-pending a { color: #d97706; font-weight: 700; text-decoration: underline; }
+
+/* ── KPI strip (5 cards) ── */
+.kpi-strip { display: grid; grid-template-columns: repeat(5,1fr); gap: 14px; margin-bottom: 20px; }
+.kpi-card {
+    background: var(--bg-card); border-radius: var(--r-lg);
+    border: 1px solid var(--border); box-shadow: var(--sh-xs);
+    padding: 16px 16px 13px; position: relative; overflow: hidden;
+    transition: box-shadow .2s, transform .2s; cursor: default;
+}
+.kpi-card:hover { box-shadow: var(--sh-md); transform: translateY(-2px); }
+.kpi-card::after { content:''; position:absolute; top:0; left:0; right:0; height:3px; }
+.kc-o::after { background: linear-gradient(90deg,#e8590c,#f59f00); }
+.kc-b::after { background: linear-gradient(90deg,#3b82f6,#06b6d4); }
+.kc-g::after { background: linear-gradient(90deg,#10b981,#34d399); }
+.kc-p::after { background: linear-gradient(90deg,#8b5cf6,#a78bfa); }
+.kc-r::after { background: linear-gradient(90deg,#f43f5e,#fb7185); }
+.kc-y::after { background: linear-gradient(90deg,#f59f00,#fbbf24); }
+.kpi-row  { display: flex; align-items: flex-start; justify-content: space-between; }
+.kpi-icon { width: 38px; height: 38px; border-radius: 10px; flex-shrink: 0; display: flex; align-items: center; justify-content: center; font-size: 15px; }
+.kc-o .kpi-icon { background: rgba(232,89,12,.1);  color: #e8590c; }
+.kc-b .kpi-icon { background: rgba(59,130,246,.1); color: #3b82f6; }
+.kc-g .kpi-icon { background: rgba(16,185,129,.1); color: #10b981; }
+.kc-p .kpi-icon { background: rgba(139,92,246,.1); color: #8b5cf6; }
+.kc-r .kpi-icon { background: rgba(244,63,94,.1);  color: #f43f5e; }
+.kc-y .kpi-icon { background: rgba(245,159,0,.1);  color: #f59f00; }
+.kpi-badge { font-size: .64rem; font-weight: 700; padding: 2px 8px; border-radius: 50px; white-space: nowrap; }
+.kpi-badge.up   { background: #ecfdf5; color: #059669; }
+.kpi-badge.down { background: #fff1f2; color: #e03131; }
+.kpi-badge.info { background: #eff6ff; color: #3b82f6; }
+.kpi-badge.warn { background: #fffbeb; color: #d97706; }
+.kpi-badge.ok   { background: #ecfdf5; color: #059669; }
+.kpi-val  { font-size: 1.9rem; font-weight: 800; color: var(--text-1); line-height: 1.05; margin-top: 10px; }
+.kpi-val small { font-size: 1rem; font-weight: 600; }
+.kpi-lbl  { font-size: .7rem; color: var(--text-2); margin-top: 4px; font-weight: 500; }
+.kpi-title { font-size: .65rem; font-weight: 700; color: var(--text-3); text-transform: uppercase; letter-spacing: .5px; }
+@@media (max-width: 1100px) { .kpi-strip { grid-template-columns: repeat(3,1fr); } }
+@@media (max-width: 700px)  { .kpi-strip { grid-template-columns: 1fr 1fr; } }
+
+/* ── Rate bar ── */
+.rate-bar {
+    display: flex; align-items: center; gap: 12px; flex-wrap: wrap;
+    background: var(--bg-card); border-radius: var(--r-lg); border: 1px solid var(--border);
+    box-shadow: var(--sh-xs); padding: 12px 20px; margin-bottom: 20px;
+}
+.rate-bar-icon  { width: 30px; height: 30px; border-radius: 8px; flex-shrink: 0; display: flex; align-items: center; justify-content: center; font-size: 12px; }
+.rate-bar-label { font-size: .8rem; font-weight: 700; color: var(--text-2); white-space: nowrap; flex-shrink: 0; }
+.rate-bar-track { flex: 1; min-width: 80px; height: 8px; background: #eef1f8; border-radius: 4px; overflow: hidden; }
+.rate-bar-fill  { height: 100%; border-radius: 4px; transition: width .8s cubic-bezier(.4,0,.2,1); }
+.rate-bar-pct   { font-size: .88rem; font-weight: 800; min-width: 48px; text-align: right; flex-shrink: 0; }
+.rate-bar-sub   { font-size: .7rem; color: var(--text-3); white-space: nowrap; }
+
+/* ── Session status strip ── */
+.ss-strip { display: grid; grid-template-columns: repeat(3,1fr); gap: 10px; margin-bottom: 20px; }
+.ss-card {
+    background: var(--bg-card); border-radius: var(--r-lg); border: 1px solid var(--border);
+    box-shadow: var(--sh-xs); padding: 14px 16px;
+    display: flex; align-items: center; gap: 12px;
+    transition: box-shadow .15s, transform .15s;
+}
+.ss-card:hover { box-shadow: var(--sh-sm); transform: translateY(-1px); }
+.ss-icon { width: 36px; height: 36px; border-radius: 9px; flex-shrink: 0; display: flex; align-items: center; justify-content: center; font-size: 14px; }
+.ss-val  { font-size: 1.5rem; font-weight: 800; color: var(--text-1); line-height: 1; }
+.ss-lbl  { font-size: .68rem; color: var(--text-2); font-weight: 500; margin-top: 3px; }
+.ss-pct  { font-size: .68rem; font-weight: 700; margin-top: 2px; }
+@@media (max-width: 640px) { .ss-strip { grid-template-columns: 1fr; } }
+
+/* ── Sec title ── */
+.sec-title {
+    font-size: .68rem; font-weight: 800; text-transform: uppercase; letter-spacing: .8px;
+    color: var(--text-3); margin-bottom: 14px;
+    display: flex; align-items: center; gap: 8px;
+}
+.sec-title::after { content:''; flex:1; height:1px; background:var(--border); }
+
+/* ── Charts row ── */
+.charts-row { display: grid; grid-template-columns: 1fr 300px; gap: 18px; margin-bottom: 20px; }
+.ccard {
+    background: var(--bg-card); border-radius: var(--r-lg);
+    border: 1px solid var(--border); box-shadow: var(--sh-sm); overflow: hidden;
+}
+.ccard-hd {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 13px 20px; border-bottom: 1px solid var(--border);
+    background: linear-gradient(to right,#fafbff,#fff); flex-wrap: wrap; gap: 8px;
+}
+.ccard-title { display: flex; align-items: center; gap: 9px; font-size: .88rem; font-weight: 700; color: var(--text-1); }
+.ccard-icon  { width: 28px; height: 28px; border-radius: 7px; background: rgba(232,89,12,.1); color: var(--c-primary); display: flex; align-items: center; justify-content: center; font-size: 12px; }
+.ccard-body  { padding: 18px 20px; }
+.ptabs { display: inline-flex; background: var(--bg-page); border: 1px solid var(--border); border-radius: var(--r-sm); padding: 2px; gap: 1px; }
+.ptab  { padding: 4px 12px; border-radius: 5px; font-size: .73rem; font-weight: 700; border: none; background: transparent; color: var(--text-3); cursor: pointer; transition: all .15s; }
+.ptab.active { background: var(--bg-card); color: var(--c-primary); box-shadow: var(--sh-xs); }
+
+/* ── Ring chart ── */
+.ring-wrap { display: flex; flex-direction: column; align-items: center; padding: 8px 0; }
+.ring-box  { position: relative; width: 140px; height: 140px; }
+.ring-svg  { transform: rotate(-90deg); position: absolute; top:0; left:0; }
+.ring-mid  { position: absolute; inset:0; display: flex; flex-direction: column; align-items: center; justify-content: center; }
+.ring-pct  { font-size: 1.65rem; font-weight: 800; color: var(--text-1); line-height: 1; }
+.ring-sub  { font-size: .62rem; font-weight: 600; color: var(--text-3); }
+.ring-lgd  { width: 100%; margin-top: 16px; display: flex; flex-direction: column; gap: 8px; }
+.rl { display: flex; align-items: center; justify-content: space-between; font-size: .79rem; }
+.rl-l   { display: flex; align-items: center; gap: 8px; font-weight: 600; color: var(--text-2); }
+.rl-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+.rl-v   { font-weight: 800; color: var(--text-1); }
+.rl-pct { font-size: .69rem; color: var(--text-3); }
+.ring-divider { border: none; border-top: 1px solid var(--border); margin: 8px 0; }
+
+/* ── Bottom row ── */
+.bottom-row { display: grid; grid-template-columns: 3fr 2fr; gap: 18px; margin-bottom: 20px; }
+
+/* ── Perf table ── */
+.pt { width: 100%; border-collapse: separate; border-spacing: 0; }
+.pt thead th {
+    padding: 9px 13px; font-size: .65rem; font-weight: 700;
+    text-transform: uppercase; letter-spacing: .6px; color: var(--text-2);
+    background: #f4f6fc; border-bottom: 2px solid var(--border); white-space: nowrap;
+}
+.pt thead th:first-child { padding-left: 20px; }
+.pt thead th:last-child  { padding-right: 20px; text-align: right; }
+.pt tbody td {
+    padding: 11px 13px; font-size: .81rem; color: var(--text-1);
+    border-bottom: 1px solid #f0f2f8; vertical-align: middle;
+}
+.pt tbody td:first-child { padding-left: 20px; }
+.pt tbody td:last-child  { padding-right: 20px; text-align: right; }
+.pt tbody tr:last-child td { border-bottom: none; }
+.pt tbody tr:hover td { background: #f8faff; }
+.cls-av   { width: 34px; height: 34px; border-radius: 9px; background: rgba(232,89,12,.1); color: var(--c-primary); font-size: 12px; font-weight: 800; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+.cls-cell { display: flex; align-items: center; gap: 10px; }
+.cls-name { font-weight: 700; font-size: .83rem; color: var(--text-1); }
+.cls-sub  { font-size: .68rem; color: var(--text-3); margin-top: 1px; }
+.prog-wrap { display: flex; align-items: center; gap: 8px; }
+.prog-bar  { flex: 1; height: 5px; border-radius: 50px; background: #f0f2f8; overflow: hidden; min-width: 50px; }
+.prog-fill { height: 100%; border-radius: 50px; transition: width .7s cubic-bezier(.4,0,.2,1); }
+.prog-pct  { font-size: .7rem; font-weight: 700; color: var(--text-2); white-space: nowrap; min-width: 30px; }
+
+/* ── Recent sessions ── */
+.sess-list { display: flex; flex-direction: column; }
+.sess-item { display: flex; align-items: center; gap: 12px; padding: 11px 20px; border-bottom: 1px solid #f0f2f8; transition: background .12s; }
+.sess-item:last-child { border-bottom: none; }
+.sess-item:hover { background: #f8faff; }
+.sess-icon { width: 32px; height: 32px; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 12px; flex-shrink: 0; }
+.sess-icon.done    { background: #ecfdf5; color: #10b981; }
+.sess-icon.pending { background: #fffbeb; color: #d97706; }
+.sess-icon.cancel  { background: #fff1f2; color: #f43f5e; }
+.sess-icon.future  { background: #eff6ff; color: #3b82f6; }
+.sess-date { min-width: 44px; font-size: .74rem; font-weight: 700; color: var(--text-2); flex-shrink: 0; line-height: 1.4; }
+.sess-info { flex: 1; min-width: 0; }
+.sess-cls  { font-size: .83rem; font-weight: 700; color: var(--text-1); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.sess-meta { font-size: .68rem; color: var(--text-3); margin-top: 1px; }
+.sess-badge { font-size: .66rem; font-weight: 700; padding: 2px 8px; border-radius: 20px; white-space: nowrap; flex-shrink: 0; }
+.sess-badge.done    { background: #ecfdf5; color: #059669; border: 1px solid #a7f3d0; }
+.sess-badge.pending { background: #fffbeb; color: #d97706; border: 1px solid #fde68a; }
+.sess-badge.cancel  { background: #fff1f2; color: #e03131; border: 1px solid #fecdd3; }
+.sess-badge.future  { background: #eff6ff; color: #3b82f6; border: 1px solid #bfdbfe; }
+
+/* ── Bar chart card ── */
+.bar-card { background: var(--bg-card); border-radius: var(--r-lg); border: 1px solid var(--border); box-shadow: var(--sh-sm); overflow: hidden; margin-bottom: 20px; }
+
+/* ── Empty state ── */
+.empty-st { display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 44px 20px; gap: 10px; text-align: center; }
+.empty-st-icon { width: 52px; height: 52px; border-radius: 50%; background: var(--bg-page); color: var(--text-3); display: flex; align-items: center; justify-content: center; font-size: 20px; }
+
+@@media (max-width: 1100px) {
+    .charts-row { grid-template-columns: 1fr; }
+    .bottom-row { grid-template-columns: 1fr; }
+}
+</style>
+}
+
+@* ── PAGE HEADER — đồng bộ design system ── *@
+<div class="page-header">
+    <div>
+        <h1 class="page-heading">Thống kê <span>của tôi</span></h1>
+        <p class="page-subheading">
+            <i class="fas fa-calendar-check" style="color:var(--c-primary)"></i>
+            Đang xem: <strong style="color:var(--text-1)">@Model.PeriodLabel</strong>
+            &nbsp;·&nbsp; <strong style="color:var(--text-1)">@Model.TotalSessions</strong> buổi
+            · <strong style="color:var(--text-1)">@Model.TotalClasses</strong> lớp
+        </p>
+    </div>
+    <div class="page-actions">
+        <a href="/Teacher/Attendance" class="btn-outline" style="height:38px;display:inline-flex;align-items:center;gap:7px;box-sizing:border-box;font-size:.83rem">
+            <i class="fas fa-clipboard-check"></i> Điểm danh
+        </a>
+    </div>
+</div>
+
+@* ── ALERT: Cảnh báo buổi chưa điểm danh ── *@
+@if (Model.PendingAttendanceCount > 0) {
+<div class="alert-pending">
+    <i class="fas fa-triangle-exclamation"></i>
+    <span>Có <strong>@Model.PendingAttendanceCount buổi học đã kết thúc nhưng chưa được điểm danh</strong>.
+        <a href="/Teacher/Attendance">Điểm danh ngay →</a>
+    </span>
+</div>
+}
+
+@* ── FILTER CARD ── *@
+<form method="get" id="ff">
+<div class="fc">
+    <div class="fc-header">
+        <div class="fc-header-icon"><i class="fas fa-sliders"></i></div>
+        <div>
+            <div class="fc-header-title">Bộ lọc thống kê</div>
+            <div class="fc-header-sub">Chọn năm/tháng hoặc khoảng ngày — hai chế độ không dùng cùng nhau</div>
+        </div>
+        <span class="fc-period-pill">
+            <i class="fas fa-calendar-check" style="font-size:10px"></i> @Model.PeriodLabel
+        </span>
+    </div>
+    <div class="fc-body">
+        @* Năm *@
+        <div class="fc-zone-col">
+            <span class="fc-lbl">Năm</span>
+            <select name="FilterYear" id="selYear"
+                    class="fc-sel @(!Model.HasDateRange && !string.IsNullOrEmpty(Model.FilterYear) ? "has-val" : "") @(Model.HasDateRange ? "disabled-look" : "")"
+                    onchange="onPeriodChange()">
+                @for (int y = currentYear + 1; y >= currentYear - 4; y--)
+                {
+                    if (y == Model.ActiveYear && !Model.HasDateRange) { <option value="@y" selected="selected">@y</option> }
+                    else { <option value="@y">@y</option> }
+                }
+            </select>
+        </div>
+        @* Tháng *@
+        <div class="fc-zone-col">
+            <span class="fc-lbl">Tháng</span>
+            <select name="FilterMonth" id="selMonth"
+                    class="fc-sel @(!Model.HasDateRange && Model.ActiveMonth > 0 ? "has-val" : "") @(Model.HasDateRange ? "disabled-look" : "")"
+                    onchange="onPeriodChange()">
+                @if (Model.ActiveMonth == 0 || Model.HasDateRange) { <option value="0" selected="selected">Cả năm</option> }
+                else { <option value="0">Cả năm</option> }
+                @for (int m = 1; m <= 12; m++)
+                {
+                    if (m == Model.ActiveMonth && !Model.HasDateRange) { <option value="@m" selected="selected">@mn[m]</option> }
+                    else { <option value="@m">@mn[m]</option> }
+                }
+            </select>
+        </div>
+
+        <div class="fc-sep-lbl">hoặc</div>
+
+        @* Từ ngày *@
+        <div class="fc-zone-col">
+            <span class="fc-lbl">Từ ngày</span>
+            <input type="date" name="FromDate" id="inpFrom"
+                   class="fc-date @(!string.IsNullOrEmpty(Model.FromDate) ? "has-val" : "")"
+                   value="@Model.FromDate" onchange="onDateChange()" />
+        </div>
+        <div class="fc-arrow">→</div>
+        @* Đến ngày *@
+        <div class="fc-zone-col">
+            <span class="fc-lbl">Đến ngày</span>
+            <input type="date" name="ToDate" id="inpTo"
+                   class="fc-date @(!string.IsNullOrEmpty(Model.ToDate) ? "has-val" : "")"
+                   value="@Model.ToDate" onchange="onDateChange()" />
+        </div>
+
+        <div class="fc-sep"></div>
+
+        @* Lớp *@
+        <div class="fc-zone-col">
+            <span class="fc-lbl">Lớp học</span>
+            <select name="ClassFilter" class="fc-sel @(!string.IsNullOrEmpty(Model.ClassFilter) ? "has-val" : "")"
+                    onchange="document.getElementById('ff').submit()">
+                <option value="">— Tất cả lớp —</option>
+                @foreach (var c in Model.AvailableClasses)
+                {
+                    if (Model.ClassFilter == c.ClassId.ToString()) { <option value="@c.ClassId" selected="selected">@c.ClassCode</option> }
+                    else { <option value="@c.ClassId">@c.ClassCode</option> }
+                }
+            </select>
+        </div>
+
+        @* Trạng thái buổi học *@
+        <div class="fc-zone-col">
+            <span class="fc-lbl">Trạng thái buổi</span>
+            <select name="SessionStatusFilter" class="fc-sel @(!string.IsNullOrEmpty(Model.SessionStatusFilter) ? "has-val" : "")"
+                    onchange="document.getElementById('ff').submit()">
+                <option value="">— Tất cả —</option>
+                @if (Model.SessionStatusFilter == "completed")
+                { <option value="completed" selected="selected">✓ Hoàn thành</option><option value="scheduled">◷ Lịch / Đang dạy</option><option value="cancelled">✗ Đã hủy</option> }
+                else if (Model.SessionStatusFilter == "scheduled")
+                { <option value="completed">✓ Hoàn thành</option><option value="scheduled" selected="selected">◷ Lịch / Đang dạy</option><option value="cancelled">✗ Đã hủy</option> }
+                else if (Model.SessionStatusFilter == "cancelled")
+                { <option value="completed">✓ Hoàn thành</option><option value="scheduled">◷ Lịch / Đang dạy</option><option value="cancelled" selected="selected">✗ Đã hủy</option> }
+                else
+                { <option value="completed">✓ Hoàn thành</option><option value="scheduled">◷ Lịch / Đang dạy</option><option value="cancelled">✗ Đã hủy</option> }
+            </select>
+        </div>
+
+        @* Reset *@
+        <div style="align-self:flex-end">
+            <a href="/Teacher/Statistics" class="btn-outline"
+               style="height:34px;padding:0 13px;display:inline-flex;align-items:center;gap:6px;font-size:.8rem;font-weight:700;text-decoration:none"
+               title="Đặt lại tất cả bộ lọc">
+                <i class="fas fa-rotate-left"></i> Đặt lại
+            </a>
+        </div>
+    </div>
+    <div class="fc-hint @(Model.HasDateRange ? "mode-date" : "")">
+        @if (Model.HasDateRange) {
+            <i class="fas fa-circle-info"></i>
+            <text>Chế độ <strong>khoảng ngày</strong> — bộ lọc năm/tháng bị bỏ qua</text>
+        } else {
+            <i class="fas fa-circle-info"></i>
+            <text>Chế độ <strong>năm/tháng</strong> — nhập ngày bên trái để chuyển sang khoảng ngày</text>
+        }
+        @{
+            var af = new System.Collections.Generic.List<string>();
+            if (!string.IsNullOrEmpty(Model.ClassFilter)) af.Add("lớp");
+            if (!string.IsNullOrEmpty(Model.SessionStatusFilter)) af.Add("trạng thái buổi");
+            if (af.Any()) { <text> · Đang lọc thêm theo: <strong>@string.Join(", ", af)</strong></text> }
+        }
+    </div>
+</div>
+</form>
+
+@* ── KPI STRIP (5 thẻ có nghĩa) ── *@
+<div class="sec-title"><i class="fas fa-gauge-high" style="color:var(--c-primary)"></i> Tổng quan</div>
+<div class="kpi-strip">
+
+    @* 1. Tổng buổi dạy + tỷ lệ hoàn thành *@
+    <div class="kpi-card kc-o">
+        <div class="kpi-row">
+            <div class="kpi-title">Tổng buổi dạy</div>
+            <div class="kpi-icon"><i class="fas fa-chalkboard-user"></i></div>
+        </div>
+        <div class="kpi-val">@Model.TotalSessions</div>
+        <div class="kpi-lbl">
+            @if (Model.TotalSessions > 0) {
+                <span class="kpi-badge @(completionRate >= 80 ? "ok" : completionRate >= 50 ? "warn" : "down")">
+                    @completionRate.ToString("F0")% hoàn thành
+                </span>
+            } else {
+                <span class="kpi-badge info">@Model.TotalClasses lớp</span>
+            }
+        </div>
+    </div>
+
+    @* 2. Chuyên cần học sinh *@
+    @{
+        var attendBadgeCls = Model.AttendanceRate >= 80 ? "up" : Model.AttendanceRate >= 60 ? "warn" : "down";
+        var attendBadgeTxt = Model.AttendanceRate >= 80 ? "Xuất sắc" : Model.AttendanceRate >= 60 ? "Trung bình" : "Cần cải thiện";
+    }
+    <div class="kpi-card kc-p">
+        <div class="kpi-row">
+            <div class="kpi-title">Chuyên cần (HS)</div>
+            <div class="kpi-icon"><i class="fas fa-user-check"></i></div>
+        </div>
+        <div class="kpi-val" style="color:@rc">@Model.AttendanceRate.ToString("F1")<small>%</small></div>
+        <div class="kpi-lbl">
+            <span class="kpi-badge @attendBadgeCls">@attendBadgeTxt</span>
+            &nbsp;@Model.PresentCount/@Model.TotalAttendanceRecords lượt
+        </div>
+    </div>
+
+    @* 3. Số học sinh đang dạy *@
+    <div class="kpi-card kc-b">
+        <div class="kpi-row">
+            <div class="kpi-title">Học sinh dạy</div>
+            <div class="kpi-icon"><i class="fas fa-users"></i></div>
+        </div>
+        <div class="kpi-val">@Model.TotalStudentsTaught</div>
+        <div class="kpi-lbl">
+            <span class="kpi-badge info">@Model.TotalClasses lớp</span>
+            &nbsp;trong kỳ
+        </div>
+    </div>
+
+    @* 4. Tỷ lệ hủy buổi *@
+    @{
+        var cancelBadgeCls = cancelRate <= 5 ? "ok" : cancelRate <= 15 ? "warn" : "down";
+        var cancelBadgeTxt = cancelRate <= 5 ? "Tốt" : cancelRate <= 15 ? "Chú ý" : "Cao";
+    }
+    <div class="kpi-card kc-r">
+        <div class="kpi-row">
+            <div class="kpi-title">Tỷ lệ hủy buổi</div>
+            <div class="kpi-icon"><i class="fas fa-calendar-xmark"></i></div>
+        </div>
+        <div class="kpi-val" style="color:@(cancelRate > 15 ? "#f43f5e" : cancelRate > 5 ? "#f59f00" : "var(--text-1)")">
+            @cancelRate.ToString("F1")<small>%</small>
+        </div>
+        <div class="kpi-lbl">
+            <span class="kpi-badge @cancelBadgeCls">@cancelBadgeTxt</span>
+            &nbsp;@Model.CancelledSessions buổi đã hủy
+        </div>
+    </div>
+
+    @* 5. Buổi chưa điểm danh *@
+    @{
+        var pendBadgeCls = Model.PendingAttendanceCount == 0 ? "ok" : Model.PendingAttendanceCount <= 3 ? "warn" : "down";
+        var pendBadgeTxt = Model.PendingAttendanceCount == 0 ? "Đã xong" : "Cần xử lý";
+    }
+    <div class="kpi-card kc-y">
+        <div class="kpi-row">
+            <div class="kpi-title">Chưa điểm danh</div>
+            <div class="kpi-icon"><i class="fas fa-clipboard-list"></i></div>
+        </div>
+        <div class="kpi-val" style="color:@(Model.PendingAttendanceCount > 0 ? "#f59f00" : "var(--text-1)")">
+            @Model.PendingAttendanceCount
+        </div>
+        <div class="kpi-lbl">
+            <span class="kpi-badge @pendBadgeCls">@pendBadgeTxt</span>
+            &nbsp;buổi còn thiếu
+        </div>
+    </div>
+
+</div>
+
+@* ── RATE BAR: Tỷ lệ chuyên cần tổng thể ── *@
+<div class="rate-bar">
+    <div class="rate-bar-icon" style="background:rgba(@(Model.AttendanceRate >= 80 ? "16,185,129" : Model.AttendanceRate >= 60 ? "245,159,0" : "244,63,94"),.1);color:@rc">
+        <i class="fas fa-chart-bar"></i>
+    </div>
+    <span class="rate-bar-label">Tỷ lệ chuyên cần — <em style="font-weight:500;font-style:normal">@Model.PeriodLabel</em></span>
+    <div class="rate-bar-track">
+        <div class="rate-bar-fill" style="width:@Model.AttendanceRate%;background:@rc"></div>
+    </div>
+    <div class="rate-bar-pct" style="color:@rc">@Model.AttendanceRate.ToString("F1")%</div>
+    <div class="rate-bar-sub">@Model.PresentCount có mặt · @Model.AbsentCount vắng · @Model.TotalAttendanceRecords lượt tổng</div>
+</div>
+
+@* ── SESSION STATUS STRIP ── *@
+<div class="sec-title"><i class="fas fa-circle-half-stroke" style="color:var(--c-primary)"></i> Trạng thái buổi học</div>
+<div class="ss-strip">
+    @{
+        double pctComp = Model.TotalSessions > 0 ? Math.Round((double)Model.CompletedSessions / Model.TotalSessions * 100, 1) : 0;
+        double pctCanc = Model.TotalSessions > 0 ? Math.Round((double)Model.CancelledSessions / Model.TotalSessions * 100, 1) : 0;
+        double pctSche = Model.TotalSessions > 0 ? Math.Round((double)Model.ScheduledSessions / Model.TotalSessions * 100, 1) : 0;
+    }
+    <div class="ss-card">
+        <div class="ss-icon" style="background:#ecfdf5;color:#10b981"><i class="fas fa-circle-check"></i></div>
+        <div>
+            <div class="ss-val">@Model.CompletedSessions</div>
+            <div class="ss-lbl">Hoàn thành</div>
+            <div class="ss-pct" style="color:#10b981">@pctComp% tổng</div>
+        </div>
+    </div>
+    <div class="ss-card">
+        <div class="ss-icon" style="background:#eff6ff;color:#3b82f6"><i class="fas fa-clock"></i></div>
+        <div>
+            <div class="ss-val">@Model.ScheduledSessions</div>
+            <div class="ss-lbl">Lịch / Đang dạy</div>
+            <div class="ss-pct" style="color:#3b82f6">@pctSche% tổng</div>
+        </div>
+    </div>
+    <div class="ss-card">
+        <div class="ss-icon" style="background:#fff1f2;color:#f43f5e"><i class="fas fa-circle-xmark"></i></div>
+        <div>
+            <div class="ss-val">@Model.CancelledSessions</div>
+            <div class="ss-lbl">Đã hủy</div>
+            <div class="ss-pct" style="color:#f43f5e">@pctCanc% tổng</div>
+        </div>
+    </div>
+</div>
+
+@* ── CHARTS ── *@
+<div class="sec-title"><i class="fas fa-chart-line" style="color:var(--c-primary)"></i> Biểu đồ phân tích</div>
+
+@* 2 biểu đồ ngang — layout 1fr 1fr *@
+<div style="display:grid;grid-template-columns:1fr 1fr;gap:18px;margin-bottom:20px" class="charts-2col">
+
+    @* Biểu đồ 1: Stacked bar — buổi hoàn thành vs hủy vs sắp tới theo tháng *@
+    <div class="ccard">
+        <div class="ccard-hd">
+            <div class="ccard-title">
+                <div class="ccard-icon"><i class="fas fa-chart-column"></i></div>
+                <div>
+                    <div>Buổi đã hoàn thành theo @(Model.ChartMode == "monthly" ? "tháng" : "ngày")</div>
+                    <div style="font-size:.68rem;font-weight:500;color:var(--text-3);margin-top:1px">Chỉ tính buổi hoàn thành · @Model.PeriodLabel</div>
+                </div>
+            </div>
+            @if (Model.ChartMode == "monthly") {
+            <div class="ptabs">
+                <button class="ptab active" id="tabStack" onclick="switchStackChart(this,'filtered')">Theo lọc</button>
+                <button class="ptab" id="tabStack12m" onclick="switchStackChart(this,'12m')">12 tháng</button>
+            </div>
+            }
+        </div>
+        <div class="ccard-body" style="height:240px;position:relative">
+            <canvas id="stackChart" style="width:100%;height:100%"></canvas>
+        </div>
+    </div>
+
+    @* Biểu đồ 2: Line chart — xu hướng chuyên cần học sinh theo tháng (%) *@
+    <div class="ccard">
+        <div class="ccard-hd">
+            <div class="ccard-title">
+                <div class="ccard-icon"><i class="fas fa-chart-line"></i></div>
+                <div>
+                    <div>Xu hướng chuyên cần học sinh</div>
+                    <div style="font-size:.68rem;font-weight:500;color:var(--text-3);margin-top:1px">% có mặt theo @(Model.ChartMode == "monthly" ? "tháng" : "ngày")</div>
+                </div>
+            </div>
+        </div>
+        <div class="ccard-body" style="height:240px;position:relative">
+            <canvas id="attChart" style="width:100%;height:100%"></canvas>
+        </div>
+    </div>
+
+</div>
+
+@* CSS responsive cho charts-2col *@
+<style>
+@@media (max-width: 900px) { .charts-2col { grid-template-columns: 1fr !important; } }
+</style>
+
+@* ── BOTTOM ROW ── *@
+<div class="sec-title"><i class="fas fa-table-list" style="color:var(--c-primary)"></i> Chi tiết</div>
+<div class="bottom-row">
+
+    @* Class perf table *@
+    <div class="ccard">
+        <div class="ccard-hd">
+            <div class="ccard-title">
+                <div class="ccard-icon"><i class="fas fa-award"></i></div>
+                Hiệu suất theo lớp
+            </div>
+            @if (Model.ClassDetails.Any()) {
+            <span style="font-size:.74rem;color:var(--text-3);font-weight:500">
+                <strong style="color:var(--text-1)">@Model.ClassDetails.Count</strong> lớp · @Model.PeriodLabel
+            </span>
+            }
+        </div>
+        @if (!Model.ClassDetails.Any()) {
+        <div class="empty-st">
+            <div class="empty-st-icon"><i class="fas fa-chalkboard"></i></div>
+            <p style="font-weight:700;color:var(--text-2)">Chưa có dữ liệu</p>
+        </div>
+        } else {
+        <div style="overflow-x:auto">
+            <table class="pt">
+                <thead>
+                    <tr>
+                        <th>Lớp / Môn</th>
+                        <th style="text-align:center">HS</th>
+                        <th style="text-align:center">Buổi</th>
+                        <th style="text-align:center">Hoàn thành</th>
+                        <th style="text-align:center">Hủy</th>
+                        <th style="min-width:120px">Chuyên cần HS</th>
+                        <th>Xếp loại</th>
+                    </tr>
+                </thead>
+                <tbody>
+                @foreach (var cls in Model.ClassDetails) {
+                    var attPct  = cls.TotalSessions > 0 ? (double)cls.AttendedSessions / cls.TotalSessions * 100 : 0;
+                    var attCol  = attPct >= 80 ? "linear-gradient(90deg,#10b981,#34d399)"
+                                : attPct >= 50 ? "linear-gradient(90deg,#f59f00,#fbbf24)"
+                                : "linear-gradient(90deg,#e8590c,#f59f00)";
+                    var rClr = RateClr(cls.AttendanceRate);
+                    var rBg  = cls.AttendanceRate >= 80 ? "#ecfdf5" : cls.AttendanceRate >= 60 ? "#fffbeb" : "#fff1f2";
+                    var rLabel = cls.AttendanceRate >= 80 ? "Tốt" : cls.AttendanceRate >= 60 ? "TB" : "Yếu";
+                    var init = cls.ClassCode.Length > 0 ? cls.ClassCode[..1].ToUpper() : "?";
+                    <tr>
+                        <td>
+                            <div class="cls-cell">
+                                <div class="cls-av">@init</div>
+                                <div><div class="cls-name">@cls.ClassCode</div><div class="cls-sub">@cls.SubjectName</div></div>
+                            </div>
+                        </td>
+                        <td style="text-align:center;font-weight:700">@cls.StudentCount</td>
+                        <td style="text-align:center;font-weight:700;color:var(--text-2)">@cls.TotalSessions</td>
+                        <td style="text-align:center;font-weight:700;color:#10b981">@cls.CompletedCount</td>
+                        <td style="text-align:center;font-weight:700;color:#f43f5e">@cls.CancelledCount</td>
+                        <td>
+                            <div class="prog-wrap">
+                                <div class="prog-bar">
+                                    <div class="prog-fill" style="width:@cls.AttendanceRate.ToString("F0")%;background:@attCol"></div>
+                                </div>
+                                <span class="prog-pct">@cls.AttendanceRate.ToString("F0")%</span>
+                            </div>
+                        </td>
+                        <td>
+                            <span style="display:inline-flex;align-items:center;padding:3px 10px;border-radius:50px;background:@rBg;color:@rClr;font-weight:800;font-size:.78rem">
+                                @rLabel
+                            </span>
+                        </td>
+                    </tr>
+                }
+                </tbody>
+            </table>
+        </div>
+        }
+    </div>
+
+    @* Recent sessions *@
+    <div class="ccard">
+        <div class="ccard-hd">
+            <div class="ccard-title">
+                <div class="ccard-icon"><i class="fas fa-clock-rotate-left"></i></div>
+                Buổi học gần đây
+            </div>
+            <a href="/Teacher/Attendance" class="btn-outline" style="padding:4px 11px;font-size:.72rem">
+                Xem tất cả <i class="fas fa-arrow-right"></i>
+            </a>
+        </div>
+        @if (!Model.RecentSessions.Any()) {
+        <div class="empty-st">
+            <div class="empty-st-icon"><i class="fas fa-calendar-xmark"></i></div>
+            <p style="font-weight:700;color:var(--text-2)">Chưa có buổi học</p>
+        </div>
+        } else {
+        <div class="sess-list">
+        @foreach (var s in Model.RecentSessions) {
+            var isToday  = s.SessionDate == today;
+            var isFuture = s.SessionDate > today;
+            var isCancelled = s.Status == SessionStatus.Cancelled;
+            var isDone   = s.Status == SessionStatus.Completed;
+            string iconCls, badgeCls, badgeTxt;
+            if (isCancelled)      { iconCls = "cancel";  badgeCls = "cancel";  badgeTxt = "Đã hủy"; }
+            else if (isFuture)    { iconCls = "future";  badgeCls = "future";  badgeTxt = "Sắp tới"; }
+            else if (isDone && s.HasAttendance) { iconCls = "done"; badgeCls = "done"; badgeTxt = "Đã ĐD"; }
+            else if (isDone)      { iconCls = "pending"; badgeCls = "pending"; badgeTxt = "Chưa ĐD"; }
+            else                  { iconCls = "future";  badgeCls = "future";  badgeTxt = "Đang học"; }
+            <div class="sess-item">
+                <div class="sess-icon @iconCls">
+                    <i class="fas fa-@(isCancelled ? "xmark" : isFuture ? "calendar" : isDone && s.HasAttendance ? "check" : "clock")"></i>
+                </div>
+                <div class="sess-date">
+                    @s.SessionDate.ToString("dd/MM")
+                    <br/><span style="font-size:.64rem;font-weight:500;color:var(--text-3)">
+                        @(isToday ? "Hôm nay" : DowVi(s.SessionDate.DayOfWeek))
+                    </span>
+                </div>
+                <div class="sess-info">
+                    <div class="sess-cls">@s.ClassName</div>
+                    <div class="sess-meta">
+                        <i class="fas fa-clock" style="font-size:9px;color:var(--c-primary)"></i> @s.ShiftName
+                        &nbsp;·&nbsp;
+                        <i class="fas fa-door-open" style="font-size:9px"></i> @s.RoomCode
+                    </div>
+                </div>
+                <span class="sess-badge @badgeCls">@badgeTxt</span>
+            </div>
+        }
+        </div>
+        }
+    </div>
+
+</div>
+
+@section Scripts {
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<script>
+(function(){
+    Chart.defaults.font.family="'Plus Jakarta Sans',system-ui,sans-serif";
+    Chart.defaults.font.size=11; Chart.defaults.color='#9aa0b4';
+    var tip={backgroundColor:'#181b27',titleColor:'#fff',bodyColor:'rgba(255,255,255,.75)',padding:10,cornerRadius:8,borderColor:'rgba(255,255,255,.08)',borderWidth:1};
+
+    /* ══════════════════════════════════════════════════════
+       DATA từ server
+    ══════════════════════════════════════════════════════ */
+    var lblFiltered  = @Html.Raw(Model.ChartLabelsJson);
+    var dataSess     = @Html.Raw(Model.ChartSessionJson);
+    var dataPresent  = @Html.Raw(Model.ChartPresentJson);
+    var lbl12m       = @Html.Raw(Model.Last12Months);
+    var data12m      = @Html.Raw(Model.Monthly12mData);
+    var chartMode    = '@Model.ChartMode';
+
+    // Stacked bar: cần 3 dataset — completed, scheduled, cancelled
+    var dataCompleted  = @Html.Raw(Model.ChartCompletedJson);
+    var dataScheduled  = @Html.Raw(Model.ChartScheduledJson);
+    var dataCancelled  = @Html.Raw(Model.ChartCancelledJson);
+
+    // Attendance rate per period
+    var dataAttRate    = @Html.Raw(Model.ChartAttRateJson);
+
+    // 12m stacked
+    var data12mComp    = @Html.Raw(Model.Chart12mCompletedJson);
+    var data12mSched   = @Html.Raw(Model.Chart12mScheduledJson);
+    var data12mCancel  = @Html.Raw(Model.Chart12mCancelledJson);
+    var data12mAtt     = @Html.Raw(Model.Chart12mAttRateJson);
+
+    /* ══════════════════════════════════════════════════════
+       BIỂU ĐỒ 1 — Bar: Buổi đã hoàn thành theo tháng/ngày
+    ══════════════════════════════════════════════════════ */
+    var stackCtx = document.getElementById('stackChart');
+    var stackGrad = stackCtx.getContext('2d').createLinearGradient(0,0,0,220);
+    stackGrad.addColorStop(0,'rgba(16,185,129,.75)');
+    stackGrad.addColorStop(1,'rgba(16,185,129,.4)');
+
+    var stackChart = new Chart(stackCtx, {
+        type: 'bar',
+        data: {
+            labels: lblFiltered,
+            datasets: [
+                {
+                    label: 'Buổi hoàn thành',
+                    data: dataCompleted,
+                    backgroundColor: stackGrad,
+                    borderColor: '#10b981',
+                    borderWidth: 1.5,
+                    borderRadius: 6,
+                    borderSkipped: false
+                }
+            ]
+        },
+        options: {
+            responsive: true, maintainAspectRatio: false,
+            interaction: { mode: 'index', intersect: false },
+            plugins: {
+                legend: { display: false },
+                tooltip: Object.assign({
+                    callbacks: {
+                        label: ctx => ' Hoàn thành: ' + ctx.parsed.y + ' buổi'
+                    }
+                }, tip)
+            },
+            scales: {
+                x: { grid:{display:false}, border:{display:false} },
+                y: { grid:{color:'#f0f2f8'}, border:{display:false}, beginAtZero:true,
+                     ticks:{stepSize:1, padding:8, callback:v => Number.isInteger(v) ? v : ''} }
+            }
+        }
+    });
+
+    /* Switch 12m */
+    window.switchStackChart = function(btn, mode) {
+        document.querySelectorAll('.ptab').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        if (mode === '12m') {
+            stackChart.data.labels = lbl12m;
+            stackChart.data.datasets[0].data = data12mComp;
+        } else {
+            stackChart.data.labels = lblFiltered;
+            stackChart.data.datasets[0].data = dataCompleted;
+        }
+        stackChart.update('active');
+    };
+
+    /* ══════════════════════════════════════════════════════
+       BIỂU ĐỒ 2 — Line: Xu hướng chuyên cần học sinh (%)
+       Đường % có mặt theo từng tháng/ngày + đường chuẩn 80%
+    ══════════════════════════════════════════════════════ */
+    var attCtx = document.getElementById('attChart');
+    var attGrad = attCtx.getContext('2d').createLinearGradient(0,0,0,220);
+    attGrad.addColorStop(0,'rgba(16,185,129,.18)');
+    attGrad.addColorStop(1,'rgba(16,185,129,0)');
+
+    // Đường ngưỡng 80%
+    var threshold80 = lblFiltered.map(() => 80);
+
+    new Chart(attCtx, {
+        type: 'line',
+        data: {
+            labels: lblFiltered,
+            datasets: [
+                {
+                    label: 'Chuyên cần (%)',
+                    data: dataAttRate,
+                    borderColor: '#10b981',
+                    backgroundColor: attGrad,
+                    borderWidth: 2.5,
+                    tension: .38,
+                    fill: true,
+                    pointBackgroundColor: '#fff',
+                    pointBorderColor: '#10b981',
+                    pointBorderWidth: 2,
+                    pointRadius: 4,
+                    pointHoverRadius: 6,
+                    yAxisID: 'y'
+                },
+                {
+                    label: 'Ngưỡng tốt (80%)',
+                    data: threshold80,
+                    borderColor: 'rgba(232,89,12,.4)',
+                    backgroundColor: 'transparent',
+                    borderWidth: 1.5,
+                    borderDash: [5, 4],
+                    tension: 0,
+                    fill: false,
+                    pointRadius: 0,
+                    pointHoverRadius: 0,
+                    yAxisID: 'y'
+                }
+            ]
+        },
+        options: {
+            responsive: true, maintainAspectRatio: false,
+            interaction: { mode: 'index', intersect: false },
+            plugins: {
+                legend: {
+                    position: 'top',
+                    labels: { padding:14, usePointStyle:true, pointStyleWidth:8, font:{weight:'700',size:11}, color:'#5a6277' }
+                },
+                tooltip: Object.assign({
+                    callbacks: {
+                        label: ctx => {
+                            if (ctx.datasetIndex === 1) return null;
+                            var v = ctx.parsed.y;
+                            return v == null ? null :
+                                ' Chuyên cần: ' + v.toFixed(1) + '%' +
+                                (v >= 80 ? ' ✓ Tốt' : v >= 60 ? ' ▲ Trung bình' : ' ✗ Cần cải thiện');
+                        },
+                        filter: item => item.datasetIndex !== 1
+                    }
+                }, tip)
+            },
+            scales: {
+                x: { grid:{display:false}, border:{display:false} },
+                y: {
+                    grid: { color:'#f0f2f8' },
+                    border: { display:false },
+                    beginAtZero: true,
+                    max: 100,
+                    ticks: { stepSize:20, padding:8, callback: v => v + '%' }
+                }
+            }
+        }
+    });
+
+    /* ── Mutual exclusion filter ── */
+    function onPeriodChange(){
+        document.getElementById('inpFrom').value='';
+        document.getElementById('inpTo').value='';
+        document.getElementById('ff').submit();
+    }
+    function onDateChange(){
+        if(document.getElementById('inpFrom').value||document.getElementById('inpTo').value){
+            document.getElementById('selMonth').value='0';
+            document.getElementById('ff').submit();
+        }
+    }
+    window.onPeriodChange=onPeriodChange;
+    window.onDateChange=onDateChange;
+})();
+</script>
+}

@@ -1,0 +1,1803 @@
+﻿@page
+@model TutoringCenterManagement.Pages.Admin.ReportsModel
+@using TutoringCenterManagement.Data.Enums
+@{
+    ViewData["Title"] = "Thống kê & Báo cáo";
+    var mn = new[] { "", "T1", "T2", "T3", "T4", "T5", "T6", "T7", "T8", "T9", "T10", "T11", "T12" };
+    var periodLabel = Model.FilterMonth == 0
+        ? $"Cả năm {Model.FilterYear}"
+        : $"Tháng {Model.FilterMonth}/{Model.FilterYear}";
+
+    Func<Subject, string> subjectColor = s => s switch
+    {
+        Subject.Math => "#3b82f6",
+        Subject.Vietnamese => "#10b981",
+        Subject.English => "#f59f00",
+        Subject.Physics => "#8b5cf6",
+        Subject.Biology => "#06b6d4",
+        Subject.Chemistry => "#ec4899",
+        Subject.Geography => "#84cc16",
+        Subject.History => "#f97316",
+        _ => "#6b7280"
+    };
+
+    var maxMonthSess = Model.MonthlySessionStats.Any() ? Model.MonthlySessionStats.Max(m => m.Completed + m.Cancelled + m.Scheduled) : 1;
+    var maxNewStudent = Model.MonthlyNewStudentStats.Any() ? Model.MonthlyNewStudentStats.Max(m => m.Count) : 1;
+    var maxSubjSt = Model.SubjectStudentStats.Any() ? Model.SubjectStudentStats.Max(s => s.Count) : 1;
+    var maxTeacher = Model.TeacherSessionStats.Any() ? Model.TeacherSessionStats.Max(t => t.SessionCount) : 1;
+    int totalSt = Model.StudentActive + Model.StudentSuspended + Model.StudentLeft;
+    int totalSess = Model.TotalSessionsCompleted + Model.TotalSessionsCancelled + Model.TotalSessionsScheduled;
+    double cancelRate = totalSess > 0 ? Math.Round((double)Model.TotalSessionsCancelled / totalSess * 100, 1) : 0;
+
+    // SVG donut helper
+    double circ = 2 * Math.PI * 50;
+    int dTot = totalSt > 0 ? totalSt : 1;
+    double lenA = circ * Model.StudentActive / dTot;
+    double lenS = circ * Model.StudentSuspended / dTot;
+    double lenL = circ * Model.StudentLeft / dTot;
+    double offA = 0; double offS = offA + lenA; double offL = offS + lenS;
+}
+
+@section Styles {
+    <style>
+        /* ═══════════════════════════════════════════════════════
+           REPORTS — Premium Admin Dashboard · Design System v3
+        ═══════════════════════════════════════════════════════ */
+
+        /* ── Filter bar ─────────────────────────────────────── */
+        .rpt-topbar {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            flex-wrap: wrap;
+            margin-bottom: 22px;
+            padding: 13px 18px;
+            background: var(--bg-card);
+            border-radius: var(--r-lg);
+            border: 1px solid var(--border);
+            box-shadow: var(--sh-xs);
+        }
+
+        .rpt-topbar-icon {
+            width: 32px;
+            height: 32px;
+            border-radius: 8px;
+            background: rgba(232,89,12,.1);
+            color: var(--c-primary);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 13px;
+            flex-shrink: 0;
+        }
+
+        .rpt-topbar-title {
+            font-size: .82rem;
+            font-weight: 800;
+            color: var(--text-1);
+        }
+
+        .rpt-topbar-sub {
+            font-size: .7rem;
+            color: var(--text-3);
+            margin-top: 1px;
+        }
+
+        .rpt-sep {
+            width: 1px;
+            height: 28px;
+            background: var(--border);
+            margin: 0 4px;
+            flex-shrink: 0;
+        }
+
+        .rpt-sel {
+            height: 36px;
+            padding: 0 30px 0 11px;
+            border: 1.5px solid var(--border);
+            border-radius: var(--r-sm);
+            background: #f8f9fc;
+            color: var(--text-1);
+            font-size: .82rem;
+            font-family: inherit;
+            font-weight: 600;
+            outline: none;
+            cursor: pointer;
+            -webkit-appearance: none;
+            appearance: none;
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='10' viewBox='0 0 24 24' fill='none' stroke='%239aa0b4' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E");
+            background-repeat: no-repeat;
+            background-position: right 9px center;
+            transition: border-color .15s;
+        }
+
+            .rpt-sel:focus {
+                border-color: var(--c-primary);
+                background-color: #fff;
+            }
+
+        .period-pill {
+            margin-left: auto;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 5px 14px;
+            border-radius: 50px;
+            background: rgba(232,89,12,.08);
+            border: 1px solid rgba(232,89,12,.2);
+            font-size: .78rem;
+            font-weight: 700;
+            color: var(--c-primary);
+            white-space: nowrap;
+        }
+
+        /* ── KPI strip ───────────────────────────────────────── */
+        .kpi-strip {
+            display: grid;
+            grid-template-columns: repeat(4,1fr);
+            gap: 12px;
+            margin-bottom: 18px;
+        }
+
+        .kpi-card {
+            background: var(--bg-card);
+            border-radius: var(--r-lg);
+            border: 1px solid var(--border);
+            box-shadow: var(--sh-xs);
+            padding: 16px 18px 14px;
+            position: relative;
+            overflow: hidden;
+            transition: box-shadow .2s,transform .2s;
+            cursor: default;
+        }
+
+            .kpi-card:hover {
+                box-shadow: var(--sh-md);
+                transform: translateY(-2px);
+            }
+
+            .kpi-card::after {
+                content: '';
+                position: absolute;
+                top: 0;
+                left: 0;
+                right: 0;
+                height: 3px;
+            }
+
+            .kpi-card.kc-blue::after {
+                background: linear-gradient(90deg,#3b82f6,#60a5fa);
+            }
+
+            .kpi-card.kc-green::after {
+                background: linear-gradient(90deg,#10b981,#34d399);
+            }
+
+            .kpi-card.kc-orange::after {
+                background: linear-gradient(90deg,#e8590c,#f59f00);
+            }
+
+            .kpi-card.kc-purple::after {
+                background: linear-gradient(90deg,#8b5cf6,#a78bfa);
+            }
+
+            .kpi-card.kc-teal::after {
+                background: linear-gradient(90deg,#06b6d4,#22d3ee);
+            }
+
+            .kpi-card.kc-red::after {
+                background: linear-gradient(90deg,#f43f5e,#fb7185);
+            }
+
+            .kpi-card.kc-amber::after {
+                background: linear-gradient(90deg,#f59f00,#fbbf24);
+            }
+
+            .kpi-card.kc-indigo::after {
+                background: linear-gradient(90deg,#6366f1,#818cf8);
+            }
+
+        .kpi-row {
+            display: flex;
+            align-items: flex-start;
+            justify-content: space-between;
+            gap: 8px;
+        }
+
+        .kpi-icon {
+            width: 38px;
+            height: 38px;
+            border-radius: 10px;
+            flex-shrink: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 15px;
+        }
+
+        .kc-blue .kpi-icon {
+            background: rgba(59,130,246,.1);
+            color: #3b82f6;
+        }
+
+        .kc-green .kpi-icon {
+            background: rgba(16,185,129,.1);
+            color: #10b981;
+        }
+
+        .kc-orange .kpi-icon {
+            background: rgba(232,89,12,.1);
+            color: #e8590c;
+        }
+
+        .kc-purple .kpi-icon {
+            background: rgba(139,92,246,.1);
+            color: #8b5cf6;
+        }
+
+        .kc-teal .kpi-icon {
+            background: rgba(6,182,212,.1);
+            color: #06b6d4;
+        }
+
+        .kc-red .kpi-icon {
+            background: rgba(244,63,94,.1);
+            color: #f43f5e;
+        }
+
+        .kc-amber .kpi-icon {
+            background: rgba(245,159,0,.1);
+            color: #f59f00;
+        }
+
+        .kc-indigo .kpi-icon {
+            background: rgba(99,102,241,.1);
+            color: #6366f1;
+        }
+
+        .kpi-val {
+            font-size: 1.9rem;
+            font-weight: 800;
+            color: var(--text-1);
+            line-height: 1.05;
+            letter-spacing: -.5px;
+            margin-top: 10px;
+        }
+
+            .kpi-val small {
+                font-size: 1rem;
+                font-weight: 600;
+            }
+
+        .kpi-lbl {
+            font-size: .7rem;
+            font-weight: 700;
+            color: var(--text-3);
+            text-transform: uppercase;
+            letter-spacing: .5px;
+        }
+
+        .kpi-foot {
+            font-size: .72rem;
+            color: var(--text-3);
+            margin-top: 6px;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+            .kpi-foot .up {
+                color: #10b981;
+                font-weight: 700;
+            }
+
+            .kpi-foot .down {
+                color: #f43f5e;
+                font-weight: 700;
+            }
+
+        /* ── Layout rows ─────────────────────────────────────── */
+        .rpt-row {
+            display: grid;
+            gap: 14px;
+            margin-bottom: 14px;
+        }
+
+            .rpt-row.c32 {
+                grid-template-columns: 3fr 2fr;
+            }
+
+            .rpt-row.c22 {
+                grid-template-columns: 1fr 1fr;
+            }
+
+            .rpt-row.c122 {
+                grid-template-columns: 1fr 2fr 2fr;
+            }
+
+            .rpt-row.c1 {
+                grid-template-columns: 1fr;
+            }
+
+            .rpt-row.c4 {
+                grid-template-columns: repeat(4,1fr);
+            }
+
+        /* ── Chart card ──────────────────────────────────────── */
+        .cc {
+            background: var(--bg-card);
+            border-radius: var(--r-lg);
+            border: 1px solid var(--border);
+            box-shadow: var(--sh-sm);
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        .cc-hd {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 13px 18px 11px;
+            border-bottom: 1px solid var(--border);
+            background: linear-gradient(to right,#fafbff,#fff);
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
+        .cc-hd-l {
+            display: flex;
+            align-items: center;
+            gap: 9px;
+        }
+
+        .cc-ico {
+            width: 28px;
+            height: 28px;
+            border-radius: 7px;
+            flex-shrink: 0;
+            background: rgba(232,89,12,.1);
+            color: var(--c-primary);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 12px;
+        }
+
+        .cc-title {
+            font-size: .88rem;
+            font-weight: 700;
+            color: var(--text-1);
+        }
+
+        .cc-subtitle {
+            font-size: .7rem;
+            color: var(--text-3);
+            margin-top: 1px;
+        }
+
+        .cc-body {
+            padding: 18px;
+            flex: 1;
+        }
+
+            .cc-body.p0 {
+                padding: 0;
+            }
+
+        /* Legend */
+        .lgd {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+
+        .lgd-i {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            font-size: .72rem;
+            font-weight: 600;
+            color: var(--text-2);
+        }
+
+        .lgd-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 2px;
+            flex-shrink: 0;
+        }
+
+        /* ═══════════════════════════════════════════════════════
+           CHART 1 — Monthly Sessions (grouped bars)
+        ═══════════════════════════════════════════════════════ */
+        .bar-chart-wrap {
+            height: 190px;
+            display: flex;
+            align-items: flex-end;
+            gap: 5px;
+            padding-bottom: 26px;
+            position: relative;
+        }
+
+        .bcw-grid {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 26px;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            pointer-events: none;
+        }
+
+        .bcw-gl {
+            width: 100%;
+            height: 1px;
+            background: var(--border);
+        }
+
+        .bar-col {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            position: relative;
+        }
+
+        .bar-group {
+            width: 100%;
+            display: flex;
+            gap: 2px;
+            align-items: flex-end;
+            flex: 1;
+        }
+
+        .bar {
+            flex: 1;
+            border-radius: 3px 3px 0 0;
+            min-height: 2px;
+            cursor: default;
+            transition: opacity .15s,filter .15s;
+            position: relative;
+        }
+
+            .bar:hover {
+                opacity: .8;
+                filter: brightness(1.1);
+            }
+
+            .bar.b-done {
+                background: linear-gradient(180deg,#10b981 0%,#34d399 100%);
+            }
+
+            .bar.b-schd {
+                background: linear-gradient(180deg,#3b82f6 0%,#60a5fa 100%);
+            }
+
+            .bar.b-canc {
+                background: linear-gradient(180deg,#f43f5e 0%,#fb7185 100%);
+            }
+
+        .bar-lbl {
+            position: absolute;
+            bottom: -22px;
+            left: 50%;
+            transform: translateX(-50%);
+            font-size: .6rem;
+            font-weight: 700;
+            color: var(--text-3);
+            white-space: nowrap;
+        }
+
+        /* bar tooltip */
+        .bar[data-tip]:hover::after {
+            content: attr(data-tip);
+            position: absolute;
+            bottom: calc(100% + 5px);
+            left: 50%;
+            transform: translateX(-50%);
+            background: #1e2433;
+            color: #fff;
+            font-size: .65rem;
+            font-weight: 600;
+            padding: 4px 7px;
+            border-radius: 5px;
+            white-space: nowrap;
+            pointer-events: none;
+            z-index: 9;
+        }
+
+        /* ═══════════════════════════════════════════════════════
+           CHART 2 — Donut (Student status)
+        ═══════════════════════════════════════════════════════ */
+        .donut-outer {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 16px;
+        }
+
+        .donut-svg-box {
+            position: relative;
+            width: 130px;
+            height: 130px;
+            flex-shrink: 0;
+        }
+
+            .donut-svg-box svg {
+                transform: rotate(-90deg);
+            }
+
+        .donut-center {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%,-50%);
+            text-align: center;
+        }
+
+            .donut-center .dv {
+                font-size: 1.6rem;
+                font-weight: 800;
+                color: var(--text-1);
+                line-height: 1;
+            }
+
+            .donut-center .dl {
+                font-size: .6rem;
+                font-weight: 700;
+                color: var(--text-3);
+                text-transform: uppercase;
+                letter-spacing: .5px;
+            }
+
+        .donut-rows {
+            width: 100%;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .donut-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .donut-row-l {
+            display: flex;
+            align-items: center;
+            gap: 7px;
+            font-size: .78rem;
+            font-weight: 600;
+            color: var(--text-2);
+        }
+
+        .donut-dot {
+            width: 10px;
+            height: 10px;
+            border-radius: 3px;
+            flex-shrink: 0;
+        }
+
+        .donut-row-r {
+            font-size: .8rem;
+            font-weight: 800;
+            color: var(--text-1);
+        }
+
+        .donut-row-p {
+            font-size: .68rem;
+            color: var(--text-3);
+            font-weight: 600;
+        }
+
+        /* ═══════════════════════════════════════════════════════
+           CHART 3 — Horizontal bar (Subject students)
+        ═══════════════════════════════════════════════════════ */
+        .hbar-chart {
+            display: flex;
+            flex-direction: column;
+            gap: 9px;
+        }
+
+        .hbar-row {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .hbar-lbl {
+            width: 68px;
+            flex-shrink: 0;
+            font-size: .73rem;
+            font-weight: 700;
+            color: var(--text-2);
+            text-align: right;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .hbar-track {
+            flex: 1;
+            height: 24px;
+            background: var(--bg-page);
+            border-radius: 5px;
+            overflow: hidden;
+        }
+
+        .hbar-fill {
+            height: 100%;
+            border-radius: 5px;
+            display: flex;
+            align-items: center;
+            padding-left: 9px;
+            font-size: .68rem;
+            font-weight: 800;
+            color: #fff;
+            min-width: 24px;
+            white-space: nowrap;
+            transition: width .6s cubic-bezier(.4,0,.2,1);
+        }
+
+        .hbar-cnt {
+            width: 34px;
+            flex-shrink: 0;
+            font-size: .78rem;
+            font-weight: 800;
+            color: var(--text-1);
+            text-align: right;
+        }
+
+        /* ═══════════════════════════════════════════════════════
+           CHART 4 — Attendance stacked bar by subject
+        ═══════════════════════════════════════════════════════ */
+        .att-chart {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .att-row {
+            display: flex;
+            align-items: center;
+            gap: 9px;
+        }
+
+        .att-lbl {
+            width: 58px;
+            flex-shrink: 0;
+            font-size: .71rem;
+            font-weight: 700;
+            color: var(--text-2);
+            text-align: right;
+        }
+
+        .att-track {
+            flex: 1;
+            height: 20px;
+            border-radius: 4px;
+            display: flex;
+            overflow: hidden;
+            background: #f0f2f8;
+        }
+
+        .att-seg {
+            height: 100%;
+            transition: width .5s ease;
+        }
+
+        .att-present {
+            background: linear-gradient(90deg,#10b981,#34d399);
+        }
+
+        .att-absent {
+            background: linear-gradient(90deg,#f43f5e,#fb7185);
+        }
+
+        .att-rate {
+            width: 44px;
+            flex-shrink: 0;
+            font-size: .75rem;
+            font-weight: 800;
+            color: var(--text-1);
+            text-align: right;
+        }
+
+        /* ═══════════════════════════════════════════════════════
+           CHART 5 — New students sparkline (line area)
+        ═══════════════════════════════════════════════════════ */
+        .sparkline-wrap {
+            position: relative;
+            height: 120px;
+            padding-bottom: 22px;
+        }
+
+            .sparkline-wrap svg {
+                width: 100%;
+                height: 100%;
+                overflow: visible;
+            }
+
+            .sparkline-wrap .spark-lbl {
+                position: absolute;
+                bottom: 0;
+                display: flex;
+                width: 100%;
+                justify-content: space-between;
+                pointer-events: none;
+            }
+
+        .spark-lbl span {
+            font-size: .58rem;
+            font-weight: 700;
+            color: var(--text-3);
+        }
+
+        /* ═══════════════════════════════════════════════════════
+           TEACHER LEADERBOARD
+        ═══════════════════════════════════════════════════════ */
+        .t-lb {
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+        }
+
+        .t-lb-row {
+            display: flex;
+            align-items: center;
+            gap: 9px;
+            padding: 8px 12px;
+            border-radius: var(--r-sm);
+            background: #fafbff;
+            border: 1px solid var(--border);
+            transition: background .12s;
+        }
+
+            .t-lb-row:hover {
+                background: #f0f4ff;
+            }
+
+        .t-rank {
+            width: 24px;
+            flex-shrink: 0;
+            font-size: .72rem;
+            font-weight: 800;
+            color: var(--text-3);
+            text-align: center;
+        }
+
+            .t-rank.g1 {
+                color: #d97706;
+            }
+
+            .t-rank.g2 {
+                color: #6b7280;
+            }
+
+            .t-rank.g3 {
+                color: #b45309;
+            }
+
+        .t-av {
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            flex-shrink: 0;
+            background: linear-gradient(135deg,#3b82f6,#60a5fa);
+            color: #fff;
+            font-weight: 800;
+            font-size: .72rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .t-name {
+            flex: 1;
+            font-size: .82rem;
+            font-weight: 600;
+            color: var(--text-1);
+            min-width: 0;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .t-cls {
+            font-size: .68rem;
+            color: var(--text-3);
+            white-space: nowrap;
+        }
+
+        .t-bar-wrap {
+            width: 80px;
+            flex-shrink: 0;
+        }
+
+        .t-bar-track {
+            height: 6px;
+            background: var(--bg-page);
+            border-radius: 3px;
+            overflow: hidden;
+        }
+
+        .t-bar-fill {
+            height: 100%;
+            background: linear-gradient(90deg,#3b82f6,#60a5fa);
+            border-radius: 3px;
+            transition: width .6s ease;
+        }
+
+        .t-val {
+            width: 30px;
+            flex-shrink: 0;
+            font-size: .78rem;
+            font-weight: 800;
+            color: var(--text-1);
+            text-align: right;
+        }
+
+        /* ═══════════════════════════════════════════════════════
+           ABSENCE TABLE
+        ═══════════════════════════════════════════════════════ */
+        .abs-table {
+            width: 100%;
+            border-collapse: separate;
+            border-spacing: 0;
+        }
+
+            .abs-table thead th {
+                padding: 9px 14px;
+                font-size: .66rem;
+                font-weight: 700;
+                text-transform: uppercase;
+                letter-spacing: .7px;
+                color: var(--text-2);
+                background: #f4f6fc;
+                border-bottom: 2px solid var(--border);
+                white-space: nowrap;
+            }
+
+                .abs-table thead th:first-child {
+                    padding-left: 18px;
+                    border-radius: var(--r-sm) 0 0 0;
+                }
+
+            .abs-table tbody td {
+                padding: 9px 14px;
+                font-size: .81rem;
+                color: var(--text-1);
+                border-bottom: 1px solid #f0f2f8;
+                vertical-align: middle;
+            }
+
+                .abs-table tbody td:first-child {
+                    padding-left: 18px;
+                }
+
+            .abs-table tbody tr:last-child td {
+                border-bottom: none;
+            }
+
+            .abs-table tbody tr:hover td {
+                background: #f8faff;
+            }
+
+        .rate-inline {
+            display: flex;
+            align-items: center;
+            gap: 7px;
+        }
+
+        .rate-track {
+            flex: 1;
+            height: 5px;
+            background: var(--bg-page);
+            border-radius: 3px;
+            overflow: hidden;
+        }
+
+        .rate-fill {
+            height: 100%;
+            border-radius: 3px;
+        }
+
+        .rbadge {
+            display: inline-flex;
+            padding: 2px 8px;
+            border-radius: 50px;
+            font-size: .68rem;
+            font-weight: 800;
+            border: 1px solid transparent;
+            white-space: nowrap;
+        }
+
+            .rbadge.rh {
+                background: #fff1f2;
+                color: #e03131;
+                border-color: #fecdd3;
+            }
+
+            .rbadge.rm {
+                background: #fffbeb;
+                color: #d97706;
+                border-color: #fde68a;
+            }
+
+            .rbadge.rl {
+                background: #ecfdf5;
+                color: #059669;
+                border-color: #a7f3d0;
+            }
+
+        .subj-tag {
+            display: inline-flex;
+            padding: 2px 8px;
+            border-radius: 50px;
+            font-size: .66rem;
+            font-weight: 700;
+            background: rgba(232,89,12,.07);
+            color: var(--c-primary);
+            border: 1px solid rgba(232,89,12,.15);
+        }
+
+        /* ═══════════════════════════════════════════════════════
+           ROOM USAGE CARDS
+        ═══════════════════════════════════════════════════════ */
+        .room-grid {
+            display: grid;
+            grid-template-columns: repeat(3,1fr);
+            gap: 10px;
+        }
+
+        .room-card {
+            padding: 13px 14px;
+            border-radius: var(--r-md);
+            background: #fafbff;
+            border: 1px solid var(--border);
+            transition: background .12s;
+        }
+
+            .room-card:hover {
+                background: #f0f4ff;
+            }
+
+        .room-code {
+            font-size: .78rem;
+            font-weight: 800;
+            color: var(--c-primary);
+            margin-bottom: 2px;
+        }
+
+        .room-name {
+            font-size: .7rem;
+            color: var(--text-3);
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            margin-bottom: 8px;
+        }
+
+        .room-bar-track {
+            height: 5px;
+            background: var(--border);
+            border-radius: 3px;
+            overflow: hidden;
+            margin-bottom: 5px;
+        }
+
+        .room-bar-fill {
+            height: 100%;
+            background: linear-gradient(90deg,var(--c-primary),var(--c-secondary));
+            border-radius: 3px;
+        }
+
+        .room-foot {
+            display: flex;
+            justify-content: space-between;
+            font-size: .68rem;
+            color: var(--text-3);
+            font-weight: 600;
+        }
+
+            .room-foot strong {
+                color: var(--text-1);
+            }
+
+        /* ═══════════════════════════════════════════════════════
+           CLASS STATUS MINI (progress arc inline)
+        ═══════════════════════════════════════════════════════ */
+        .cls-status-wrap {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            justify-content: center;
+            height: 100%;
+        }
+
+        .cls-arc-box {
+            position: relative;
+            width: 100px;
+            height: 100px;
+        }
+
+            .cls-arc-box svg {
+                transform: rotate(-90deg);
+            }
+
+        .cls-arc-center {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%,-50%);
+            text-align: center;
+        }
+
+            .cls-arc-center .cav {
+                font-size: 1.4rem;
+                font-weight: 800;
+                color: var(--text-1);
+                line-height: 1;
+            }
+
+            .cls-arc-center .cal {
+                font-size: .58rem;
+                font-weight: 700;
+                color: var(--text-3);
+                text-transform: uppercase;
+            }
+
+        .cls-legend {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .cls-leg-row {
+            display: flex;
+            align-items: center;
+            gap: 7px;
+            font-size: .78rem;
+        }
+
+        .cls-leg-dot {
+            width: 10px;
+            height: 10px;
+            border-radius: 3px;
+            flex-shrink: 0;
+        }
+
+        .cls-leg-lbl {
+            font-weight: 600;
+            color: var(--text-2);
+        }
+
+        .cls-leg-val {
+            font-weight: 800;
+            color: var(--text-1);
+            margin-left: auto;
+        }
+
+        /* ── Responsive ──────────────────────────────────────── */
+        @@media(max-width:1200px) {
+            .kpi-strip {
+                grid-template-columns: repeat(4,1fr);
+            }
+
+            .rpt-row.c32 {
+                grid-template-columns: 1fr;
+            }
+
+            .rpt-row.c122 {
+                grid-template-columns: 1fr 1fr;
+            }
+        }
+
+        @@media(max-width:900px) {
+            .kpi-strip {
+                grid-template-columns: repeat(2,1fr);
+            }
+
+            .rpt-row.c22, .rpt-row.c122 {
+                grid-template-columns: 1fr;
+            }
+
+            .room-grid {
+                grid-template-columns: repeat(2,1fr);
+            }
+        }
+
+        @@media(max-width:600px) {
+            .kpi-strip {
+                grid-template-columns: 1fr 1fr;
+            }
+
+            .room-grid {
+                grid-template-columns: 1fr 1fr;
+            }
+        }
+
+        @@media(max-width:400px) {
+            .kpi-strip {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+}
+
+<!-- PAGE HEADER -->
+<div class="page-header">
+    <div>
+        <h1 class="page-heading">Thống kê <span>&amp; Báo cáo</span></h1>
+        <p class="page-subheading">
+            <i class="fas fa-chart-mixed" style="color:var(--c-primary)"></i>
+            Phân tích toàn diện hoạt động — <strong>@periodLabel</strong>
+        </p>
+    </div>
+</div>
+
+<!-- ════════ BỘ LỌC THỜI GIAN ════════ -->
+<form method="get" id="ff">
+    <div class="rpt-topbar">
+        <div class="rpt-topbar-icon"><i class="fas fa-sliders"></i></div>
+        <div>
+            <div class="rpt-topbar-title">Bộ lọc báo cáo</div>
+            <div class="rpt-topbar-sub">Chọn năm và tháng để lọc dữ liệu</div>
+        </div>
+        <div class="rpt-sep"></div>
+
+        <select name="FilterYear" class="rpt-sel" onchange="document.getElementById('ff').submit()">
+            @foreach (var y in Model.AvailableYears)
+            {
+                <option value="@y" selected="@(y == Model.FilterYear ? "selected" : null)">
+                    Năm @y
+                </option>
+            }
+        </select>
+
+        <select name="FilterMonth" class="rpt-sel" onchange="document.getElementById('ff').submit()">
+            <option value="0" selected="@(Model.FilterMonth == 0 ? "selected" : null)">
+                Cả năm
+            </option>
+            @for (int m = 1; m <= 12; m++)
+            {
+                <option value="@m" selected="@(Model.FilterMonth == m ? "selected" : null)">
+                    Tháng @m
+                </option>
+            }
+        </select>
+
+        <div class="rpt-sep"></div>
+        <button type="submit" class="btn-brand" style="height:36px;padding:0 16px;font-size:.8rem">
+            <i class="fas fa-rotate-right"></i> Cập nhật
+        </button>
+
+        <span class="period-pill">
+            <i class="fas fa-calendar-check" style="font-size:10px"></i>
+            @periodLabel
+        </span>
+
+        <div class="rpt-sep"></div>
+
+        @{
+            var rptMonth = Model.FilterMonth == 0 ? DateTime.Today.Month : Model.FilterMonth;
+        }
+        <a href="/Admin/Reports/TeacherMonthlyReport?FilterYear=@(Model.FilterYear)&FilterMonth=@(rptMonth)"
+           style="display:inline-flex;align-items:center;gap:6px;
+              padding:7px 14px;border-radius:var(--r-sm);
+              background:rgba(59,130,246,.1);border:1px solid rgba(59,130,246,.3);
+              color:#2563eb;font-size:.78rem;font-weight:700;text-decoration:none;
+              white-space:nowrap;transition:background .15s"
+           onmouseover="this.style.background='rgba(59,130,246,.2)'"
+           onmouseout="this.style.background='rgba(59,130,246,.1)'">
+            <i class="fas fa-chalkboard-user"></i> BC Giáo viên
+        </a>
+
+        <a href="/Admin/Reports/StudentMonthlyReport?FilterYear=@(Model.FilterYear)&FilterMonth=@(rptMonth)"
+           style="display:inline-flex;align-items:center;gap:6px;
+              padding:7px 14px;border-radius:var(--r-sm);
+              background:rgba(16,185,129,.1);border:1px solid rgba(16,185,129,.3);
+              color:#059669;font-size:.78rem;font-weight:700;text-decoration:none;
+              white-space:nowrap;transition:background .15s"
+           onmouseover="this.style.background='rgba(16,185,129,.2)'"
+           onmouseout="this.style.background='rgba(16,185,129,.1)'">
+            <i class="fas fa-users"></i> BC Học viên
+        </a>
+    </div>
+</form>
+
+<!-- ════════ KPI STRIP ════════ -->
+<div class="kpi-strip">
+
+    <div class="kpi-card kc-blue">
+        <div class="kpi-row">
+            <div class="kpi-lbl">Học sinh đang học</div>
+            <div class="kpi-icon"><i class="fas fa-graduation-cap"></i></div>
+        </div>
+        <div class="kpi-val">@Model.TotalActiveStudents</div>
+        <div class="kpi-foot">
+            <i class="fas fa-user-plus" style="color:#3b82f6;font-size:10px"></i>
+            <span class="up">+@Model.NewStudentsInPeriod</span> mới trong kỳ
+        </div>
+    </div>
+
+    <div class="kpi-card kc-orange">
+        <div class="kpi-row">
+            <div class="kpi-lbl">Giáo viên</div>
+            <div class="kpi-icon"><i class="fas fa-chalkboard-user"></i></div>
+        </div>
+        <div class="kpi-val">@Model.TotalTeachers</div>
+        <div class="kpi-foot"><i class="fas fa-circle" style="color:#10b981;font-size:7px"></i> Đang hoạt động</div>
+    </div>
+
+    <div class="kpi-card kc-green">
+        <div class="kpi-row">
+            <div class="kpi-lbl">Lớp đang mở</div>
+            <div class="kpi-icon"><i class="fas fa-chalkboard"></i></div>
+        </div>
+        <div class="kpi-val">@Model.TotalActiveClasses</div>
+        <div class="kpi-foot"><i class="fas fa-circle" style="color:#9ca3af;font-size:7px"></i> @Model.ClassInactive lớp tạm ngừng</div>
+    </div>
+
+    <div class="kpi-card kc-purple">
+        <div class="kpi-row">
+            <div class="kpi-lbl">Tỉ lệ chuyên cần</div>
+            <div class="kpi-icon"><i class="fas fa-clipboard-check"></i></div>
+        </div>
+        <div class="kpi-val">@Model.AvgAttendanceRate<small>%</small></div>
+        <div class="kpi-foot">
+            <i class="fas fa-calendar-check" style="color:#8b5cf6;font-size:10px"></i>
+            @Model.TotalSessionsCompleted buổi hoàn thành
+        </div>
+    </div>
+
+    <div class="kpi-card kc-teal">
+        <div class="kpi-row">
+            <div class="kpi-lbl">Buổi hoàn thành</div>
+            <div class="kpi-icon"><i class="fas fa-circle-check"></i></div>
+        </div>
+        <div class="kpi-val">@Model.TotalSessionsCompleted</div>
+        <div class="kpi-foot"><i class="fas fa-clock" style="color:#06b6d4;font-size:10px"></i> Trong @periodLabel</div>
+    </div>
+
+    <div class="kpi-card kc-red">
+        <div class="kpi-row">
+            <div class="kpi-lbl">Buổi bị huỷ</div>
+            <div class="kpi-icon"><i class="fas fa-calendar-xmark"></i></div>
+        </div>
+        <div class="kpi-val">@Model.TotalSessionsCancelled</div>
+        <div class="kpi-foot">
+            <span class="@(cancelRate > 10 ? "down" : "")">@cancelRate% tổng buổi</span>
+        </div>
+    </div>
+
+    <div class="kpi-card kc-amber">
+        <div class="kpi-row">
+            <div class="kpi-lbl">Học sinh mới</div>
+            <div class="kpi-icon"><i class="fas fa-user-plus"></i></div>
+        </div>
+        <div class="kpi-val">@Model.NewStudentsInPeriod</div>
+        <div class="kpi-foot">Nhập học trong kỳ</div>
+    </div>
+
+    <div class="kpi-card kc-indigo">
+        <div class="kpi-row">
+            <div class="kpi-lbl">Ngày nghỉ lễ</div>
+            <div class="kpi-icon"><i class="fas fa-umbrella-beach"></i></div>
+        </div>
+        <div class="kpi-val">@Model.TotalHolidays</div>
+        <div class="kpi-foot">Trong năm @Model.FilterYear</div>
+    </div>
+
+</div>
+
+<!-- ════════ ROW 1: Buổi học theo tháng + Trạng thái học sinh ════════ -->
+<div class="rpt-row c32">
+
+    <!-- Buổi học theo tháng -->
+    <div class="cc">
+        <div class="cc-hd">
+            <div class="cc-hd-l">
+                <div class="cc-ico"><i class="fas fa-chart-bar"></i></div>
+                <div>
+                    <div class="cc-title">Buổi học theo tháng</div>
+                    <div class="cc-subtitle">Năm @Model.FilterYear — hoàn thành / lịch / huỷ</div>
+                </div>
+            </div>
+            <div class="lgd">
+                <span class="lgd-i"><span class="lgd-dot" style="background:#10b981"></span>Hoàn thành</span>
+                <span class="lgd-i"><span class="lgd-dot" style="background:#3b82f6"></span>Lịch</span>
+                <span class="lgd-i"><span class="lgd-dot" style="background:#f43f5e"></span>Huỷ</span>
+            </div>
+        </div>
+        <div class="cc-body">
+            <div class="bar-chart-wrap">
+                <div class="bcw-grid">
+                    <div class="bcw-gl"></div><div class="bcw-gl"></div>
+                    <div class="bcw-gl"></div><div class="bcw-gl"></div>
+                </div>
+                @foreach (var m in Model.MonthlySessionStats)
+                {
+                    var pC = maxMonthSess > 0 ? (double)m.Completed / maxMonthSess * 100 : 0;
+                    var pS = maxMonthSess > 0 ? (double)m.Scheduled / maxMonthSess * 100 : 0;
+                    var pX = maxMonthSess > 0 ? (double)m.Cancelled / maxMonthSess * 100 : 0;
+                    <div class="bar-col">
+                        <div class="bar-group">
+                            <div class="bar b-done" style="height:@(pC.ToString("F1"))%" data-tip="Hoàn thành: @m.Completed"></div>
+                            <div class="bar b-schd" style="height:@(pS.ToString("F1"))%" data-tip="Lịch: @m.Scheduled"></div>
+                            <div class="bar b-canc" style="height:@(pX.ToString("F1"))%" data-tip="Huỷ: @m.Cancelled"></div>
+                        </div>
+                        <span class="bar-lbl">@mn[m.Month]</span>
+                    </div>
+                }
+            </div>
+        </div>
+    </div>
+
+    <!-- Trạng thái học sinh (Donut) -->
+    <div class="cc">
+        <div class="cc-hd">
+            <div class="cc-hd-l">
+                <div class="cc-ico"><i class="fas fa-users"></i></div>
+                <div>
+                    <div class="cc-title">Trạng thái học sinh</div>
+                    <div class="cc-subtitle">Phân bổ theo trạng thái ghi danh</div>
+                </div>
+            </div>
+        </div>
+        <div class="cc-body" style="display:flex;align-items:center;justify-content:center">
+            @{
+                double pA = Math.Round((double)Model.StudentActive / (totalSt > 0 ? totalSt : 1) * 100, 1);
+                double pSp = Math.Round((double)Model.StudentSuspended / (totalSt > 0 ? totalSt : 1) * 100, 1);
+                double pL = Math.Round((double)Model.StudentLeft / (totalSt > 0 ? totalSt : 1) * 100, 1);
+            }
+            <div class="donut-outer">
+                <div class="donut-svg-box">
+                    <svg viewBox="0 0 120 120" width="130" height="130">
+                        <circle cx="60" cy="60" r="50" fill="none" stroke="#eef1f8" stroke-width="12" />
+                        @if (Model.StudentLeft > 0)
+                        {
+                            <circle cx="60" cy="60" r="50" fill="none" stroke="#9ca3af" stroke-width="12"
+                                    stroke-dasharray="@(lenL.ToString("F2")) @((circ - lenL).ToString("F2"))"
+                                    stroke-dashoffset="@((-offL).ToString("F2"))" />
+                        }
+                        @if (Model.StudentSuspended > 0)
+                        {
+                            <circle cx="60" cy="60" r="50" fill="none" stroke="#f59f00" stroke-width="12"
+                                    stroke-dasharray="@(lenS.ToString("F2")) @((circ - lenS).ToString("F2"))"
+                                    stroke-dashoffset="@((-offS).ToString("F2"))" />
+                        }
+                        @if (Model.StudentActive > 0)
+                        {
+                            <circle cx="60" cy="60" r="50" fill="none" stroke="#10b981" stroke-width="12"
+                                    stroke-dasharray="@(lenA.ToString("F2")) @((circ - lenA).ToString("F2"))"
+                                    stroke-dashoffset="@((-offA).ToString("F2"))" />
+                        }
+                    </svg>
+                    <div class="donut-center">
+                        <div class="dv">@totalSt</div>
+                        <div class="dl">HS</div>
+                    </div>
+                </div>
+                <div class="donut-rows">
+                    <div class="donut-row">
+                        <div class="donut-row-l"><div class="donut-dot" style="background:#10b981"></div>Đang học</div>
+                        <div><span class="donut-row-r">@Model.StudentActive</span> <span class="donut-row-p">@pA%</span></div>
+                    </div>
+                    <div class="donut-row">
+                        <div class="donut-row-l"><div class="donut-dot" style="background:#f59f00"></div>Bảo lưu</div>
+                        <div><span class="donut-row-r">@Model.StudentSuspended</span> <span class="donut-row-p">@pSp%</span></div>
+                    </div>
+                    <div class="donut-row">
+                        <div class="donut-row-l"><div class="donut-dot" style="background:#9ca3af"></div>Đã nghỉ</div>
+                        <div><span class="donut-row-r">@Model.StudentLeft</span> <span class="donut-row-p">@pL%</span></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+</div>
+
+<!-- ════════ ROW 2: Học sinh theo môn + Tỉ lệ điểm danh theo môn ════════ -->
+<div class="rpt-row c22">
+
+    <!-- Học sinh theo môn (hbar) -->
+    <div class="cc">
+        <div class="cc-hd">
+            <div class="cc-hd-l">
+                <div class="cc-ico"><i class="fas fa-book-open"></i></div>
+                <div>
+                    <div class="cc-title">Học sinh theo môn</div>
+                    <div class="cc-subtitle">Số học sinh đang học phân theo môn học</div>
+                </div>
+            </div>
+        </div>
+        <div class="cc-body">
+            @if (Model.SubjectStudentStats.Any())
+            {
+                <div class="hbar-chart">
+                    @foreach (var s in Model.SubjectStudentStats)
+                    {
+                        var pct = maxSubjSt > 0 ? (double)s.Count / maxSubjSt * 100 : 0;
+                        var col = subjectColor(s.Subject);
+                        <div class="hbar-row">
+                            <span class="hbar-lbl" title="@s.LabelFull">@s.Label</span>
+                            <div class="hbar-track">
+                                <div class="hbar-fill" style="width:@(pct.ToString("F1"))%;background:@col">
+                                    @if (pct > 15)
+                                    {
+                                        <text>@s.Count</text>
+                                    }
+                                </div>
+                            </div>
+                            <span class="hbar-cnt">@s.Count</span>
+                        </div>
+                    }
+                </div>
+            }
+            else
+            {
+                <div style="text-align:center;padding:40px 0;color:var(--text-3);font-size:.83rem">
+                    <i class="fas fa-book" style="font-size:28px;opacity:.3;display:block;margin-bottom:10px"></i>
+                    Chưa có dữ liệu
+                </div>
+            }
+        </div>
+    </div>
+
+    <!-- Điểm danh theo môn (stacked) -->
+    <div class="cc">
+        <div class="cc-hd">
+            <div class="cc-hd-l">
+                <div class="cc-ico"><i class="fas fa-clipboard-check"></i></div>
+                <div>
+                    <div class="cc-title">Tỉ lệ điểm danh theo môn</div>
+                    <div class="cc-subtitle">@periodLabel — có mặt / vắng</div>
+                </div>
+            </div>
+            <div class="lgd">
+                <span class="lgd-i"><span class="lgd-dot" style="background:#10b981"></span>Có mặt</span>
+                <span class="lgd-i"><span class="lgd-dot" style="background:#f43f5e"></span>Vắng</span>
+            </div>
+        </div>
+        <div class="cc-body">
+            @if (Model.SubjectAttendanceStats.Any())
+            {
+                <div class="att-chart">
+                    @foreach (var s in Model.SubjectAttendanceStats)
+                    {
+                        var pP = s.Total > 0 ? (double)s.Present / s.Total * 100 : 0;
+                        var pAb = s.Total > 0 ? (double)s.Absent / s.Total * 100 : 0;
+                        <div class="att-row">
+                            <span class="att-lbl">@s.Label</span>
+                            <div class="att-track">
+                                <div class="att-seg att-present" style="width:@(pP.ToString("F1"))%" title="Có mặt: @s.Present"></div>
+                                <div class="att-seg att-absent" style="width:@(pAb.ToString("F1"))%" title="Vắng: @s.Absent"></div>
+                            </div>
+                            <span class="att-rate">@s.Rate%</span>
+                        </div>
+                    }
+                </div>
+            }
+            else
+            {
+                <div style="text-align:center;padding:40px 0;color:var(--text-3);font-size:.83rem">
+                    <i class="fas fa-clipboard" style="font-size:28px;opacity:.3;display:block;margin-bottom:10px"></i>
+                    Chưa có dữ liệu điểm danh
+                </div>
+            }
+        </div>
+    </div>
+
+</div>
+
+<!-- ════════ ROW 3: Học sinh mới theo tháng + Lớp học ════════ -->
+<div class="rpt-row c22">
+
+    <!-- Học sinh mới theo tháng (sparkline) -->
+    <div class="cc">
+        <div class="cc-hd">
+            <div class="cc-hd-l">
+                <div class="cc-ico" style="background:rgba(245,159,0,.1);color:#f59f00"><i class="fas fa-user-plus"></i></div>
+                <div>
+                    <div class="cc-title">Học sinh mới theo tháng</div>
+                    <div class="cc-subtitle">Xu hướng tuyển sinh — Năm @Model.FilterYear</div>
+                </div>
+            </div>
+        </div>
+        <div class="cc-body">
+            @{
+                var ns = Model.MonthlyNewStudentStats;
+                var maxNS = ns.Any() ? ns.Max(x => x.Count) : 1;
+                if (maxNS == 0) maxNS = 1;
+                // Build SVG polyline points (viewBox 0 0 340 90)
+                var pts = new System.Text.StringBuilder();
+                var fillPts = new System.Text.StringBuilder();
+                fillPts.Append("0,90 ");
+                for (int i = 0; i < 12; i++)
+                {
+                    double x = i / 11.0 * 340;
+                    double y = 90 - (double)ns[i].Count / maxNS * 80;
+                    pts.Append($"{x.ToString("F1")},{y.ToString("F1")} ");
+                    fillPts.Append($"{x.ToString("F1")},{y.ToString("F1")} ");
+                }
+                fillPts.Append("340,90");
+            }
+            <div class="sparkline-wrap" id="sparkWrap">
+                <svg viewBox="0 0 340 90" preserveAspectRatio="none">
+                    <defs>
+                        <linearGradient id="sparkGrad" x1="0" y1="0" x2="0" y2="1">
+                            <stop offset="0%" stop-color="#f59f00" stop-opacity=".3" />
+                            <stop offset="100%" stop-color="#f59f00" stop-opacity=".02" />
+                        </linearGradient>
+                    </defs>
+                    <!-- Grid lines -->
+                    <line x1="0" y1="0" x2="340" y2="0" stroke="var(--border)" stroke-width=".5" />
+                    <line x1="0" y1="30" x2="340" y2="30" stroke="var(--border)" stroke-width=".5" />
+                    <line x1="0" y1="60" x2="340" y2="60" stroke="var(--border)" stroke-width=".5" />
+                    <line x1="0" y1="90" x2="340" y2="90" stroke="var(--border)" stroke-width=".5" />
+                    <!-- Fill area -->
+                    <polygon points="@fillPts" fill="url(#sparkGrad)" />
+                    <!-- Line -->
+                    <polyline points="@pts" fill="none" stroke="#f59f00" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" />
+                    <!-- Dots -->
+                    @for (int i = 0; i < 12; i++)
+                    {
+                        double x2 = i / 11.0 * 340;
+                        double y2 = 90 - (double)ns[i].Count / maxNS * 80;
+                        if (ns[i].Count > 0)
+                        {
+                            <circle cx="@(x2.ToString("F1"))" cy="@(y2.ToString("F1"))" r="3.5" fill="#f59f00" stroke="#fff" stroke-width="1.5">
+                                <title>Tháng @ns[i].Month: @ns[i].Count HS mới</title>
+                            </circle>
+                        }
+                    }
+                </svg>
+                <div class="spark-lbl">
+                    @foreach (var m2 in mn.Skip(1))
+                    {
+                        <span>@m2</span>
+                    }
+                </div>
+            </div>
+            <!-- Tổng kết dưới sparkline -->
+            <div style="display:flex;gap:16px;margin-top:14px;flex-wrap:wrap">
+                <div style="font-size:.72rem;color:var(--text-3)">
+                    <span style="font-size:1.1rem;font-weight:800;color:var(--text-1)">@ns.Sum(x => x.Count)</span>
+                    học sinh mới cả năm
+                </div>
+                <div style="font-size:.72rem;color:var(--text-3)">
+                    Tháng cao nhất:
+                    <strong style="color:var(--text-1)">T@(ns.OrderByDescending(x => x.Count).First().Month)</strong>
+                    (@ns.Max(x => x.Count) HS)
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Trạng thái lớp học (arc donut mini) -->
+    <div class="cc">
+        <div class="cc-hd">
+            <div class="cc-hd-l">
+                <div class="cc-ico" style="background:rgba(16,185,129,.1);color:#10b981"><i class="fas fa-chalkboard"></i></div>
+                <div>
+                    <div class="cc-title">Trạng thái lớp học</div>
+                    <div class="cc-subtitle">Phân bổ lớp đang hoạt động và tạm ngừng</div>
+                </div>
+            </div>
+        </div>
+        <div class="cc-body" style="display:flex;align-items:center;justify-content:center">
+            @{
+                int totalCls = Model.ClassActive + Model.ClassInactive;
+                int tc2 = totalCls > 0 ? totalCls : 1;
+                double clsCirc = 2 * Math.PI * 40;
+                double lenCa = clsCirc * Model.ClassActive / tc2;
+                double lenCi = clsCirc * Model.ClassInactive / tc2;
+                double offCi = lenCa;
+                double pCa = Math.Round((double)Model.ClassActive / tc2 * 100, 1);
+                double pCi = Math.Round((double)Model.ClassInactive / tc2 * 100, 1);
+            }
+            <div class="cls-status-wrap">
+                <div class="cls-arc-box">
+                    <svg viewBox="0 0 100 100" width="100" height="100">
+                        <circle cx="50" cy="50" r="40" fill="none" stroke="#eef1f8" stroke-width="12" />
+                        @if (Model.ClassInactive > 0)
+                        {
+                            <circle cx="50" cy="50" r="40" fill="none" stroke="#9ca3af" stroke-width="12"
+                                    stroke-dasharray="@(lenCi.ToString("F2")) @((clsCirc - lenCi).ToString("F2"))"
+                                    stroke-dashoffset="@((-offCi).ToString("F2"))" />
+                        }
+                        @if (Model.ClassActive > 0)
+                        {
+                            <circle cx="50" cy="50" r="40" fill="none" stroke="#10b981" stroke-width="12"
+                                    stroke-dasharray="@(lenCa.ToString("F2")) @((clsCirc - lenCa).ToString("F2"))"
+                                    stroke-dashoffset="0" />
+                        }
+                    </svg>
+                    <div class="cls-arc-center">
+                        <div class="cav">@totalCls</div>
+                        <div class="cal">Lớp</div>
+                    </div>
+                </div>
+                <div class="cls-legend">
+                    <div class="cls-leg-row">
+                        <div class="cls-leg-dot" style="background:#10b981"></div>
+                        <span class="cls-leg-lbl">Hoạt động</span>
+                        <span class="cls-leg-val">@Model.ClassActive <small style="font-size:.65rem;color:var(--text-3);font-weight:600">(@pCa%)</small></span>
+                    </div>
+                    <div class="cls-leg-row">
+                        <div class="cls-leg-dot" style="background:#9ca3af"></div>
+                        <span class="cls-leg-lbl">Tạm ngừng</span>
+                        <span class="cls-leg-val">@Model.ClassInactive <small style="font-size:.65rem;color:var(--text-3);font-weight:600">(@pCi%)</small></span>
+                    </div>
+                    <div style="margin-top:8px;padding-top:8px;border-top:1px solid var(--border)">
+                        <div style="font-size:.72rem;color:var(--text-3)">Phòng học hiện có</div>
+                        <div style="font-size:1.3rem;font-weight:800;color:var(--text-1)">@Model.TotalRooms <small style="font-size:.75rem;font-weight:600;color:var(--text-3)">phòng</small></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+</div>
+
+<!-- ════════ ROW 4: Lớp vắng cao + Giáo viên ════════ -->
+<div class="rpt-row c32">
+
+    <!-- Lớp vắng nhiều nhất -->
+    <div class="cc">
+        <div class="cc-hd">
+            <div class="cc-hd-l">
+                <div class="cc-ico" style="background:rgba(244,63,94,.1);color:#f43f5e">
+                    <i class="fas fa-triangle-exclamation"></i>
+                </div>
+                <div>
+                    <div class="cc-title">Lớp có tỉ lệ vắng cao</div>
+                    <div class="cc-subtitle">@periodLabel — Top 8 cần theo dõi</div>
+                </div>
+            </div>
+        </div>
+        <div class="cc-body p0">
+            @if (Model.TopAbsenceClasses.Any())
+            {
+                <table class="abs-table">
+                    <thead>
+                        <tr>
+                            <th>Lớp</th>
+                            <th>Môn</th>
+                            <th>Tỉ lệ vắng</th>
+                            <th style="text-align:right">Vắng / Tổng</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var c in Model.TopAbsenceClasses)
+                        {
+                            var rcls = c.AbsenceRate >= 30 ? "rh" : c.AbsenceRate >= 15 ? "rm" : "rl";
+                            var rcol = c.AbsenceRate >= 30 ? "#f43f5e" : c.AbsenceRate >= 15 ? "#f59f00" : "#10b981";
+                            <tr>
+                                <td>
+                                    <strong>@c.ClassCode</strong>
+                                    @if (!string.IsNullOrEmpty(c.ClassName))
+                                    {
+                                        <div style="font-size:.68rem;color:var(--text-3)">@c.ClassName</div>
+                                    }
+                                </td>
+                                <td><span class="subj-tag">@c.SubjectLabel</span></td>
+                                <td>
+                                    <div class="rate-inline">
+                                        <div class="rate-track">
+                                            <div class="rate-fill" style="width:@(c.AbsenceRate.ToString("F1"))%;background:@rcol"></div>
+                                        </div>
+                                        <span class="rbadge @rcls">@c.AbsenceRate%</span>
+                                    </div>
+                                </td>
+                                <td style="text-align:right;color:var(--text-2);font-size:.76rem">
+                                    <strong>@c.AbsentCount</strong> / @c.TotalAtt
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            }
+            else
+            {
+                <div style="text-align:center;padding:48px 20px;color:var(--text-3);font-size:.83rem">
+                    <i class="fas fa-circle-check" style="font-size:32px;color:#10b981;opacity:.6;display:block;margin-bottom:10px"></i>
+                    <strong style="color:#059669">Tốt!</strong> Không có lớp vắng bất thường
+                </div>
+            }
+        </div>
+    </div>
+
+    <!-- Giáo viên leaderboard -->
+    <div class="cc">
+        <div class="cc-hd">
+            <div class="cc-hd-l">
+                <div class="cc-ico" style="background:rgba(59,130,246,.1);color:#3b82f6">
+                    <i class="fas fa-ranking-star"></i>
+                </div>
+                <div>
+                    <div class="cc-title">Giáo viên tích cực nhất</div>
+                    <div class="cc-subtitle">Buổi dạy hoàn thành — @periodLabel</div>
+                </div>
+            </div>
+        </div>
+        <div class="cc-body">
+            @if (Model.TeacherSessionStats.Any())
+            {
+                <div class="t-lb">
+                    @for (int i = 0; i < Model.TeacherSessionStats.Count; i++)
+                    {
+                        var t = Model.TeacherSessionStats[i];
+                        var ri = i + 1;
+                        var rc = ri == 1 ? "g1" : ri == 2 ? "g2" : ri == 3 ? "g3" : "";
+                        var ric = ri == 1 ? "🥇" : ri == 2 ? "🥈" : ri == 3 ? "🥉" : ri.ToString();
+                        var tp = maxTeacher > 0 ? (double)t.SessionCount / maxTeacher * 100 : 0;
+                        var ini = string.Join("", t.TeacherName.Split(' ', StringSplitOptions.RemoveEmptyEntries).Select(p => p[0]).Take(2)).ToUpper();
+                        <div class="t-lb-row">
+                            <span class="t-rank @rc">@ric</span>
+                            <div class="t-av">@ini</div>
+                            <span class="t-name" title="@t.TeacherName">@t.TeacherName</span>
+                            <span class="t-cls">@t.ClassCount lớp</span>
+                            <div class="t-bar-wrap">
+                                <div class="t-bar-track">
+                                    <div class="t-bar-fill" style="width:@(tp.ToString("F1"))%"></div>
+                                </div>
+                            </div>
+                            <span class="t-val">@t.SessionCount</span>
+                        </div>
+                    }
+                </div>
+            }
+            else
+            {
+                <div style="text-align:center;padding:40px 0;color:var(--text-3);font-size:.83rem">
+                    <i class="fas fa-chalkboard-user" style="font-size:28px;opacity:.3;display:block;margin-bottom:10px"></i>
+                    Chưa có dữ liệu buổi học
+                </div>
+            }
+        </div>
+    </div>
+
+</div>
+
+<!-- ════════ ROW 5: Sử dụng phòng ════════ -->
+@if (Model.RoomUsageStats.Any())
+{
+    <div class="rpt-row c1" style="margin-bottom:0">
+        <div class="cc">
+            <div class="cc-hd">
+                <div class="cc-hd-l">
+                    <div class="cc-ico" style="background:rgba(6,182,212,.1);color:#06b6d4"><i class="fas fa-door-open"></i></div>
+                    <div>
+                        <div class="cc-title">Tần suất sử dụng phòng học</div>
+                        <div class="cc-subtitle">@periodLabel — số buổi hoàn thành theo phòng (Top 6)</div>
+                    </div>
+                </div>
+            </div>
+            <div class="cc-body">
+                <div class="room-grid">
+                    @foreach (var r in Model.RoomUsageStats)
+                    {
+                        <div class="room-card">
+                            <div class="room-code">@r.RoomCode</div>
+                            <div class="room-name">@r.RoomName</div>
+                            <div class="room-bar-track">
+                                <div class="room-bar-fill" style="width:@(r.UsagePct.ToString("F0"))%"></div>
+                            </div>
+                            <div class="room-foot">
+                                <span>Sức chứa: <strong>@r.Capacity</strong></span>
+                                <span><strong>@r.UsedSessions</strong> buổi</span>
+                            </div>
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
+}

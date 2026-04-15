@@ -1,0 +1,1013 @@
+﻿@page
+@model TutoringCenterManagement.Pages.Admin.Rooms.CreateModel
+@{
+    ViewData["Title"] = "Thêm phòng học";
+}
+
+@section Styles {
+    <style>
+        /* ════════════════════════════════════
+               ROOMS CREATE — đồng bộ design system
+            ════════════════════════════════════ */
+
+        /* ── Layout 2 cột: form + preview ── */
+        .create-layout {
+            display: grid;
+            grid-template-columns: 1fr 280px;
+            gap: 20px;
+            align-items: start;
+        }
+
+        /* ── Form card ── */
+        .form-card {
+            background: var(--bg-card);
+            border-radius: var(--r-lg);
+            border: 1px solid var(--border);
+            box-shadow: var(--sh-sm);
+            overflow: hidden;
+            margin-bottom: 16px;
+        }
+
+            .form-card:last-child {
+                margin-bottom: 0;
+            }
+
+        .form-card-hd {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 14px 20px;
+            border-bottom: 1px solid var(--border);
+            background: linear-gradient(to right, #fafbff, #fff);
+        }
+
+        .form-card-icon {
+            width: 30px;
+            height: 30px;
+            border-radius: 8px;
+            background: rgba(232,89,12,.1);
+            color: var(--c-primary);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 13px;
+            flex-shrink: 0;
+        }
+
+        .form-card-title {
+            font-size: .92rem;
+            font-weight: 700;
+            color: var(--text-1);
+        }
+
+        .form-card-subtitle {
+            font-size: .75rem;
+            color: var(--text-3);
+            margin-top: 1px;
+        }
+
+        .form-card-body {
+            padding: 22px 24px;
+        }
+
+        /* ── Form grid ── */
+        .form-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 16px;
+        }
+
+        .span-2 {
+            grid-column: span 2;
+        }
+
+        /* ── Field ── */
+        .form-field {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+
+        .field-label {
+            font-size: .72rem;
+            font-weight: 700;
+            color: var(--text-2);
+            text-transform: uppercase;
+            letter-spacing: .5px;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+            .field-label .req {
+                color: #f43f5e;
+                font-size: 13px;
+                line-height: 1;
+            }
+
+            .field-label .badge-opt {
+                font-size: .6rem;
+                font-weight: 600;
+                padding: 1px 6px;
+                border-radius: 4px;
+                background: var(--bg-page);
+                border: 1px solid var(--border);
+                color: var(--text-3);
+                text-transform: none;
+                letter-spacing: 0;
+            }
+
+        /* ── Input ── */
+        .form-input {
+            height: 38px;
+            padding: 0 12px;
+            border: 1.5px solid var(--border);
+            border-radius: var(--r-sm);
+            background: #f8f9fc;
+            color: var(--text-1);
+            font-size: .85rem;
+            font-family: 'Plus Jakarta Sans', system-ui, sans-serif;
+            font-weight: 500;
+            outline: none;
+            width: 100%;
+            box-sizing: border-box;
+            transition: border-color .15s, background .15s, box-shadow .15s;
+        }
+
+            .form-input:focus {
+                border-color: var(--c-primary);
+                background: #fff;
+                box-shadow: 0 0 0 3px var(--c-glow);
+            }
+
+            .form-input:hover:not(:focus) {
+                border-color: #c4c9d8;
+            }
+
+            .form-input::placeholder {
+                color: var(--text-3);
+                font-size: .82rem;
+            }
+
+        /* Input với icon */
+        .input-wrap {
+            position: relative;
+        }
+
+            .input-wrap .input-icon {
+                position: absolute;
+                left: 11px;
+                top: 0;
+                bottom: 0;
+                display: flex;
+                align-items: center;
+                color: var(--text-3);
+                font-size: 13px;
+                pointer-events: none;
+                transition: color .15s;
+            }
+
+            .input-wrap:focus-within .input-icon {
+                color: var(--c-primary);
+            }
+
+            .input-wrap .form-input {
+                padding-left: 34px;
+            }
+
+        /* Number input — ẩn spinner mặc định */
+        .form-input[type="number"]::-webkit-inner-spin-button,
+        .form-input[type="number"]::-webkit-outer-spin-button {
+            -webkit-appearance: none;
+        }
+
+        .form-input[type="number"] {
+            -moz-appearance: textfield;
+        }
+
+        /* Number stepper custom */
+        .num-wrap {
+            position: relative;
+            display: flex;
+        }
+
+            .num-wrap .form-input {
+                padding-right: 64px;
+            }
+
+        .num-stepper {
+            position: absolute;
+            right: 0;
+            top: 0;
+            bottom: 0;
+            display: flex;
+            flex-direction: column;
+            border-left: 1.5px solid var(--border);
+            border-radius: 0 var(--r-sm) var(--r-sm) 0;
+            overflow: hidden;
+        }
+
+            .num-stepper button {
+                flex: 1;
+                width: 30px;
+                padding: 0;
+                background: #f4f6fc;
+                border: none;
+                cursor: pointer;
+                color: var(--text-3);
+                font-size: 9px;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                transition: background .12s, color .12s;
+                line-height: 1;
+            }
+
+                .num-stepper button:first-child {
+                    border-bottom: 1px solid var(--border);
+                }
+
+                .num-stepper button:hover {
+                    background: var(--c-primary);
+                    color: #fff;
+                }
+
+        /* Textarea */
+        .form-textarea {
+            padding: 10px 12px;
+            border: 1.5px solid var(--border);
+            border-radius: var(--r-sm);
+            background: #f8f9fc;
+            color: var(--text-1);
+            font-size: .85rem;
+            font-family: 'Plus Jakarta Sans', system-ui, sans-serif;
+            font-weight: 500;
+            outline: none;
+            width: 100%;
+            box-sizing: border-box;
+            min-height: 80px;
+            resize: vertical;
+            line-height: 1.5;
+            transition: border-color .15s, background .15s, box-shadow .15s;
+        }
+
+            .form-textarea:focus {
+                border-color: var(--c-primary);
+                background: #fff;
+                box-shadow: 0 0 0 3px var(--c-glow);
+            }
+
+            .form-textarea:hover:not(:focus) {
+                border-color: #c4c9d8;
+            }
+
+            .form-textarea::placeholder {
+                color: var(--text-3);
+                font-size: .82rem;
+            }
+
+        /* Validation */
+        .field-error {
+            font-size: .73rem;
+            color: #e03131;
+            display: none;
+            align-items: center;
+            gap: 4px;
+        }
+
+            .field-error:not(:empty) {
+                display: flex;
+            }
+
+            .field-error::before {
+                content: '\f06a';
+                font-family: 'Font Awesome 6 Free';
+                font-weight: 900;
+                font-size: 10px;
+                flex-shrink: 0;
+            }
+
+        /* Hint text */
+        .field-hint {
+            font-size: .72rem;
+            color: var(--text-3);
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+
+            .field-hint i {
+                font-size: 10px;
+                color: var(--c-primary);
+            }
+
+        /* ── Capacity tier badges ── */
+        .cap-tiers {
+            display: flex;
+            gap: 6px;
+            flex-wrap: wrap;
+            margin-top: 10px;
+        }
+
+        .cap-tier {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            padding: 4px 10px;
+            border-radius: var(--r-sm);
+            font-size: .72rem;
+            font-weight: 600;
+            cursor: pointer;
+            border: 1.5px solid transparent;
+            transition: all .15s;
+            user-select: none;
+        }
+
+            .cap-tier:hover {
+                transform: translateY(-1px);
+                box-shadow: var(--sh-xs);
+            }
+
+            .cap-tier.sm {
+                background: rgba(16,185,129,.08);
+                color: #059669;
+                border-color: rgba(16,185,129,.2);
+            }
+
+            .cap-tier.md {
+                background: rgba(59,130,246,.08);
+                color: #2563eb;
+                border-color: rgba(59,130,246,.2);
+            }
+
+            .cap-tier.lg {
+                background: rgba(232,89,12,.08);
+                color: #c2410c;
+                border-color: rgba(232,89,12,.2);
+            }
+
+            .cap-tier.xl {
+                background: rgba(244,63,94,.08);
+                color: #e03131;
+                border-color: rgba(244,63,94,.2);
+            }
+
+            .cap-tier.active {
+                box-shadow: 0 0 0 2px currentColor;
+            }
+
+        /* ── Preview sidebar ── */
+        .preview-card {
+            background: var(--bg-card);
+            border-radius: var(--r-lg);
+            border: 1px solid var(--border);
+            box-shadow: var(--sh-sm);
+            overflow: hidden;
+            position: sticky;
+            top: 80px;
+        }
+
+        .preview-hd {
+            padding: 14px 18px;
+            border-bottom: 1px solid var(--border);
+            background: linear-gradient(to right, #fafbff, #fff);
+            font-size: .78rem;
+            font-weight: 700;
+            color: var(--text-2);
+            display: flex;
+            align-items: center;
+            gap: 7px;
+            text-transform: uppercase;
+            letter-spacing: .5px;
+        }
+
+            .preview-hd i {
+                color: var(--c-primary);
+            }
+
+        .preview-body {
+            padding: 20px 18px;
+        }
+
+        /* Room preview card */
+        .pv-room-card {
+            border-radius: var(--r-md);
+            border: 1.5px solid var(--border);
+            overflow: hidden;
+            margin-bottom: 16px;
+            transition: border-color .3s;
+        }
+
+        .pv-room-banner {
+            height: 64px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 26px;
+            color: #fff;
+            background: linear-gradient(135deg, var(--c-primary), #f59f00);
+            transition: background .3s;
+            position: relative;
+            overflow: hidden;
+        }
+
+            .pv-room-banner::before {
+                content: '';
+                position: absolute;
+                inset: 0;
+                background: repeating-linear-gradient( 45deg, rgba(255,255,255,.04) 0, rgba(255,255,255,.04) 1px, transparent 0, transparent 50% );
+                background-size: 12px 12px;
+            }
+
+            .pv-room-banner.sm {
+                background: linear-gradient(135deg,#10b981,#34d399);
+            }
+
+            .pv-room-banner.md {
+                background: linear-gradient(135deg,#3b82f6,#60a5fa);
+            }
+
+            .pv-room-banner.lg {
+                background: linear-gradient(135deg,#e8590c,#f59f00);
+            }
+
+            .pv-room-banner.xl {
+                background: linear-gradient(135deg,#f43f5e,#fb7185);
+            }
+
+        .pv-room-info {
+            padding: 12px 14px;
+        }
+
+        .pv-room-name {
+            font-size: .9rem;
+            font-weight: 800;
+            color: var(--text-1);
+            margin-bottom: 4px;
+        }
+
+            .pv-room-name.empty {
+                color: var(--text-3);
+                font-style: italic;
+                font-weight: 400;
+                font-size: .82rem;
+            }
+
+        .pv-code-badge {
+            display: inline-flex;
+            align-items: center;
+            padding: 3px 8px;
+            border-radius: 4px;
+            background: rgba(232,89,12,.08);
+            border: 1px solid rgba(232,89,12,.2);
+            color: var(--c-primary);
+            font-size: .72rem;
+            font-weight: 800;
+            letter-spacing: .5px;
+            font-family: 'Courier New', monospace;
+        }
+
+            .pv-code-badge.empty {
+                background: var(--bg-page);
+                border-color: var(--border);
+                color: var(--text-3);
+                font-style: italic;
+                font-weight: 400;
+                font-family: inherit;
+                letter-spacing: 0;
+            }
+
+        /* Capacity preview */
+        .pv-divider {
+            height: 1px;
+            background: var(--border);
+            margin: 14px 0;
+        }
+
+        .pv-cap-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 8px;
+        }
+
+        .pv-cap-label {
+            font-size: .72rem;
+            color: var(--text-3);
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: .4px;
+        }
+
+        .pv-cap-num {
+            font-size: 1.4rem;
+            font-weight: 800;
+            color: var(--text-1);
+            line-height: 1;
+        }
+
+        .pv-cap-unit {
+            font-size: .72rem;
+            color: var(--text-3);
+            font-weight: 500;
+        }
+
+        .pv-cap-bar {
+            height: 6px;
+            border-radius: 99px;
+            background: #eef0f8;
+            overflow: hidden;
+            margin-bottom: 6px;
+        }
+
+        .pv-cap-fill {
+            height: 100%;
+            border-radius: 99px;
+            width: 0%;
+            transition: width .4s ease, background .3s;
+        }
+
+            .pv-cap-fill.sm {
+                background: linear-gradient(90deg,#10b981,#34d399);
+            }
+
+            .pv-cap-fill.md {
+                background: linear-gradient(90deg,#3b82f6,#60a5fa);
+            }
+
+            .pv-cap-fill.lg {
+                background: linear-gradient(90deg,#e8590c,#f59f00);
+            }
+
+            .pv-cap-fill.xl {
+                background: linear-gradient(90deg,#f43f5e,#fb7185);
+            }
+
+        .pv-cap-tier-lbl {
+            font-size: .72rem;
+            font-weight: 700;
+            text-align: right;
+            transition: color .3s;
+        }
+
+            .pv-cap-tier-lbl.sm {
+                color: #059669;
+            }
+
+            .pv-cap-tier-lbl.md {
+                color: #2563eb;
+            }
+
+            .pv-cap-tier-lbl.lg {
+                color: #c2410c;
+            }
+
+            .pv-cap-tier-lbl.xl {
+                color: #e03131;
+            }
+
+        /* Note preview */
+        .pv-note {
+            font-size: .8rem;
+            color: var(--text-2);
+            line-height: 1.5;
+            font-style: italic;
+        }
+
+            .pv-note.empty {
+                color: var(--text-3);
+            }
+
+        /* ── Form actions ── */
+        .form-actions {
+            display: flex;
+            align-items: center;
+            justify-content: flex-end;
+            gap: 10px;
+            padding: 16px 24px;
+            border-top: 1px solid var(--border);
+            background: #f9fafd;
+        }
+
+        /* ── Responsive ── */
+        @@media (max-width: 860px) {
+            .create-layout {
+                grid-template-columns: 1fr;
+            }
+
+            .preview-card {
+                position: static;
+            }
+        }
+
+        @@media (max-width: 520px) {
+            .form-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .span-2 {
+                grid-column: span 1;
+            }
+
+            .cap-tiers {
+                gap: 4px;
+            }
+        }
+    </style>
+}
+
+<!-- ════════════════════════════════════════
+     PAGE HEADER
+════════════════════════════════════════ -->
+<div class="page-header">
+    <div>
+        <h1 class="page-heading">Thêm <span>phòng học mới</span></h1>
+        <p class="page-subheading">
+            <i class="fas fa-circle-info" style="color:var(--c-primary)"></i>
+            Điền thông tin để tạo phòng học mới trong hệ thống
+        </p>
+    </div>
+    <div class="page-actions">
+        <a href="/Admin/Rooms" class="btn-outline">
+            <i class="fas fa-arrow-left"></i> Quay lại
+        </a>
+    </div>
+</div>
+
+<!-- ════════════════════════════════════════
+     MAIN LAYOUT
+════════════════════════════════════════ -->
+<div class="create-layout">
+
+    <!-- ── Cột trái: Form ── -->
+    <div>
+        <form method="post" id="createForm">
+
+            <!-- ┌──────────────────────────────────────┐ -->
+            <!-- │  CARD 1 — Thông tin cơ bản           │ -->
+            <!-- └──────────────────────────────────────┘ -->
+            <div class="form-card">
+                <div class="form-card-hd">
+                    <div class="form-card-icon"><i class="fas fa-door-open"></i></div>
+                    <div>
+                        <div class="form-card-title">Thông tin phòng học</div>
+                        <div class="form-card-subtitle">Mã phòng và tên phòng hiển thị trong hệ thống</div>
+                    </div>
+                </div>
+                <div class="form-card-body">
+                    <div class="form-grid">
+
+                        <div class="form-field">
+                            <label class="field-label" for="inputRoomCode">
+                                Mã phòng <span class="req">*</span>
+                            </label>
+                            <div class="input-wrap">
+                                <span class="input-icon"><i class="fas fa-hashtag"></i></span>
+                                <input asp-for="Input.RoomCode"
+                                       id="inputRoomCode"
+                                       class="form-input"
+                                       placeholder="VD: P101, LAB-01..."
+                                       autocomplete="off"
+                                       style="text-transform:uppercase;letter-spacing:.5px;font-family:'Courier New',monospace;font-weight:700" />
+                            </div>
+                            <span asp-validation-for="Input.RoomCode" class="field-error"></span>
+                            <span class="field-hint">
+                                <i class="fas fa-circle-info"></i>
+                                Mã phòng là duy nhất, không thể thay đổi sau khi tạo
+                            </span>
+                        </div>
+
+                        <div class="form-field">
+                            <label class="field-label" for="inputRoomName">
+                                Tên phòng <span class="req">*</span>
+                            </label>
+                            <div class="input-wrap">
+                                <span class="input-icon"><i class="fas fa-door-open"></i></span>
+                                <input asp-for="Input.RoomName"
+                                       id="inputRoomName"
+                                       class="form-input"
+                                       placeholder="VD: Phòng Toán 1, Phòng Lab..." />
+                            </div>
+                            <span asp-validation-for="Input.RoomName" class="field-error"></span>
+                        </div>
+
+                    </div>
+                </div>
+            </div>
+
+            <!-- ┌──────────────────────────────────────┐ -->
+            <!-- │  CARD 2 — Sức chứa                   │ -->
+            <!-- └──────────────────────────────────────┘ -->
+            <div class="form-card">
+                <div class="form-card-hd">
+                    <div class="form-card-icon"><i class="fas fa-users"></i></div>
+                    <div>
+                        <div class="form-card-title">Sức chứa phòng</div>
+                        <div class="form-card-subtitle">Số chỗ ngồi tối đa trong phòng học</div>
+                    </div>
+                </div>
+                <div class="form-card-body">
+
+                    <div class="form-field" style="max-width:200px">
+                        <label class="field-label" for="inputCapacity">
+                            Số chỗ ngồi <span class="req">*</span>
+                        </label>
+                        <div class="num-wrap">
+                            <input asp-for="Input.Capacity"
+                                   id="inputCapacity"
+                                   type="number"
+                                   class="form-input"
+                                   min="1"
+                                   max="200"
+                                   placeholder="0" />
+                            <div class="num-stepper">
+                                <button type="button" id="capUp" title="Tăng"><i class="fas fa-chevron-up"></i></button>
+                                <button type="button" id="capDown" title="Giảm"><i class="fas fa-chevron-down"></i></button>
+                            </div>
+                        </div>
+                        <span asp-validation-for="Input.Capacity" class="field-error"></span>
+                    </div>
+
+                    <!-- Quick-pick tiers -->
+                    <div class="cap-tiers" id="capTiers">
+                        <span class="field-hint" style="width:100%;margin-bottom:2px">
+                            <i class="fas fa-bolt"></i> Chọn nhanh theo quy mô:
+                        </span>
+                        <button type="button" class="cap-tier sm" data-val="10">
+                            <i class="fas fa-user-group"></i> Nhỏ · 10
+                        </button>
+                        <button type="button" class="cap-tier sm" data-val="15">
+                            <i class="fas fa-user-group"></i> Nhỏ · 15
+                        </button>
+                        <button type="button" class="cap-tier md" data-val="20">
+                            <i class="fas fa-users"></i> Vừa · 20
+                        </button>
+                        <button type="button" class="cap-tier md" data-val="25">
+                            <i class="fas fa-users"></i> Vừa · 25
+                        </button>
+                        <button type="button" class="cap-tier lg" data-val="30">
+                            <i class="fas fa-users-rectangle"></i> Lớn · 30
+                        </button>
+                        <button type="button" class="cap-tier lg" data-val="40">
+                            <i class="fas fa-users-rectangle"></i> Lớn · 40
+                        </button>
+                        <button type="button" class="cap-tier xl" data-val="50">
+                            <i class="fas fa-building-columns"></i> Hội trường · 50
+                        </button>
+                    </div>
+
+                </div>
+            </div>
+
+            <!-- ┌──────────────────────────────────────┐ -->
+            <!-- │  CARD 3 — Ghi chú                    │ -->
+            <!-- └──────────────────────────────────────┘ -->
+            <div class="form-card">
+                <div class="form-card-hd">
+                    <div class="form-card-icon"><i class="fas fa-note-sticky"></i></div>
+                    <div>
+                        <div class="form-card-title">Ghi chú</div>
+                        <div class="form-card-subtitle">Thông tin bổ sung về phòng học</div>
+                    </div>
+                </div>
+                <div class="form-card-body">
+                    <div class="form-field">
+                        <label class="field-label">
+                            Nội dung ghi chú
+                            <span class="badge-opt">tuỳ chọn</span>
+                        </label>
+                        <textarea asp-for="Input.Note"
+                                  id="inputNote"
+                                  class="form-textarea"
+                                  placeholder="VD: Có máy chiếu, điều hoà, phòng thực hành..."></textarea>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ── Action buttons ── -->
+            <div class="form-card">
+                <div class="form-actions">
+                    <a href="/Admin/Rooms" class="btn-outline">
+                        <i class="fas fa-times"></i> Hủy
+                    </a>
+                    <button type="submit" class="btn-brand">
+                        <i class="fas fa-plus"></i> Tạo phòng học
+                    </button>
+                </div>
+            </div>
+
+        </form>
+    </div>
+
+    <!-- ── Cột phải: Preview sidebar ── -->
+    <div>
+        <div class="preview-card">
+            <div class="preview-hd">
+                <i class="fas fa-eye"></i> Xem trước
+            </div>
+            <div class="preview-body">
+
+                <!-- Room card preview -->
+                <div class="pv-room-card" id="pvCard">
+                    <div class="pv-room-banner" id="pvBanner">
+                        <i class="fas fa-door-open"></i>
+                    </div>
+                    <div class="pv-room-info">
+                        <div class="pv-room-name empty" id="pvName">Chưa nhập tên phòng</div>
+                        <div style="margin-top:5px">
+                            <span class="pv-code-badge empty" id="pvCode">Chưa có mã</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Capacity preview -->
+                <div class="pv-divider"></div>
+
+                <div class="pv-cap-row">
+                    <span class="pv-cap-label">Sức chứa</span>
+                    <span class="pv-cap-tier-lbl" id="pvTierLbl">—</span>
+                </div>
+                <div style="display:flex;align-items:baseline;gap:4px;margin-bottom:8px">
+                    <span class="pv-cap-num" id="pvCapNum">—</span>
+                    <span class="pv-cap-unit" id="pvCapUnit"></span>
+                </div>
+                <div class="pv-cap-bar">
+                    <div class="pv-cap-fill" id="pvCapFill"></div>
+                </div>
+
+                <!-- Note preview -->
+                <div class="pv-divider"></div>
+
+                <div style="display:flex;align-items:center;gap:6px;margin-bottom:8px">
+                    <div style="width:20px;height:20px;border-radius:5px;background:var(--bg-page);color:var(--text-3);display:flex;align-items:center;justify-content:center;font-size:10px;flex-shrink:0">
+                        <i class="fas fa-note-sticky"></i>
+                    </div>
+                    <span style="font-size:.68rem;font-weight:700;color:var(--text-3);text-transform:uppercase;letter-spacing:.4px">Ghi chú</span>
+                </div>
+                <div class="pv-note empty" id="pvNote">Chưa có ghi chú</div>
+
+            </div>
+        </div>
+    </div>
+
+</div>
+
+@section Scripts {
+    <script src="~/lib/jquery-validation/jquery.validate.min.js"></script>
+    <script src="~/lib/jquery-validation-unobtrusive/jquery.validate.unobtrusive.min.js"></script>
+    <script>
+        (function () {
+
+            /* ── Refs ── */
+            var capInput  = document.getElementById('inputCapacity');
+            var capUp     = document.getElementById('capUp');
+            var capDown   = document.getElementById('capDown');
+
+            /* Preview refs */
+            var pvName    = document.getElementById('pvName');
+            var pvCode    = document.getElementById('pvCode');
+            var pvBanner  = document.getElementById('pvBanner');
+            var pvCapNum  = document.getElementById('pvCapNum');
+            var pvCapUnit = document.getElementById('pvCapUnit');
+            var pvCapFill = document.getElementById('pvCapFill');
+            var pvTierLbl = document.getElementById('pvTierLbl');
+            var pvNote    = document.getElementById('pvNote');
+
+            /* Max capacity for bar scale */
+            var BAR_MAX = 50;
+
+            /* ══════════════════════════════════════
+               CAPACITY TIER HELPER
+            ══════════════════════════════════════ */
+            function getTier(n) {
+                if (!n || n <= 0) return null;
+                if (n <= 15) return { cls: 'sm', label: 'Phòng nhỏ' };
+                if (n <= 25) return { cls: 'md', label: 'Phòng vừa' };
+                if (n <= 35) return { cls: 'lg', label: 'Phòng lớn' };
+                return { cls: 'xl', label: 'Hội trường' };
+            }
+
+            /* ══════════════════════════════════════
+               UPDATE PREVIEW
+            ══════════════════════════════════════ */
+            function updatePreview() {
+                /* Name */
+                var name = document.getElementById('inputRoomName').value.trim();
+                if (name) {
+                    pvName.textContent = name;
+                    pvName.className   = 'pv-room-name';
+                } else {
+                    pvName.textContent = 'Chưa nhập tên phòng';
+                    pvName.className   = 'pv-room-name empty';
+                }
+
+                /* Code */
+                var code = document.getElementById('inputRoomCode').value.trim().toUpperCase();
+                if (code) {
+                    pvCode.textContent = code;
+                    pvCode.className   = 'pv-code-badge';
+                } else {
+                    pvCode.textContent = 'Chưa có mã';
+                    pvCode.className   = 'pv-code-badge empty';
+                }
+
+                /* Capacity */
+                var cap  = parseInt(capInput.value) || 0;
+                var tier = getTier(cap);
+
+                if (cap > 0) {
+                    pvCapNum.textContent  = cap;
+                    pvCapUnit.textContent = 'chỗ ngồi';
+                } else {
+                    pvCapNum.textContent  = '—';
+                    pvCapUnit.textContent = '';
+                }
+
+                /* Bar */
+                var pct = cap > 0 ? Math.min(100, Math.round(cap / BAR_MAX * 100)) : 0;
+                pvCapFill.style.width = pct + '%';
+
+                /* Tier colors */
+                if (tier) {
+                    pvBanner.className    = 'pv-room-banner ' + tier.cls;
+                    pvCapFill.className   = 'pv-cap-fill ' + tier.cls;
+                    pvTierLbl.className   = 'pv-cap-tier-lbl ' + tier.cls;
+                    pvTierLbl.textContent = tier.label;
+                } else {
+                    pvBanner.className    = 'pv-room-banner';
+                    pvCapFill.className   = 'pv-cap-fill';
+                    pvTierLbl.className   = 'pv-cap-tier-lbl';
+                    pvTierLbl.textContent = '—';
+                }
+
+                /* Active tier buttons */
+                document.querySelectorAll('.cap-tier').forEach(function (btn) {
+                    btn.classList.toggle('active', parseInt(btn.dataset.val) === cap);
+                });
+
+                /* Note */
+                var note = document.getElementById('inputNote').value.trim();
+                if (note) {
+                    pvNote.textContent = note;
+                    pvNote.className   = 'pv-note';
+                } else {
+                    pvNote.textContent = 'Chưa có ghi chú';
+                    pvNote.className   = 'pv-note empty';
+                }
+            }
+
+            /* ══════════════════════════════════════
+               STEPPER BUTTONS
+            ══════════════════════════════════════ */
+            if (capUp) {
+                capUp.addEventListener('click', function () {
+                    var v = parseInt(capInput.value) || 0;
+                    capInput.value = Math.min(200, v + 1);
+                    updatePreview();
+                });
+            }
+            if (capDown) {
+                capDown.addEventListener('click', function () {
+                    var v = parseInt(capInput.value) || 0;
+                    capInput.value = Math.max(1, v - 1);
+                    updatePreview();
+                });
+            }
+
+            /* ══════════════════════════════════════
+               QUICK-PICK TIER BUTTONS
+            ══════════════════════════════════════ */
+            document.querySelectorAll('.cap-tier').forEach(function (btn) {
+                btn.addEventListener('click', function () {
+                    capInput.value = parseInt(this.dataset.val);
+                    updatePreview();
+                });
+            });
+
+            /* ══════════════════════════════════════
+               AUTO-UPPERCASE MÃ PHÒNG
+            ══════════════════════════════════════ */
+            var codeInput = document.getElementById('inputRoomCode');
+            if (codeInput) {
+                codeInput.addEventListener('input', function () {
+                    var pos = this.selectionStart;
+                    this.value = this.value.toUpperCase();
+                    this.setSelectionRange(pos, pos);
+                    updatePreview();
+                });
+            }
+
+            /* ══════════════════════════════════════
+               BIND ALL INPUTS
+            ══════════════════════════════════════ */
+            ['inputRoomName', 'inputCapacity', 'inputNote'].forEach(function (id) {
+                var el = document.getElementById(id);
+                if (el) el.addEventListener('input', updatePreview);
+            });
+
+            /* Init */
+            updatePreview();
+
+        })();
+    </script>
+}

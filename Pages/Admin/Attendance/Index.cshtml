@@ -1,0 +1,1020 @@
+﻿@page
+@model TutoringCenterManagement.Pages.Admin.Attendance.IndexModel
+@{
+    ViewData["Title"] = "Quản lý điểm danh";
+
+    var totalSessions = Model.Sessions.Count;
+    var doneSessions = Model.Sessions.Count(s => s.AttendanceCount > 0);
+    var pendingSessions = Model.Sessions.Count(s => s.AttendanceCount == 0);
+}
+
+@section Styles {
+    <style>
+        /* ════════════════════════════════════
+                   ATTENDANCE INDEX — đồng bộ design system
+                ════════════════════════════════════ */
+
+        /* ── Summary chips ── */
+        .summary-bar {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+            margin-bottom: 20px;
+        }
+
+        .summary-chip {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 8px 14px;
+            border-radius: var(--r-sm);
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            box-shadow: var(--sh-xs);
+            font-size: .8rem;
+            font-weight: 600;
+            color: var(--text-2);
+        }
+
+            .summary-chip .chip-icon {
+                width: 26px;
+                height: 26px;
+                border-radius: 6px;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                font-size: 11px;
+                flex-shrink: 0;
+            }
+
+            .summary-chip .chip-num {
+                font-weight: 800;
+                color: var(--text-1);
+                font-size: .88rem;
+            }
+
+        .chip-icon.all {
+            background: rgba(232,89,12,.1);
+            color: #e8590c;
+        }
+
+        .chip-icon.done {
+            background: rgba(16,185,129,.1);
+            color: #10b981;
+        }
+
+        .chip-icon.pending {
+            background: rgba(245,159,0,.1);
+            color: #f59f00;
+        }
+
+        /* ── Filter card ── */
+        .filter-card {
+            background: var(--bg-card);
+            border-radius: var(--r-lg);
+            border: 1px solid var(--border);
+            box-shadow: var(--sh-sm);
+            padding: 16px 20px;
+            margin-bottom: 20px;
+        }
+
+        .filter-row {
+            display: flex;
+            align-items: flex-end;
+            gap: 12px;
+            flex-wrap: wrap;
+        }
+
+        .filter-group {
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+        }
+
+            .filter-group.grow {
+                flex: 1;
+                min-width: 180px;
+            }
+
+        .filter-label {
+            font-size: .68rem;
+            font-weight: 700;
+            color: var(--text-3);
+            text-transform: uppercase;
+            letter-spacing: .6px;
+        }
+
+        .filter-select,
+        .filter-date {
+            padding: 8px 12px;
+            border: 1.5px solid var(--border);
+            border-radius: var(--r-sm);
+            background: var(--bg-page);
+            color: var(--text-1);
+            font-size: .83rem;
+            font-family: 'Plus Jakarta Sans', system-ui, sans-serif;
+            outline: none;
+            cursor: pointer;
+            transition: border-color .15s, box-shadow .15s;
+        }
+
+            .filter-select:focus, .filter-date:focus {
+                border-color: var(--c-primary);
+                box-shadow: 0 0 0 3px var(--c-glow);
+            }
+
+        /* ── Table card ── */
+        .table-card {
+            background: var(--bg-card);
+            border-radius: var(--r-lg);
+            border: 1px solid var(--border);
+            box-shadow: var(--sh-sm);
+            overflow: hidden;
+        }
+
+        .table-card-hd {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 14px 20px;
+            border-bottom: 1px solid var(--border);
+            background: linear-gradient(to right, #fafbff, #fff);
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+
+        .table-card-title {
+            display: flex;
+            align-items: center;
+            gap: 9px;
+            font-size: .92rem;
+            font-weight: 700;
+            color: var(--text-1);
+        }
+
+        .ct-icon {
+            width: 28px;
+            height: 28px;
+            border-radius: 7px;
+            background: rgba(232,89,12,.1);
+            color: var(--c-primary);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 12px;
+        }
+
+        .result-count {
+            font-size: .75rem;
+            font-weight: 600;
+            color: var(--text-3);
+            background: var(--bg-page);
+            border: 1px solid var(--border);
+            padding: 3px 10px;
+            border-radius: 50px;
+        }
+
+        /* ── Pagesize bar ── */
+        .pagesize-wrap {
+            display: flex;
+            align-items: center;
+            gap: 7px;
+            font-size: .78rem;
+            font-weight: 600;
+            color: var(--text-2);
+        }
+
+        .pagesize-select {
+            height: 30px;
+            padding: 0 22px 0 8px;
+            border: 1.5px solid var(--border);
+            border-radius: var(--r-sm);
+            background: #f8f9fc;
+            color: var(--text-1);
+            font-size: .78rem;
+            font-family: 'Plus Jakarta Sans', system-ui, sans-serif;
+            outline: none;
+            cursor: pointer;
+            -webkit-appearance: none;
+            appearance: none;
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='9' height='9' viewBox='0 0 24 24' fill='none' stroke='%239aa0b4' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E");
+            background-repeat: no-repeat;
+            background-position: right 7px center;
+            transition: border-color .15s;
+        }
+
+            .pagesize-select:focus {
+                border-color: var(--c-primary);
+            }
+
+        /* ── Session table ── */
+        .session-table {
+            width: 100%;
+            border-collapse: separate;
+            border-spacing: 0;
+        }
+
+            .session-table thead th {
+                padding: 11px 16px;
+                font-size: .7rem;
+                font-weight: 700;
+                text-transform: uppercase;
+                letter-spacing: .7px;
+                color: var(--text-2);
+                background: #f4f6fc;
+                border-bottom: 2px solid var(--border);
+                white-space: nowrap;
+            }
+
+                .session-table thead th:first-child {
+                    padding-left: 20px;
+                }
+
+                .session-table thead th:last-child {
+                    padding-right: 20px;
+                }
+
+            .session-table tbody td {
+                padding: 13px 16px;
+                font-size: .83rem;
+                color: var(--text-1);
+                border-bottom: 1px solid #f0f2f8;
+                vertical-align: middle;
+            }
+
+                .session-table tbody td:first-child {
+                    padding-left: 20px;
+                }
+
+                .session-table tbody td:last-child {
+                    padding-right: 20px;
+                }
+
+            .session-table tbody tr:last-child td {
+                border-bottom: none;
+            }
+
+            .session-table tbody tr:hover td {
+                background: #f8faff;
+            }
+
+        /* ── Date badge ── */
+        .date-cell {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .date-badge {
+            width: 40px;
+            height: 40px;
+            border-radius: 10px;
+            background: rgba(232,89,12,.08);
+            border: 1px solid rgba(232,89,12,.15);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+        }
+
+            .date-badge .db-day {
+                font-size: .95rem;
+                font-weight: 800;
+                color: var(--c-primary);
+                line-height: 1;
+            }
+
+            .date-badge .db-mon {
+                font-size: .58rem;
+                font-weight: 700;
+                color: var(--c-primary);
+                opacity: .8;
+            }
+
+        .date-meta {
+            display: flex;
+            flex-direction: column;
+            gap: 1px;
+        }
+
+            .date-meta .dm-dow {
+                font-size: .78rem;
+                font-weight: 700;
+                color: var(--text-1);
+            }
+
+            .date-meta .dm-year {
+                font-size: .7rem;
+                color: var(--text-3);
+            }
+
+        /* ── Info pills ── */
+        .info-pill {
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            padding: 4px 9px;
+            border-radius: var(--r-sm);
+            font-size: .75rem;
+            font-weight: 600;
+        }
+
+            .info-pill.shift {
+                background: rgba(59,130,246,.08);
+                color: #2563eb;
+                border: 1px solid rgba(59,130,246,.15);
+            }
+
+            .info-pill.room {
+                background: rgba(139,92,246,.08);
+                color: #7c3aed;
+                border: 1px solid rgba(139,92,246,.15);
+            }
+
+            .info-pill.cls {
+                background: rgba(232,89,12,.08);
+                color: #e8590c;
+                border: 1px solid rgba(232,89,12,.15);
+            }
+
+        /* ── Teacher cell ── */
+        .teacher-cell {
+            display: flex;
+            align-items: center;
+            gap: 7px;
+        }
+
+        .t-avatar {
+            width: 28px;
+            height: 28px;
+            border-radius: 50%;
+            background: linear-gradient(135deg,#3b82f6,#60a5fa);
+            color: #fff;
+            font-size: 11px;
+            font-weight: 800;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+            box-shadow: 0 2px 6px rgba(59,130,246,.25);
+        }
+
+        .t-name {
+            font-size: .82rem;
+            font-weight: 600;
+            color: var(--text-1);
+        }
+
+        /* ── Attendance status ── */
+        .att-status {
+            display: inline-flex;
+            align-items: center;
+            gap: 7px;
+            padding: 5px 11px;
+            border-radius: var(--r-sm);
+            font-size: .76rem;
+            font-weight: 700;
+        }
+
+            .att-status.done {
+                background: #ecfdf5;
+                color: #059669;
+                border: 1px solid #a7f3d0;
+            }
+
+            .att-status.pending {
+                background: #fffbeb;
+                color: #d97706;
+                border: 1px solid #fde68a;
+            }
+
+        .att-progress {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            margin-top: 5px;
+        }
+
+        .prog-bar {
+            flex: 1;
+            height: 4px;
+            border-radius: 99px;
+            background: #e5e7eb;
+            overflow: hidden;
+            min-width: 60px;
+        }
+
+            .prog-bar .prog-fill {
+                height: 100%;
+                border-radius: 99px;
+                background: linear-gradient(to right, #10b981, #34d399);
+            }
+
+        .prog-text {
+            font-size: .7rem;
+            font-weight: 600;
+            color: var(--text-3);
+            white-space: nowrap;
+        }
+
+        /* ── Action buttons ── */
+        .action-group {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            justify-content: flex-end;
+        }
+
+        .act-btn {
+            width: 32px;
+            height: 32px;
+            border-radius: 8px;
+            border: 1px solid var(--border);
+            background: var(--bg-card);
+            color: var(--text-2);
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 13px;
+            cursor: pointer;
+            text-decoration: none;
+            transition: all .15s;
+        }
+
+            .act-btn:hover {
+                transform: translateY(-1px);
+                box-shadow: var(--sh-xs);
+            }
+
+            .act-btn.create {
+                background: rgba(232,89,12,.08);
+                color: var(--c-primary);
+                border-color: rgba(232,89,12,.2);
+            }
+
+                .act-btn.create:hover {
+                    background: var(--c-primary);
+                    color: #fff;
+                    border-color: var(--c-primary);
+                }
+
+            .act-btn.edit {
+                background: rgba(59,130,246,.08);
+                color: #2563eb;
+                border-color: rgba(59,130,246,.2);
+            }
+
+                .act-btn.edit:hover {
+                    background: #2563eb;
+                    color: #fff;
+                    border-color: #2563eb;
+                }
+
+        /* ── Table footer + pagination ── */
+        .table-foot {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 13px 20px;
+            border-top: 1px solid var(--border);
+            background: #f9fafd;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+
+        .foot-info {
+            font-size: .78rem;
+            color: var(--text-2);
+            font-weight: 500;
+        }
+
+        .pager {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+
+        .pg-btn {
+            min-width: 30px;
+            height: 30px;
+            padding: 0 7px;
+            border-radius: var(--r-sm);
+            border: 1.5px solid var(--border);
+            background: #fff;
+            color: var(--text-2);
+            font-size: .78rem;
+            font-weight: 600;
+            cursor: pointer;
+            text-decoration: none !important;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all .15s;
+        }
+
+            .pg-btn:hover {
+                border-color: var(--c-primary);
+                color: var(--c-primary);
+            }
+
+            .pg-btn.active {
+                background: var(--c-primary);
+                border-color: var(--c-primary);
+                color: #fff !important;
+            }
+
+            .pg-btn:disabled {
+                opacity: .4;
+                cursor: not-allowed;
+            }
+
+        /* ── Empty / Prompt ── */
+        .empty-state {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 50px 20px;
+            gap: 10px;
+        }
+
+            .empty-state .ei {
+                width: 48px;
+                height: 48px;
+                border-radius: 12px;
+                background: var(--bg-page);
+                border: 1px solid var(--border);
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                font-size: 20px;
+                margin-bottom: 4px;
+            }
+
+            .empty-state p {
+                font-size: .85rem;
+                font-weight: 600;
+                color: var(--text-2);
+                margin: 0;
+            }
+
+            .empty-state span {
+                font-size: .78rem;
+                color: var(--text-3);
+            }
+
+        /* ── Toast ── */
+        .toast-bar {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 12px 16px;
+            border-radius: var(--r-sm);
+            font-size: .83rem;
+            font-weight: 600;
+            margin-bottom: 16px;
+            border: 1px solid transparent;
+        }
+
+            .toast-bar.success {
+                background: #ecfdf5;
+                color: #059669;
+                border-color: #a7f3d0;
+            }
+
+            .toast-bar.error {
+                background: #fff1f2;
+                color: #e03131;
+                border-color: #fecdd3;
+            }
+
+        .toast-close {
+            margin-left: auto;
+            background: none;
+            border: none;
+            color: inherit;
+            opacity: .6;
+            cursor: pointer;
+            padding: 0;
+            font-size: 12px;
+        }
+
+            .toast-close:hover {
+                opacity: 1;
+            }
+
+        @@media (max-width: 768px) {
+            .filter-row {
+                flex-direction: column;
+                align-items: stretch;
+            }
+
+            .filter-select, .filter-date {
+                width: 100%;
+            }
+
+            .summary-bar {
+                gap: 8px;
+            }
+        }
+    </style>
+}
+
+<!-- ════════════════════════════════════════
+     PAGE HEADER
+════════════════════════════════════════ -->
+<div class="page-header">
+    <div>
+        <h1 class="page-heading">Quản lý <span>điểm danh</span></h1>
+        <p class="page-subheading">
+            <i class="fas fa-circle-info" style="color:var(--c-primary)"></i>
+            Theo dõi và quản lý điểm danh theo từng buổi học
+        </p>
+    </div>
+</div>
+
+<!-- TOASTS -->
+@if (TempData["SuccessMessage"] != null)
+{
+    <div class="toast-bar success" id="toastSuccess">
+        <i class="fas fa-circle-check"></i>
+        @TempData["SuccessMessage"]
+        <button class="toast-close" onclick="this.closest('.toast-bar').remove()"><i class="fas fa-times"></i></button>
+    </div>
+}
+@if (TempData["ErrorMessage"] != null)
+{
+    <div class="toast-bar error" id="toastError">
+        <i class="fas fa-circle-exclamation"></i>
+        @TempData["ErrorMessage"]
+        <button class="toast-close" onclick="this.closest('.toast-bar').remove()"><i class="fas fa-times"></i></button>
+    </div>
+}
+
+<!-- ════════════════════════════════════════
+     SUMMARY CHIPS
+════════════════════════════════════════ -->
+@if (Model.Sessions.Any())
+{
+    <div class="summary-bar">
+        <div class="summary-chip">
+            <div class="chip-icon all"><i class="fas fa-calendar-days"></i></div>
+            <span>Tổng buổi học</span>
+            <span class="chip-num">@totalSessions</span>
+        </div>
+        <div class="summary-chip">
+            <div class="chip-icon done"><i class="fas fa-circle-check"></i></div>
+            <span>Đã điểm danh</span>
+            <span class="chip-num">@doneSessions</span>
+        </div>
+        <div class="summary-chip">
+            <div class="chip-icon pending"><i class="fas fa-clock"></i></div>
+            <span>Chưa điểm danh</span>
+            <span class="chip-num">@pendingSessions</span>
+        </div>
+    </div>
+}
+
+<!-- ════════════════════════════════════════
+     FILTER BAR — lớp (optional) + từ ngày + đến ngày
+════════════════════════════════════════ -->
+<div class="filter-card">
+    <form method="get" id="filterForm">
+        <div class="filter-row">
+
+            <!-- Lớp học (optional) -->
+            <div class="filter-group grow">
+                <span class="filter-label">Lớp học</span>
+                <select name="classId" class="filter-select" onchange="document.getElementById('filterForm').submit()">
+                    <option value="">— Tất cả lớp —</option>
+                    @foreach (var c in Model.Classes)
+                    {
+                        <option value="@c.ClassId" selected="@(Model.ClassId == c.ClassId ? "selected" : null)">@c.ClassCode</option>
+                    }
+                </select>
+            </div>
+
+            <!-- Từ ngày -->
+            <div class="filter-group">
+                <span class="filter-label">Từ ngày</span>
+                <input type="date" name="fromDate" class="filter-date" value="@Model.FromDate" />
+            </div>
+
+            <!-- Đến ngày -->
+            <div class="filter-group">
+                <span class="filter-label">Đến ngày</span>
+                <input type="date" name="toDate" class="filter-date" value="@Model.ToDate" />
+            </div>
+
+            <!-- Buttons -->
+            <div class="filter-group" style="flex-direction:row;gap:8px">
+                <button type="submit" class="btn-brand" style="padding:8px 18px;font-size:.83rem">
+                    <i class="fas fa-search"></i> Lọc
+                </button>
+                <a href="/Admin/Attendance" class="btn-outline" style="padding:8px 14px;font-size:.83rem" title="Đặt lại bộ lọc">
+                    <i class="fas fa-rotate-right"></i>
+                </a>
+            </div>
+
+        </div>
+    </form>
+</div>
+
+<!-- ════════════════════════════════════════
+     PAGESIZE BAR
+════════════════════════════════════════ -->
+<div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;margin-bottom:14px">
+    <div class="pagesize-wrap">
+        <span>Hiển thị</span>
+        <select class="pagesize-select" id="pagesizeSelect">
+            <option value="10">10</option>
+            <option value="20" selected>20</option>
+            <option value="50">50</option>
+            <option value="0">Tất cả</option>
+        </select>
+        <span>bản ghi</span>
+    </div>
+    <span style="font-size:.78rem;color:var(--text-3);font-weight:500" id="showingLabel"></span>
+</div>
+
+<!-- ════════════════════════════════════════
+     SESSION TABLE
+════════════════════════════════════════ -->
+<div class="table-card">
+
+    <div class="table-card-hd">
+        <div class="table-card-title">
+            <div class="ct-icon"><i class="fas fa-clipboard-check"></i></div>
+            Danh sách buổi học
+            @if (Model.ClassId.HasValue)
+            {
+                var cls = Model.Classes.FirstOrDefault(c => c.ClassId == Model.ClassId);
+                if (cls != null)
+                {
+                    <span style="font-size:.78rem;font-weight:500;color:var(--text-3)">— Lớp @cls.ClassCode</span>
+                }
+            }
+        </div>
+        <span class="result-count" id="resultCount">@Model.Sessions.Count buổi</span>
+    </div>
+
+    <div style="overflow-x:auto">
+        <table class="session-table">
+            <thead>
+                <tr>
+                    <th>Buổi học</th>
+                    <th>Lớp</th>
+                    <th>Ca học</th>
+                    <th>Phòng</th>
+                    <th>Giáo viên</th>
+                    <th>Điểm danh</th>
+                    <th style="text-align:right">Thao tác</th>
+                </tr>
+            </thead>
+            <tbody id="sessionTableBody">
+                @if (Model.Sessions.Any())
+                {
+                    @foreach (var s in Model.Sessions)
+                    {
+                        var dow = s.SessionDate.DayOfWeek switch
+                        {
+                            DayOfWeek.Monday => "T.Hai",
+                            DayOfWeek.Tuesday => "T.Ba",
+                            DayOfWeek.Wednesday => "T.Tư",
+                            DayOfWeek.Thursday => "T.Năm",
+                            DayOfWeek.Friday => "T.Sáu",
+                            DayOfWeek.Saturday => "T.Bảy",
+                            DayOfWeek.Sunday => "CN",
+                            _ => ""
+                        };
+                        var teacherInitial = !string.IsNullOrEmpty(s.TeacherName)
+                        ? s.TeacherName.Trim().Split(' ')[^1].Substring(0, 1).ToUpper()
+                        : "?";
+                        var pct = s.TotalStudents > 0
+                        ? (int)((double)s.AttendanceCount / s.TotalStudents * 100)
+                        : 0;
+
+                        <tr>
+                            <!-- Date -->
+                            <td>
+                                <div class="date-cell">
+                                    <div class="date-badge">
+                                        <span class="db-day">@s.SessionDate.Day</span>
+                                        <span class="db-mon">Th@(s.SessionDate.Month)</span>
+                                    </div>
+                                    <div class="date-meta">
+                                        <span class="dm-dow">@dow, @s.SessionDate.Year</span>
+                                    </div>
+                                </div>
+                            </td>
+                            <!-- Class -->
+                            <td>
+                                <span class="info-pill cls">
+                                    <i class="fas fa-chalkboard"></i> @s.ClassName
+                                </span>
+                            </td>
+                            <!-- Shift -->
+                            <td>
+                                <span class="info-pill shift">
+                                    <i class="fas fa-clock"></i> @s.ShiftName
+                                </span>
+                            </td>
+                            <!-- Room -->
+                            <td>
+                                <span class="info-pill room">
+                                    <i class="fas fa-door-open"></i> @s.RoomCode
+                                </span>
+                            </td>
+                            <!-- Teacher -->
+                            <td>
+                                <div class="teacher-cell">
+                                    <div class="t-avatar">@teacherInitial</div>
+                                    <span class="t-name">@s.TeacherName</span>
+                                </div>
+                            </td>
+                            <!-- Attendance -->
+                            <td>
+                                @if (s.AttendanceCount == 0)
+                                {
+                                    <span class="att-status pending"><i class="fas fa-clock"></i> Chưa điểm danh</span>
+                                }
+                                else
+                                {
+                                    <span class="att-status done"><i class="fas fa-circle-check"></i> Đã điểm danh</span>
+                                    <div class="att-progress">
+                                        <div class="prog-bar"><div class="prog-fill" style="width:@pct%"></div></div>
+                                        <span class="prog-text">@s.AttendanceCount/@s.TotalStudents HS</span>
+                                    </div>
+                                }
+                            </td>
+                            <!-- Actions -->
+                            <td>
+                                <div class="action-group">
+                                    @if (s.AttendanceCount == 0)
+                                    {
+                                        <a href="/Admin/Attendance/Create?sessionId=@s.SessionId"
+                                           class="act-btn create" title="Điểm danh buổi học này">
+                                            <i class="fas fa-plus"></i>
+                                        </a>
+                                    }
+                                    else
+                                    {
+                                        <a href="/Admin/Attendance/Edit?sessionId=@s.SessionId"
+                                           class="act-btn edit" title="Chỉnh sửa điểm danh">
+                                            <i class="fas fa-pen"></i>
+                                        </a>
+                                    }
+                                </div>
+                            </td>
+                        </tr>
+                    }
+                }
+                else
+                {
+                    <tr class="empty-row">
+                        <td colspan="7">
+                            <div class="empty-state">
+                                <div class="ei"><i class="fas fa-calendar-xmark"></i></div>
+                                <p>Không có buổi học nào</p>
+                                <span>Thử thay đổi bộ lọc hoặc chọn lớp khác</span>
+                            </div>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+
+    @if (Model.Sessions.Any())
+    {
+        <div class="table-foot">
+            <span class="foot-info" id="footInfo">
+                Hiển thị <strong id="footShowing">0</strong> / <strong>@Model.Sessions.Count</strong> buổi học
+            </span>
+            <div class="pager" id="pager"></div>
+        </div>
+    }
+
+</div>
+
+@section Scripts {
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+
+            /* ── Auto dismiss toasts ── */
+            setTimeout(function () {
+                ['toastSuccess', 'toastError'].forEach(function (id) {
+                    var el = document.getElementById(id);
+                    if (el) { el.style.transition = 'opacity .4s'; el.style.opacity = '0'; setTimeout(function () { if (el) el.remove(); }, 400); }
+                });
+            }, 4000);
+
+            /* ── Pagination + pagesize ── */
+            var tbody     = document.getElementById('sessionTableBody');
+            if (!tbody) return;
+
+            var allRows   = Array.from(tbody.querySelectorAll('tr:not(.empty-row)'));
+            var totalRows = allRows.length;
+            var sel       = document.getElementById('pagesizeSelect');
+            var pager     = document.getElementById('pager');
+
+            var pageSize    = sel ? parseInt(sel.value) : 20;
+            var currentPage = 1;
+
+            function totalPages() {
+                if (pageSize === 0) return 1;
+                return Math.max(1, Math.ceil(totalRows / pageSize));
+            }
+
+            function applyPage() {
+                var tp = totalPages();
+                if (currentPage > tp) currentPage = tp;
+                if (currentPage < 1)  currentPage = 1;
+
+                var start = pageSize === 0 ? 0 : (currentPage - 1) * pageSize;
+                var end   = pageSize === 0 ? totalRows : start + pageSize;
+                var shown = 0;
+
+                allRows.forEach(function (row, idx) {
+                    if (idx >= start && idx < end) { row.style.display = ''; shown++; }
+                    else                           { row.style.display = 'none'; }
+                });
+
+                /* foot info */
+                var fs = document.getElementById('footShowing');
+                if (fs) fs.textContent = shown;
+
+                var sl = document.getElementById('showingLabel');
+                if (sl) sl.textContent = shown + ' / ' + totalRows + ' bản ghi';
+
+                /* build pager */
+                buildPager(tp);
+            }
+
+            function buildPager(tp) {
+                if (!pager) return;
+                pager.innerHTML = '';
+
+                /* prev */
+                var prev = makePgBtn('<i class="fas fa-chevron-left" style="font-size:10px"></i>', currentPage <= 1);
+                prev.addEventListener('click', function () { if (currentPage > 1) { currentPage--; applyPage(); } });
+                pager.appendChild(prev);
+
+                /* page buttons — show max 7 around current */
+                var pages = [];
+                if (tp <= 7) {
+                    for (var i = 1; i <= tp; i++) pages.push(i);
+                } else {
+                    pages.push(1);
+                    var left  = Math.max(2, currentPage - 2);
+                    var right = Math.min(tp - 1, currentPage + 2);
+                    if (left > 2)    pages.push('...');
+                    for (var i = left; i <= right; i++) pages.push(i);
+                    if (right < tp - 1) pages.push('...');
+                    pages.push(tp);
+                }
+
+                pages.forEach(function (p) {
+                    if (p === '...') {
+                        var dots = document.createElement('span');
+                        dots.textContent = '…';
+                        dots.style.cssText = 'font-size:.78rem;color:var(--text-3);padding:0 4px;align-self:center';
+                        pager.appendChild(dots);
+                    } else {
+                        var btn = makePgBtn(p, false);
+                        if (p === currentPage) btn.classList.add('active');
+                        (function (page) {
+                            btn.addEventListener('click', function () { currentPage = page; applyPage(); });
+                        })(p);
+                        pager.appendChild(btn);
+                    }
+                });
+
+                /* next */
+                var next = makePgBtn('<i class="fas fa-chevron-right" style="font-size:10px"></i>', currentPage >= tp);
+                next.addEventListener('click', function () { if (currentPage < tp) { currentPage++; applyPage(); } });
+                pager.appendChild(next);
+            }
+
+            function makePgBtn(html, disabled) {
+                var btn = document.createElement('button');
+                btn.className  = 'pg-btn';
+                btn.innerHTML  = html;
+                btn.disabled   = disabled;
+                btn.type       = 'button';
+                return btn;
+            }
+
+            /* pagesize change */
+            if (sel) {
+                sel.addEventListener('change', function () {
+                    pageSize    = parseInt(sel.value);
+                    currentPage = 1;
+                    applyPage();
+                });
+            }
+
+            applyPage();
+        });
+    </script>
+}

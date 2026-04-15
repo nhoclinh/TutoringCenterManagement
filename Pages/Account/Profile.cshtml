@@ -1,0 +1,1056 @@
+﻿@page
+@model TutoringCenterManagement.Pages.Account.ProfileModel
+@using TutoringCenterManagement.Data.Enums
+@{
+    ViewData["Title"] = "Thông tin cá nhân";
+    var role = Model.Input.AccountId > 0 ? "" : "";
+}
+
+@section Styles {
+    <style>
+        /* ══════════════════════════════════════════════
+                   PROFILE PAGE — đồng bộ design system
+                ══════════════════════════════════════════════ */
+        .profile-layout {
+            display: grid;
+            grid-template-columns: 280px 1fr;
+            gap: 20px;
+            align-items: start;
+        }
+
+        /* ── Sidebar card ── */
+        .sidebar-card {
+            background: var(--bg-card);
+            border-radius: var(--r-lg);
+            border: 1px solid var(--border);
+            box-shadow: var(--sh-sm);
+            overflow: hidden;
+            position: sticky;
+            top: 20px;
+        }
+
+        .sidebar-hd {
+            padding: 14px 18px;
+            border-bottom: 1px solid var(--border);
+            background: linear-gradient(to right, #fafbff, #fff);
+            font-size: .78rem;
+            font-weight: 700;
+            color: var(--text-2);
+            display: flex;
+            align-items: center;
+            gap: 7px;
+            text-transform: uppercase;
+            letter-spacing: .5px;
+        }
+
+            .sidebar-hd i {
+                color: var(--c-primary);
+            }
+
+        .sidebar-body {
+            padding: 24px 18px;
+        }
+
+        /* ── Avatar ── */
+        .profile-avatar-wrap {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+
+        .profile-avatar {
+            width: 80px;
+            height: 80px;
+            border-radius: 50%;
+            color: #fff;
+            font-size: 28px;
+            font-weight: 800;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 6px 20px rgba(0,0,0,.15);
+            flex-shrink: 0;
+        }
+
+            .profile-avatar.admin {
+                background: linear-gradient(135deg,#f43f5e,#fb7185);
+                box-shadow: 0 6px 20px rgba(244,63,94,.3);
+            }
+
+            .profile-avatar.teacher {
+                background: linear-gradient(135deg,#3b82f6,#60a5fa);
+                box-shadow: 0 6px 20px rgba(59,130,246,.3);
+            }
+
+            .profile-avatar.student {
+                background: linear-gradient(135deg,#10b981,#34d399);
+                box-shadow: 0 6px 20px rgba(16,185,129,.3);
+            }
+
+            .profile-avatar.parent {
+                background: linear-gradient(135deg,#f59f00,#fbbf24);
+                box-shadow: 0 6px 20px rgba(245,159,0,.3);
+            }
+
+        .profile-name {
+            font-size: 1rem;
+            font-weight: 800;
+            color: var(--text-1);
+            text-align: center;
+            line-height: 1.3;
+        }
+
+        .profile-username {
+            font-size: .78rem;
+            color: var(--text-3);
+            text-align: center;
+        }
+
+        /* Role badge */
+        .role-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            padding: 4px 12px;
+            border-radius: 50px;
+            font-size: .72rem;
+            font-weight: 700;
+            border: 1px solid transparent;
+        }
+
+            .role-badge.admin {
+                background: #fff1f2;
+                color: #e03131;
+                border-color: #fecdd3;
+            }
+
+            .role-badge.teacher {
+                background: #eff6ff;
+                color: #2563eb;
+                border-color: #bfdbfe;
+            }
+
+            .role-badge.student {
+                background: #ecfdf5;
+                color: #059669;
+                border-color: #a7f3d0;
+            }
+
+            .role-badge.parent {
+                background: #fffbeb;
+                color: #d97706;
+                border-color: #fde68a;
+            }
+
+        /* Sidebar info rows */
+        .pf-divider {
+            height: 1px;
+            background: var(--border);
+            margin: 16px 0;
+        }
+
+        .sb-row {
+            display: flex;
+            align-items: flex-start;
+            gap: 10px;
+            margin-bottom: 12px;
+            font-size: .82rem;
+        }
+
+            .sb-row:last-child {
+                margin-bottom: 0;
+            }
+
+        .sb-row-icon {
+            width: 26px;
+            height: 26px;
+            border-radius: 6px;
+            background: var(--bg-page);
+            border: 1px solid var(--border);
+            color: var(--text-3);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 11px;
+            flex-shrink: 0;
+            margin-top: 1px;
+        }
+
+        .sb-row-info .sb-lbl {
+            font-size: .66rem;
+            font-weight: 700;
+            color: var(--text-3);
+            text-transform: uppercase;
+            letter-spacing: .5px;
+        }
+
+        .sb-row-info .sb-val {
+            font-size: .82rem;
+            font-weight: 600;
+            color: var(--text-1);
+            margin-top: 1px;
+        }
+
+        /* Quick links */
+        .quick-links {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+            margin-top: 4px;
+        }
+
+        .quick-link {
+            display: flex;
+            align-items: center;
+            gap: 9px;
+            padding: 9px 12px;
+            border-radius: var(--r-sm);
+            font-size: .82rem;
+            font-weight: 600;
+            color: var(--text-2);
+            text-decoration: none;
+            transition: all .14s;
+            border: 1px solid transparent;
+        }
+
+            .quick-link:hover {
+                background: var(--bg-page);
+                border-color: var(--border);
+                color: var(--c-primary);
+            }
+
+            .quick-link.active-link {
+                background: rgba(232,89,12,.06);
+                border-color: rgba(232,89,12,.15);
+                color: var(--c-primary);
+                font-weight: 700;
+            }
+
+            .quick-link i {
+                width: 18px;
+                text-align: center;
+                font-size: 13px;
+                flex-shrink: 0;
+            }
+
+        /* ── Form card ── */
+        .form-card {
+            background: var(--bg-card);
+            border-radius: var(--r-lg);
+            border: 1px solid var(--border);
+            box-shadow: var(--sh-sm);
+            overflow: hidden;
+            margin-bottom: 16px;
+        }
+
+            .form-card:last-child {
+                margin-bottom: 0;
+            }
+
+        .form-card-hd {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 14px 20px;
+            border-bottom: 1px solid var(--border);
+            background: linear-gradient(to right, #fafbff, #fff);
+        }
+
+        .form-card-icon {
+            width: 30px;
+            height: 30px;
+            border-radius: 8px;
+            background: rgba(232,89,12,.1);
+            color: var(--c-primary);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 13px;
+            flex-shrink: 0;
+        }
+
+        .form-card-title {
+            font-size: .92rem;
+            font-weight: 700;
+            color: var(--text-1);
+        }
+
+        .form-card-subtitle {
+            font-size: .74rem;
+            color: var(--text-3);
+            margin-top: 1px;
+        }
+
+        .form-card-body {
+            padding: 22px 24px;
+        }
+
+        /* ── Form grid ── */
+        .form-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 16px;
+        }
+
+            .form-grid.full {
+                grid-template-columns: 1fr;
+            }
+
+        .span-2 {
+            grid-column: span 2;
+        }
+
+        /* ── Form field ── */
+        .form-field {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+
+        .field-label {
+            font-size: .72rem;
+            font-weight: 700;
+            color: var(--text-2);
+            text-transform: uppercase;
+            letter-spacing: .5px;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+            .field-label .req {
+                color: #f43f5e;
+                font-size: 13px;
+                line-height: 1;
+            }
+
+            .field-label .opt {
+                font-size: .6rem;
+                font-weight: 600;
+                padding: 1px 6px;
+                border-radius: 4px;
+                background: var(--bg-page);
+                border: 1px solid var(--border);
+                color: var(--text-3);
+                text-transform: none;
+                letter-spacing: 0;
+            }
+
+        .form-input, .form-select {
+            height: 38px;
+            padding: 0 12px;
+            border: 1.5px solid var(--border);
+            border-radius: var(--r-sm);
+            background: #f8f9fc;
+            color: var(--text-1);
+            font-size: .85rem;
+            font-family: 'Plus Jakarta Sans', system-ui, sans-serif;
+            font-weight: 500;
+            outline: none;
+            width: 100%;
+            box-sizing: border-box;
+            transition: border-color .15s, background .15s, box-shadow .15s;
+        }
+
+            .form-input:focus, .form-select:focus {
+                border-color: var(--c-primary);
+                background: #fff;
+                box-shadow: 0 0 0 3px var(--c-glow);
+            }
+
+            .form-input::placeholder {
+                color: var(--text-3);
+                font-size: .82rem;
+            }
+
+            .form-input:hover, .form-select:hover {
+                border-color: #c4c9d8;
+            }
+
+        .form-select {
+            -webkit-appearance: none;
+            appearance: none;
+            padding-right: 32px;
+            cursor: pointer;
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='10' viewBox='0 0 24 24' fill='none' stroke='%239aa0b4' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E");
+            background-repeat: no-repeat;
+            background-position: right 10px center;
+        }
+
+        .form-textarea {
+            padding: 10px 12px;
+            min-height: 80px;
+            border: 1.5px solid var(--border);
+            border-radius: var(--r-sm);
+            background: #f8f9fc;
+            color: var(--text-1);
+            font-size: .85rem;
+            font-family: 'Plus Jakarta Sans', system-ui, sans-serif;
+            font-weight: 500;
+            outline: none;
+            width: 100%;
+            box-sizing: border-box;
+            resize: vertical;
+            line-height: 1.5;
+            transition: border-color .15s, box-shadow .15s;
+        }
+
+            .form-textarea:focus {
+                border-color: var(--c-primary);
+                background: #fff;
+                box-shadow: 0 0 0 3px var(--c-glow);
+            }
+
+        /* Read-only */
+        .form-input[readonly] {
+            background: #f0f2f8;
+            color: var(--text-2);
+            cursor: default;
+        }
+
+            .form-input[readonly]:hover {
+                border-color: var(--border);
+            }
+
+            .form-input[readonly]:focus {
+                border-color: var(--border);
+                box-shadow: none;
+            }
+
+        .field-error {
+            font-size: .73rem;
+            color: #e03131;
+            display: none;
+            align-items: center;
+            gap: 4px;
+        }
+
+            .field-error:not(:empty) {
+                display: flex;
+            }
+
+            .field-error::before {
+                content: '\f06a';
+                font-family: 'Font Awesome 6 Free';
+                font-weight: 900;
+                font-size: 10px;
+                flex-shrink: 0;
+            }
+
+        /* Gender radio */
+        .gender-options {
+            display: flex;
+            gap: 10px;
+        }
+
+        .gender-radio {
+            display: none;
+        }
+
+        .gender-label {
+            flex: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 7px;
+            padding: 8px 12px;
+            border: 1.5px solid var(--border);
+            border-radius: var(--r-sm);
+            background: var(--bg-page);
+            cursor: pointer;
+            font-size: .84rem;
+            font-weight: 600;
+            color: var(--text-2);
+            transition: all .14s;
+        }
+
+            .gender-label:hover {
+                border-color: #c4c9d8;
+                background: #fff;
+            }
+
+        /* Màu mặc định cho icon */
+        .gender-label-male i {
+            color: #60a5fa;
+        }
+
+        .gender-label-female i {
+            color: #f472b6;
+        }
+
+        /* Màu khi được chọn — gán từ server qua Razor, không dùng :checked */
+        .gender-label-male.is-checked {
+            border-color: #3b82f6;
+            background: rgba(59,130,246,.07);
+            color: #2563eb;
+            box-shadow: none;
+        }
+
+            .gender-label-male.is-checked i {
+                color: #2563eb;
+            }
+
+        .gender-label-female.is-checked {
+            border-color: #ec4899;
+            background: rgba(236,72,153,.07);
+            color: #db2777;
+            box-shadow: none;
+        }
+
+            .gender-label-female.is-checked i {
+                color: #db2777;
+            }
+
+        /* Hover chỉ áp dụng khi chưa chọn */
+        .gender-label-male:not(.is-checked):hover,
+        .gender-label-female:not(.is-checked):hover {
+            border-color: #c4c9d8;
+            background: #fff;
+        }
+
+        /* Khi bấm chọn (JS) */
+        .gender-label-male.selected {
+            border-color: #3b82f6;
+            background: rgba(59,130,246,.07);
+            color: #2563eb;
+        }
+
+            .gender-label-male.selected i {
+                color: #2563eb;
+            }
+
+        .gender-label-female.selected {
+            border-color: #ec4899;
+            background: rgba(236,72,153,.07);
+            color: #db2777;
+        }
+
+            .gender-label-female.selected i {
+                color: #db2777;
+            }
+
+        /* Section divider */
+        .section-sep {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: .72rem;
+            font-weight: 800;
+            color: var(--text-3);
+            text-transform: uppercase;
+            letter-spacing: .8px;
+            margin-bottom: 16px;
+        }
+
+            .section-sep::after {
+                content: '';
+                flex: 1;
+                height: 1px;
+                background: var(--border);
+            }
+
+            .section-sep i {
+                width: 20px;
+                height: 20px;
+                border-radius: 5px;
+                background: rgba(232,89,12,.1);
+                color: var(--c-primary);
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                font-size: 9px;
+            }
+
+        /* Form actions */
+        .form-actions {
+            display: flex;
+            align-items: center;
+            justify-content: flex-end;
+            gap: 10px;
+            padding: 16px 24px;
+            border-top: 1px solid var(--border);
+            background: #f9fafd;
+        }
+
+        /* Toast */
+        .toast-wrap {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            z-index: 9999;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .toast-item {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 12px 16px;
+            border-radius: var(--r-md);
+            background: #fff;
+            border: 1px solid var(--border);
+            box-shadow: 0 8px 24px rgba(0,0,0,.12);
+            font-size: .83rem;
+            font-weight: 600;
+            color: var(--text-1);
+            min-width: 260px;
+            max-width: 360px;
+            animation: toastIn .3s cubic-bezier(.34,1.4,.64,1);
+        }
+
+            .toast-item.success {
+                border-left: 4px solid #10b981;
+            }
+
+            .toast-item.error {
+                border-left: 4px solid #f43f5e;
+            }
+
+            .toast-item.success .ti {
+                color: #10b981;
+            }
+
+            .toast-item.error .ti {
+                color: #f43f5e;
+            }
+
+        .toast-close {
+            margin-left: auto;
+            background: none;
+            border: none;
+            color: var(--text-3);
+            cursor: pointer;
+            font-size: 12px;
+            padding: 0 2px;
+        }
+
+        @@keyframes toastIn {
+            from {
+                opacity: 0;
+                transform: translateX(20px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateX(0);
+            }
+        }
+
+        @@media (max-width: 900px) {
+            .profile-layout {
+                grid-template-columns: 1fr;
+            }
+
+            .sidebar-card {
+                position: static;
+            }
+        }
+
+        @@media (max-width: 600px) {
+            .form-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .span-2 {
+                grid-column: span 1;
+            }
+        }
+    </style>
+}
+
+<!-- Toast container -->
+<div class="toast-wrap" id="toastWrap"></div>
+
+<!-- PAGE HEADER -->
+<div class="page-header">
+    <div>
+        <h1 class="page-heading">Thông tin <span>cá nhân</span></h1>
+        <p class="page-subheading">
+            <i class="fas fa-circle-info" style="color:var(--c-primary)"></i>
+            Cập nhật thông tin tài khoản của bạn
+        </p>
+    </div>
+</div>
+
+<div class="profile-layout">
+
+    <!-- ══════ SIDEBAR ══════ -->
+    <div>
+        <div class="sidebar-card">
+            <div class="sidebar-hd">
+                <i class="fas fa-id-card"></i> Tổng quan
+            </div>
+            <div class="sidebar-body">
+
+                <!-- Avatar + tên + role -->
+                <div class="profile-avatar-wrap">
+                    <div class="profile-avatar @Model.RoleCss">
+                        @Model.Initials
+                    </div>
+                    <div class="profile-name">@Model.Input.Fullname</div>
+                    <div class="profile-username">@@@Model.Username</div>
+                    <span class="role-badge @Model.RoleCss">
+                        <i class="fas @Model.RoleIcon"></i>
+                        @Model.RoleLabel
+                    </span>
+                </div>
+
+                <div class="pf-divider"></div>
+
+                <!-- Thông tin tóm tắt -->
+                <div class="sb-row">
+                    <div class="sb-row-icon"><i class="fas fa-phone"></i></div>
+                    <div class="sb-row-info">
+                        <div class="sb-lbl">Điện thoại</div>
+                        <div class="sb-val">@(string.IsNullOrEmpty(Model.Input.Phone) ? "Chưa cập nhật" : Model.Input.Phone)</div>
+                    </div>
+                </div>
+                <div class="sb-row">
+                    <div class="sb-row-icon"><i class="fas fa-cake-candles"></i></div>
+                    <div class="sb-row-info">
+                        <div class="sb-lbl">Ngày sinh</div>
+                        <div class="sb-val">@(Model.Input.Dob.HasValue? Model.Input.Dob.Value.ToString("dd/MM/yyyy") : "Chưa cập nhật")</div>
+                    </div>
+                </div>
+                <div class="sb-row">
+                    <div class="sb-row-icon"><i class="fas fa-venus-mars"></i></div>
+                    <div class="sb-row-info">
+                        <div class="sb-lbl">Giới tính</div>
+                        @if (Model.Input.Gender == Gender.Male)
+                        {
+                            <span style="display:inline-flex;align-items:center;gap:5px;font-size:.8rem;font-weight:700;color:#2563eb;background:rgba(59,130,246,.08);border:1px solid rgba(59,130,246,.2);padding:2px 10px;border-radius:20px">
+                                <i class="fas fa-mars" style="font-size:10px"></i> Nam
+                            </span>
+                        }
+                        else
+                        {
+                            <span style="display:inline-flex;align-items:center;gap:5px;font-size:.8rem;font-weight:700;color:#db2777;background:rgba(236,72,153,.08);border:1px solid rgba(236,72,153,.2);padding:2px 10px;border-radius:20px">
+                                <i class="fas fa-venus" style="font-size:10px"></i> Nữ
+                            </span>
+                        }
+                    </div>
+                </div>
+                <div class="sb-row">
+                    <div class="sb-row-icon"><i class="fas fa-clock"></i></div>
+                    <div class="sb-row-info">
+                        <div class="sb-lbl">Ngày tạo</div>
+                        <div class="sb-val">@Model.CreatedAt.ToString("dd/MM/yyyy")</div>
+                    </div>
+                </div>
+
+                <div class="pf-divider"></div>
+
+                <!-- Quick links -->
+                <div class="quick-links">
+                    <a href="/Account/Profile" class="quick-link active-link">
+                        <i class="fas fa-user-pen"></i> Chỉnh sửa thông tin
+                    </a>
+                    <a href="/Account/ChangePassword" class="quick-link">
+                        <i class="fas fa-lock"></i> Đổi mật khẩu
+                    </a>
+                </div>
+
+            </div>
+        </div>
+    </div>
+
+    <!-- ══════ FORM ══════ -->
+    <div>
+        <form method="post">
+            @Html.AntiForgeryToken()
+            <input type="hidden" asp-for="Input.AccountId" />
+
+            <!-- ── Card: Thông tin cơ bản ── -->
+            <div class="form-card">
+                <div class="form-card-hd">
+                    <div class="form-card-icon"><i class="fas fa-user"></i></div>
+                    <div>
+                        <div class="form-card-title">Thông tin cơ bản</div>
+                        <div class="form-card-subtitle">Họ tên, ngày sinh, giới tính và liên hệ</div>
+                    </div>
+                </div>
+                <div class="form-card-body">
+
+                    <!-- Tài khoản (readonly) -->
+                    <div class="section-sep">
+                        <i class="fas fa-key"></i> Tài khoản
+                    </div>
+                    <div class="form-grid" style="margin-bottom:24px">
+                        <div class="form-field">
+                            <label class="field-label">Tên đăng nhập</label>
+                            <input type="text" value="@Model.Username" class="form-input" readonly />
+                        </div>
+                        <div class="form-field">
+                            <label class="field-label">Vai trò</label>
+                            <input type="text" value="@Model.RoleLabel" class="form-input" readonly />
+                        </div>
+                    </div>
+
+                    <!-- Cá nhân -->
+                    <div class="section-sep">
+                        <i class="fas fa-id-card"></i> Cá nhân
+                    </div>
+                    <div class="form-grid" style="margin-bottom:16px">
+                        <div class="form-field span-2">
+                            <label class="field-label" for="fullname">
+                                Họ và tên <span class="req">*</span>
+                            </label>
+                            <input asp-for="Input.Fullname" id="fullname" class="form-input"
+                                   placeholder="Nguyễn Văn A" />
+                            <span asp-validation-for="Input.Fullname" class="field-error"></span>
+                        </div>
+
+                        <div class="form-field">
+                            <label class="field-label" for="dob">
+                                Ngày sinh <span class="opt">tùy chọn</span>
+                            </label>
+                            <input asp-for="Input.Dob" type="date" id="dob" class="form-input" />
+                        </div>
+
+                        <div class="form-field">
+                            <label class="field-label" for="phone">
+                                Số điện thoại <span class="opt">tùy chọn</span>
+                            </label>
+                            <input asp-for="Input.Phone" id="phone" class="form-input"
+                                   placeholder="09xxxxxxxx" />
+                            <span asp-validation-for="Input.Phone" class="field-error"></span>
+                        </div>
+
+                        <div class="form-field span-2">
+                            <label class="field-label">Giới tính</label>
+                            <div class="gender-options">
+                                <input type="radio" asp-for="Input.Gender"
+                                       value="@((int)Gender.Male)"
+                                       id="genderMale" class="gender-radio" />
+                                @if (Model.Input.Gender == Gender.Male)
+                                {
+                                    <label for="genderMale" class="gender-label gender-label-male is-checked">
+                                        <i class="fas fa-mars"></i> Nam
+                                    </label>
+                                }
+                                else
+                                {
+                                    <label for="genderMale" class="gender-label gender-label-male">
+                                        <i class="fas fa-mars"></i> Nam
+                                    </label>
+                                }
+                                <input type="radio" asp-for="Input.Gender"
+                                       value="@((int)Gender.Female)"
+                                       id="genderFemale" class="gender-radio" />
+                                @if (Model.Input.Gender == Gender.Female)
+                                {
+                                    <label for="genderFemale" class="gender-label gender-label-female is-checked">
+                                        <i class="fas fa-venus"></i> Nữ
+                                    </label>
+                                }
+                                else
+                                {
+                                    <label for="genderFemale" class="gender-label gender-label-female">
+                                        <i class="fas fa-venus"></i> Nữ
+                                    </label>
+                                }
+                            </div>
+                        </div>
+                    </div>
+
+                </div>
+
+                <div class="form-actions">
+                    <button type="submit" class="btn-brand">
+                        <i class="fas fa-floppy-disk"></i> Lưu thay đổi
+                    </button>
+                </div>
+            </div>
+
+            <!-- ── Card: Thông tin theo vai trò ── -->
+            @if (Model.RoleCss == "admin")
+            {
+                <div class="form-card">
+                    <div class="form-card-hd">
+                        <div class="form-card-icon" style="background:rgba(244,63,94,.1);color:#f43f5e">
+                            <i class="fas fa-shield-halved"></i>
+                        </div>
+                        <div>
+                            <div class="form-card-title">Thông tin quản trị</div>
+                            <div class="form-card-subtitle">Chức danh và ghi chú nội bộ</div>
+                        </div>
+                    </div>
+                    <div class="form-card-body">
+                        <div class="form-grid full">
+                            <div class="form-field">
+                                <label class="field-label" for="title">
+                                    Chức danh <span class="opt">tùy chọn</span>
+                                </label>
+                                <input asp-for="Input.Title" id="title" class="form-input"
+                                       placeholder="VD: Quản lý, Kế toán..." />
+                            </div>
+                        </div>
+                    </div>
+                    <div class="form-actions">
+                        <button type="submit" class="btn-brand">
+                            <i class="fas fa-floppy-disk"></i> Lưu thay đổi
+                        </button>
+                    </div>
+                </div>
+            }
+
+            @if (Model.RoleCss == "teacher")
+            {
+                <div class="form-card">
+                    <div class="form-card-hd">
+                        <div class="form-card-icon" style="background:rgba(59,130,246,.1);color:#3b82f6">
+                            <i class="fas fa-chalkboard-user"></i>
+                        </div>
+                        <div>
+                            <div class="form-card-title">Thông tin giáo viên</div>
+                            <div class="form-card-subtitle">Ghi chú và thông tin bổ sung</div>
+                        </div>
+                    </div>
+                    <div class="form-card-body">
+                        <div class="form-field">
+                            <label class="field-label" for="note">
+                                Ghi chú <span class="opt">tùy chọn</span>
+                            </label>
+                            <textarea asp-for="Input.Note" id="note" class="form-textarea"
+                                      placeholder="Kinh nghiệm, chuyên môn..."></textarea>
+                        </div>
+                    </div>
+                    <div class="form-actions">
+                        <button type="submit" class="btn-brand">
+                            <i class="fas fa-floppy-disk"></i> Lưu thay đổi
+                        </button>
+                    </div>
+                </div>
+            }
+
+            @if (Model.RoleCss == "student")
+            {
+                <div class="form-card">
+                    <div class="form-card-hd">
+                        <div class="form-card-icon" style="background:rgba(16,185,129,.1);color:#10b981">
+                            <i class="fas fa-graduation-cap"></i>
+                        </div>
+                        <div>
+                            <div class="form-card-title">Thông tin học sinh</div>
+                            <div class="form-card-subtitle">Trường đang học và ghi chú</div>
+                        </div>
+                    </div>
+                    <div class="form-card-body">
+                        <div class="form-grid full" style="gap:14px">
+                            <div class="form-field">
+                                <label class="field-label" for="currentSchool">
+                                    Trường đang học <span class="opt">tùy chọn</span>
+                                </label>
+                                <input asp-for="Input.CurrentSchool" id="currentSchool" class="form-input"
+                                       placeholder="VD: THPT Nguyễn Thị Minh Khai" />
+                            </div>
+                            <div class="form-field">
+                                <label class="field-label" for="noteStudent">
+                                    Ghi chú <span class="opt">tùy chọn</span>
+                                </label>
+                                <textarea asp-for="Input.Note" id="noteStudent" class="form-textarea"
+                                          placeholder="Thông tin thêm về học sinh..."></textarea>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="form-actions">
+                        <button type="submit" class="btn-brand">
+                            <i class="fas fa-floppy-disk"></i> Lưu thay đổi
+                        </button>
+                    </div>
+                </div>
+            }
+
+            @if (Model.RoleCss == "parent")
+            {
+                <div class="form-card">
+                    <div class="form-card-hd">
+                        <div class="form-card-icon" style="background:rgba(245,159,0,.1);color:#f59f00">
+                            <i class="fas fa-house-user"></i>
+                        </div>
+                        <div>
+                            <div class="form-card-title">Thông tin phụ huynh</div>
+                            <div class="form-card-subtitle">Ghi chú liên hệ và thông tin bổ sung</div>
+                        </div>
+                    </div>
+                    <div class="form-card-body">
+                        <div class="form-field">
+                            <label class="field-label" for="noteParent">
+                                Ghi chú <span class="opt">tùy chọn</span>
+                            </label>
+                            <textarea asp-for="Input.Note" id="noteParent" class="form-textarea"
+                                      placeholder="Ghi chú về phụ huynh..."></textarea>
+                        </div>
+                    </div>
+                    <div class="form-actions">
+                        <button type="submit" class="btn-brand">
+                            <i class="fas fa-floppy-disk"></i> Lưu thay đổi
+                        </button>
+                    </div>
+                </div>
+            }
+
+        </form>
+    </div>
+
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+    <script>
+        (function () {
+            function showToast(msg, type) {
+                var wrap = document.getElementById('toastWrap');
+                var t = document.createElement('div');
+                t.className = 'toast-item ' + (type || 'success');
+                t.innerHTML =
+                    '<i class="fas ' + (type === 'error' ? 'fa-circle-xmark' : 'fa-circle-check') + ' ti"></i>' +
+                    '<span>' + msg + '</span>' +
+                    '<button class="toast-close" onclick="this.parentElement.remove()"><i class="fas fa-times"></i></button>';
+                wrap.appendChild(t);
+                setTimeout(function () { if (t.parentElement) t.remove(); }, 4500);
+            }
+
+            @if (TempData["SuccessMessage"] != null)
+            {
+                        <text>document.addEventListener('DOMContentLoaded', function() {
+                            showToast('@Html.Raw(TempData["SuccessMessage"]!.ToString()!.Replace("'", "\\'"))', 'success');
+                        });</text>
+            }
+            @if (TempData["ErrorMessage"] != null)
+            {
+                        <text>document.addEventListener('DOMContentLoaded', function() {
+                            showToast('@Html.Raw(TempData["ErrorMessage"]!.ToString()!.Replace("'", "\\'"))', 'error');
+                        });</text>
+            }
+
+            // Gender: cập nhật màu khi người dùng bấm chọn
+            document.addEventListener('DOMContentLoaded', function () {
+                document.querySelectorAll('.gender-radio').forEach(function(r) {
+                    r.addEventListener('change', function() {
+                        document.querySelectorAll('.gender-label').forEach(function(l) {
+                            l.classList.remove('is-checked', 'selected');
+                        });
+                        var lbl = document.querySelector('label[for="' + r.id + '"]');
+                        if (lbl) lbl.classList.add('is-checked');
+                    });
+                });
+            });
+
+            // Live-update sidebar name
+            document.addEventListener('DOMContentLoaded', function () {
+                var fullnameInput = document.getElementById('fullname');
+                var sidebarName   = document.querySelector('.profile-name');
+                if (fullnameInput && sidebarName) {
+                    fullnameInput.addEventListener('input', function () {
+                        sidebarName.textContent = this.value || '—';
+                    });
+                }
+            });
+        }());
+    </script>
+}

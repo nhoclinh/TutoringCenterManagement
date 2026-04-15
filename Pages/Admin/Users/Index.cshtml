@@ -1,0 +1,1400 @@
+﻿@page
+@model TutoringCenterManagement.Pages.Admin.Users.IndexModel
+@{
+    ViewData["Title"] = "Quản lý người dùng";
+}
+
+@section Styles {
+    <style>
+        /* ════════════════════════════════════
+                               USERS PAGE — đồng bộ design system
+                            ════════════════════════════════════ */
+
+        /* ── Summary chips ── */
+        .summary-bar {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+            margin-bottom: 20px;
+        }
+
+        .summary-chip {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 8px 14px;
+            border-radius: var(--r-sm);
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            box-shadow: var(--sh-xs);
+            font-size: .8rem;
+            font-weight: 600;
+            color: var(--text-2);
+        }
+
+            .summary-chip .chip-icon {
+                width: 26px;
+                height: 26px;
+                border-radius: 6px;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                font-size: 11px;
+                flex-shrink: 0;
+            }
+
+            .summary-chip .chip-num {
+                font-weight: 800;
+                color: var(--text-1);
+                font-size: .88rem;
+            }
+
+        .chip-icon.all {
+            background: rgba(232,89,12,.1);
+            color: #e8590c;
+        }
+
+        .chip-icon.admin {
+            background: rgba(244,63,94,.1);
+            color: #f43f5e;
+        }
+
+        .chip-icon.teacher {
+            background: rgba(59,130,246,.1);
+            color: #3b82f6;
+        }
+
+        .chip-icon.student {
+            background: rgba(16,185,129,.1);
+            color: #10b981;
+        }
+
+        .chip-icon.parent {
+            background: rgba(245,159,0,.1);
+            color: #f59f00;
+        }
+
+        /* ── Filter card ── */
+        .filter-card {
+            background: var(--bg-card);
+            border-radius: var(--r-lg);
+            border: 1px solid var(--border);
+            box-shadow: var(--sh-sm);
+            padding: 16px 20px;
+            margin-bottom: 20px;
+        }
+
+        .filter-row {
+            display: flex;
+            align-items: flex-end;
+            gap: 12px;
+            flex-wrap: wrap;
+        }
+
+        .filter-group {
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+        }
+
+            .filter-group.grow {
+                flex: 1;
+                min-width: 200px;
+            }
+
+        .filter-label {
+            font-size: .68rem;
+            font-weight: 700;
+            color: var(--text-3);
+            text-transform: uppercase;
+            letter-spacing: .6px;
+        }
+
+        .filter-select {
+            padding: 8px 12px;
+            border: 1.5px solid var(--border);
+            border-radius: var(--r-sm);
+            background: var(--bg-page);
+            color: var(--text-1);
+            font-size: .83rem;
+            font-family: 'Plus Jakarta Sans', system-ui, sans-serif;
+            outline: none;
+            cursor: pointer;
+            transition: border-color .15s, box-shadow .15s;
+            min-width: 150px;
+        }
+
+            .filter-select:focus {
+                border-color: var(--c-primary);
+                box-shadow: 0 0 0 3px var(--c-glow);
+            }
+
+        .search-wrap {
+            position: relative;
+            display: flex;
+            align-items: center;
+        }
+
+            .search-wrap i {
+                position: absolute;
+                left: 12px;
+                color: var(--text-3);
+                font-size: 13px;
+                pointer-events: none;
+            }
+
+            .search-wrap:focus-within i {
+                color: var(--c-primary);
+            }
+
+        .search-input {
+            padding: 8px 12px 8px 36px;
+            border: 1.5px solid var(--border);
+            border-radius: var(--r-sm);
+            background: var(--bg-page);
+            color: var(--text-1);
+            font-size: .83rem;
+            font-family: 'Plus Jakarta Sans', system-ui, sans-serif;
+            outline: none;
+            width: 100%;
+            transition: border-color .15s, box-shadow .15s;
+        }
+
+            .search-input:focus {
+                border-color: var(--c-primary);
+                box-shadow: 0 0 0 3px var(--c-glow);
+            }
+
+            .search-input::placeholder {
+                color: var(--text-3);
+            }
+
+        /* ── Table card ── */
+        .table-card {
+            background: var(--bg-card);
+            border-radius: var(--r-lg);
+            border: 1px solid var(--border);
+            box-shadow: var(--sh-sm);
+            overflow: hidden;
+        }
+
+        .table-card-hd {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 14px 20px;
+            border-bottom: 1px solid var(--border);
+            background: linear-gradient(to right, #fafbff, #fff);
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+
+        .table-card-title {
+            display: flex;
+            align-items: center;
+            gap: 9px;
+            font-size: .92rem;
+            font-weight: 700;
+            color: var(--text-1);
+        }
+
+        .ct-icon {
+            width: 28px;
+            height: 28px;
+            border-radius: 7px;
+            background: rgba(232,89,12,.1);
+            color: var(--c-primary);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 12px;
+        }
+
+        .result-count {
+            font-size: .75rem;
+            font-weight: 600;
+            color: var(--text-3);
+            background: var(--bg-page);
+            border: 1px solid var(--border);
+            padding: 3px 10px;
+            border-radius: 50px;
+        }
+
+        /* ── User table ── */
+        .user-table {
+            width: 100%;
+            border-collapse: separate;
+            border-spacing: 0;
+        }
+
+            .user-table thead th {
+                padding: 11px 16px;
+                font-size: .7rem;
+                font-weight: 700;
+                text-transform: uppercase;
+                letter-spacing: .7px;
+                color: var(--text-2);
+                background: #f4f6fc;
+                border-bottom: 2px solid var(--border);
+                white-space: nowrap;
+            }
+
+                .user-table thead th:first-child {
+                    padding-left: 20px;
+                }
+
+                .user-table thead th:last-child {
+                    padding-right: 20px;
+                }
+
+            .user-table tbody td {
+                padding: 13px 16px;
+                font-size: .83rem;
+                color: var(--text-1);
+                border-bottom: 1px solid #f0f2f8;
+                vertical-align: middle;
+            }
+
+                .user-table tbody td:first-child {
+                    padding-left: 20px;
+                }
+
+                .user-table tbody td:last-child {
+                    padding-right: 20px;
+                }
+
+            .user-table tbody tr:last-child td {
+                border-bottom: none;
+            }
+
+            .user-table tbody tr:hover td {
+                background: #f8faff;
+            }
+
+        /* ── User cell (avatar + name) ── */
+        .user-cell {
+            display: flex;
+            align-items: center;
+            gap: 11px;
+        }
+
+        .u-avatar {
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            background: var(--c-gradient);
+            color: #fff;
+            font-weight: 800;
+            font-size: 13px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+            box-shadow: 0 2px 8px var(--c-glow);
+        }
+
+            .u-avatar.admin {
+                background: linear-gradient(135deg,#f43f5e,#fb7185);
+                box-shadow: 0 2px 8px rgba(244,63,94,.25);
+            }
+
+            .u-avatar.teacher {
+                background: linear-gradient(135deg,#3b82f6,#60a5fa);
+                box-shadow: 0 2px 8px rgba(59,130,246,.25);
+            }
+
+            .u-avatar.student {
+                background: linear-gradient(135deg,#10b981,#34d399);
+                box-shadow: 0 2px 8px rgba(16,185,129,.25);
+            }
+
+            .u-avatar.parent {
+                background: linear-gradient(135deg,#f59f00,#fbbf24);
+                box-shadow: 0 2px 8px rgba(245,159,0,.25);
+            }
+
+        .u-name {
+            font-weight: 700;
+            color: var(--text-1);
+            font-size: .85rem;
+        }
+
+        .u-id {
+            font-size: .7rem;
+            color: var(--text-3);
+            margin-top: 1px;
+        }
+
+        /* ── Role badges ── */
+        .role-bdg {
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            padding: 4px 10px;
+            border-radius: var(--r-sm);
+            font-size: .72rem;
+            font-weight: 700;
+            border: 1px solid transparent;
+        }
+
+            .role-bdg i {
+                font-size: 10px;
+            }
+
+            .role-bdg.admin {
+                background: #fff1f2;
+                color: #e03131;
+                border-color: #fecdd3;
+            }
+
+            .role-bdg.teacher {
+                background: #eff6ff;
+                color: #2563eb;
+                border-color: #bfdbfe;
+            }
+
+            .role-bdg.student {
+                background: #ecfdf5;
+                color: #059669;
+                border-color: #a7f3d0;
+            }
+
+            .role-bdg.parent {
+                background: #fffbeb;
+                color: #d97706;
+                border-color: #fde68a;
+            }
+
+        /* ── Status pill ── */
+        .status-pill {
+            display: inline-flex;
+            align-items: center;
+            gap: 7px;
+            font-size: .78rem;
+            font-weight: 600;
+        }
+
+        .s-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            position: relative;
+            flex-shrink: 0;
+        }
+
+            .s-dot.active {
+                background: #10b981;
+                box-shadow: 0 0 0 0 rgba(16,185,129,.4);
+                animation: sPulse 2.2s infinite;
+            }
+
+            .s-dot.inactive {
+                background: #9ca3af;
+            }
+
+        @@keyframes sPulse {
+            0% {
+                box-shadow: 0 0 0 0 rgba(16,185,129,.45);
+            }
+
+            70% {
+                box-shadow: 0 0 0 6px rgba(16,185,129,.0);
+            }
+
+            100% {
+                box-shadow: 0 0 0 0 rgba(16,185,129,.0);
+            }
+        }
+
+        /* ── Phone cell ── */
+        .phone-cell {
+            display: flex;
+            align-items: center;
+            gap: 7px;
+            color: var(--text-2);
+        }
+
+            .phone-cell i {
+                font-size: 11px;
+                color: var(--text-3);
+            }
+
+        /* ── Action buttons ── */
+        .action-group {
+            display: flex;
+            align-items: center;
+            justify-content: flex-end;
+            gap: 6px;
+        }
+
+        .act-btn {
+            width: 32px;
+            height: 32px;
+            border-radius: var(--r-sm);
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            border: 1.5px solid var(--border);
+            background: #fff;
+            font-size: 12px;
+            cursor: pointer;
+            text-decoration: none !important;
+            transition: all .15s;
+            color: var(--text-2);
+        }
+
+            .act-btn:hover {
+                transform: translateY(-1px);
+                box-shadow: var(--sh-sm);
+            }
+
+            .act-btn.edit:hover {
+                border-color: #3b82f6;
+                color: #3b82f6;
+                background: #eff6ff;
+            }
+
+            .act-btn.deactivate:hover {
+                border-color: #f59f00;
+                color: #d97706;
+                background: #fffbeb;
+            }
+
+            .act-btn.activate:hover {
+                border-color: #10b981;
+                color: #059669;
+                background: #ecfdf5;
+            }
+
+            .act-btn.delete:hover {
+                border-color: #f43f5e;
+                color: #e03131;
+                background: #fff1f2;
+            }
+
+        /* ── Empty state ── */
+        .empty-row td {
+            padding: 64px 20px !important;
+            text-align: center;
+            background: transparent !important;
+            border-bottom: none !important;
+        }
+
+        .empty-icon {
+            width: 64px;
+            height: 64px;
+            border-radius: 50%;
+            background: var(--bg-page);
+            margin: 0 auto 14px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
+            color: var(--text-3);
+        }
+
+        .empty-title {
+            font-size: .95rem;
+            font-weight: 700;
+            color: var(--text-1);
+            margin-bottom: 6px;
+        }
+
+        .empty-desc {
+            font-size: .8rem;
+            color: var(--text-2);
+        }
+
+        /* ── Pagination ── */
+        .table-foot {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 13px 20px;
+            border-top: 1px solid var(--border);
+            background: #f9fafd;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+
+        .foot-info {
+            font-size: .78rem;
+            color: var(--text-2);
+            font-weight: 500;
+        }
+
+        .pager {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+
+        .pg-btn {
+            min-width: 30px;
+            height: 30px;
+            padding: 0 7px;
+            border-radius: var(--r-sm);
+            border: 1.5px solid var(--border);
+            background: #fff;
+            color: var(--text-2);
+            font-size: .78rem;
+            font-weight: 600;
+            cursor: pointer;
+            text-decoration: none !important;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all .15s;
+        }
+
+            .pg-btn:hover {
+                border-color: var(--c-primary);
+                color: var(--c-primary);
+            }
+
+            .pg-btn.active {
+                background: var(--c-primary);
+                border-color: var(--c-primary);
+                color: #fff !important;
+            }
+
+            .pg-btn:disabled {
+                opacity: .4;
+                cursor: not-allowed;
+            }
+
+        /* ══════════════════════════════════
+                               CONFIRM MODAL — vanilla JS
+                            ══════════════════════════════════ */
+        .cm-backdrop {
+            visibility: hidden;
+            opacity: 0;
+            position: fixed;
+            inset: 0;
+            z-index: 9990;
+            background: rgba(15,17,23,.52);
+            backdrop-filter: blur(3px);
+            -webkit-backdrop-filter: blur(3px);
+            transition: opacity .2s, visibility .2s;
+        }
+
+        .cm-modal {
+            visibility: hidden;
+            opacity: 0;
+            position: fixed;
+            inset: 0;
+            z-index: 9991;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 16px;
+            transition: opacity .2s, visibility .2s;
+            pointer-events: none;
+        }
+
+            .cm-backdrop.cm-open,
+            .cm-modal.cm-open {
+                visibility: visible;
+                opacity: 1;
+                pointer-events: all;
+            }
+
+        .cm-box {
+            background: #fff;
+            border-radius: var(--r-xl);
+            box-shadow: 0 24px 56px rgba(0,0,0,.18), 0 8px 20px rgba(0,0,0,.08);
+            width: 100%;
+            max-width: 380px;
+            overflow: hidden;
+            transform: scale(.94) translateY(10px);
+            transition: transform .22s cubic-bezier(.34,1.4,.64,1);
+        }
+
+        .cm-modal.cm-open .cm-box {
+            transform: scale(1) translateY(0);
+        }
+
+        .cm-head {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 18px 20px 14px;
+        }
+
+        .cm-icon-wrap {
+            width: 42px;
+            height: 42px;
+            border-radius: var(--r-md);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 18px;
+            flex-shrink: 0;
+        }
+
+            .cm-icon-wrap.danger {
+                background: #fff1f2;
+                color: #e03131;
+            }
+
+            .cm-icon-wrap.warning {
+                background: #fffbeb;
+                color: #d97706;
+            }
+
+            .cm-icon-wrap.success {
+                background: #ecfdf5;
+                color: #059669;
+            }
+
+        .cm-head-text h6 {
+            font-size: .95rem;
+            font-weight: 800;
+            color: var(--text-1);
+            margin: 0 0 2px;
+        }
+
+        .cm-head-text p {
+            font-size: .8rem;
+            color: var(--text-2);
+            margin: 0;
+        }
+
+        .cm-body-msg {
+            padding: 4px 20px 16px;
+            font-size: .83rem;
+            color: var(--text-2);
+            line-height: 1.6;
+        }
+
+            .cm-body-msg strong {
+                color: var(--text-1);
+            }
+
+        .cm-foot {
+            display: flex;
+            justify-content: flex-end;
+            gap: 8px;
+            padding: 14px 20px;
+            border-top: 1px solid var(--border);
+            background: #f9fafd;
+        }
+
+        /* ── Import/Export dropdown ── */
+        .ie-dropdown {
+            position: relative;
+        }
+
+        .ie-menu {
+            display: none;
+            position: absolute;
+            top: calc(100% + 6px);
+            right: 0;
+            background: #fff;
+            border: 1px solid var(--border);
+            border-radius: var(--r-md);
+            box-shadow: 0 8px 24px rgba(0,0,0,.12);
+            min-width: 220px;
+            z-index: 999;
+            overflow: hidden;
+        }
+
+            .ie-menu.open {
+                display: block;
+                animation: fadeDown .15s ease;
+            }
+
+        @@keyframes fadeDown {
+            from {
+                opacity: 0;
+                transform: translateY(-6px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .ie-item {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 11px 16px;
+            font-size: .83rem;
+            color: var(--text-1);
+            text-decoration: none !important;
+            transition: background .12s;
+            border-bottom: 1px solid #f0f2f8;
+        }
+
+            .ie-item:last-child {
+                border-bottom: none;
+            }
+
+            .ie-item:hover {
+                background: #f8faff;
+            }
+
+            .ie-item i {
+                font-size: 16px;
+                flex-shrink: 0;
+            }
+
+        .ie-item-title {
+            font-weight: 700;
+            color: var(--text-1);
+            font-size: .83rem;
+        }
+
+        .ie-item-desc {
+            font-size: .72rem;
+            color: var(--text-3);
+            margin-top: 1px;
+        }
+
+        /* ── Page size selector ── */
+        .pagesize-wrap {
+            display: flex;
+            align-items: center;
+            gap: 7px;
+            font-size: .78rem;
+            font-weight: 600;
+            color: var(--text-2);
+        }
+
+        .pagesize-select {
+            height: 30px;
+            padding: 0 22px 0 8px;
+            border: 1.5px solid var(--border);
+            border-radius: var(--r-sm);
+            background: #f8f9fc;
+            color: var(--text-1);
+            font-size: .78rem;
+            font-family: 'Plus Jakarta Sans', system-ui, sans-serif;
+            outline: none;
+            cursor: pointer;
+            -webkit-appearance: none;
+            appearance: none;
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='9' height='9' viewBox='0 0 24 24' fill='none' stroke='%239aa0b4' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E");
+            background-repeat: no-repeat;
+            background-position: right 7px center;
+            transition: border-color .15s;
+        }
+
+            .pagesize-select:focus {
+                border-color: var(--c-primary);
+            }
+
+        /* ── Responsive ── */
+        @@media (max-width: 768px) {
+            .summary-bar {
+                gap: 8px;
+            }
+
+            .filter-row {
+                flex-direction: column;
+                align-items: stretch;
+            }
+
+            .filter-select {
+                min-width: unset;
+            }
+
+            .user-table thead th:nth-child(4),
+            .user-table tbody td:nth-child(4) {
+                display: none;
+            }
+            /* hide phone on mobile */
+        }
+
+        /* ── Toast notifications ── */
+        .toast-item {
+            display: flex; align-items: center; gap: 10px;
+            padding: 11px 14px; border-radius: var(--r-md);
+            background: #fff; border: 1px solid var(--border);
+            box-shadow: 0 8px 28px rgba(0,0,0,.13);
+            font-size: .83rem; font-weight: 600; color: var(--text-1);
+            min-width: 260px; max-width: 380px;
+            pointer-events: all;
+            animation: toastIn .25s cubic-bezier(.34,1.4,.64,1) both;
+        }
+
+        @@keyframes toastIn {
+            from { opacity: 0; transform: translateX(24px) scale(.96); }
+            to   { opacity: 1; transform: translateX(0) scale(1); }
+        }
+
+        .toast-item.success { border-left: 4px solid #10b981; }
+        .toast-item.error   { border-left: 4px solid #f43f5e; }
+        .toast-item.warning { border-left: 4px solid #f59f00; }
+
+        .toast-icon {
+            font-size: 15px; flex-shrink: 0;
+        }
+
+        .toast-item.success .toast-icon { color: #10b981; }
+        .toast-item.error   .toast-icon { color: #f43f5e; }
+        .toast-item.warning .toast-icon { color: #f59f00; }
+
+        .toast-close {
+            margin-left: auto; background: none; border: none;
+            color: var(--text-3); cursor: pointer; padding: 2px 4px;
+            font-size: 11px; border-radius: 4px; flex-shrink: 0;
+            transition: color .12s;
+        }
+        .toast-close:hover { color: var(--text-1); }
+    </style>
+}
+
+<!-- ════════════════════════════════════════
+     TOAST NOTIFICATIONS
+════════════════════════════════════════ -->
+<div id="toastWrap" style="position:fixed;top:20px;right:20px;z-index:99999;display:flex;flex-direction:column;gap:8px;pointer-events:none;"></div>
+
+<!-- ════════════════════════════════════════
+     PAGE HEADER
+════════════════════════════════════════ -->
+<div class="page-header">
+    <div>
+        <h1 class="page-heading">Quản lý <span>người dùng</span></h1>
+        <p class="page-subheading">
+            <i class="fas fa-circle-info" style="color:var(--c-primary)"></i>
+            Tổng cộng <strong style="color:var(--text-1)">@Model.Users.Count</strong> tài khoản trong hệ thống
+        </p>
+    </div>
+    <div class="page-actions">
+        <div class="ie-dropdown" id="ieDropdownWrap">
+            <button class="btn-outline" id="ieDropdownBtn" onclick="toggleIeDropdown(event)" style="padding: 0 16px; white-space: nowrap; display: flex; align-items: center; height: 38px; box-sizing: border-box;">
+                <i class="fas fa-file-excel"></i> Import / Export
+                <i class="fas fa-chevron-down" style="font-size:10px;margin-left:4px"></i>
+            </button>
+            <div class="ie-menu" id="ieMenu">
+                <a href="/Admin/Users/ImportExport?handler=Export" class="ie-item">
+                    <i class="fas fa-file-arrow-down" style="color:#10b981"></i>
+                    <div>
+                        <div class="ie-item-title">Export Excel</div>
+                        <div class="ie-item-desc">Tải xuống toàn bộ danh sách</div>
+                    </div>
+                </a>
+                <a href="/Admin/Users/ImportExport" class="ie-item">
+                    <i class="fas fa-file-arrow-up" style="color:#3b82f6"></i>
+                    <div>
+                        <div class="ie-item-title">Import Excel</div>
+                        <div class="ie-item-desc">Thêm người dùng hàng loạt</div>
+                    </div>
+                </a>
+                <a href="/Admin/Users/ImportExport?handler=Template" class="ie-item">
+                    <i class="fas fa-file-alt" style="color:#f59f00"></i>
+                    <div>
+                        <div class="ie-item-title">Tải file mẫu</div>
+                        <div class="ie-item-desc">Template trống để nhập liệu</div>
+                    </div>
+                </a>
+            </div>
+        </div>
+        <a href="/Admin/Users/Create" class="btn-brand" style="height:38px;display:inline-flex;align-items:center;box-sizing:border-box;">
+            <i class="fas fa-user-plus"></i> Thêm người dùng
+        </a>
+    </div>
+</div>
+
+<!-- ════════════════════════════════════════
+     SUMMARY CHIPS
+════════════════════════════════════════ -->
+<div class="summary-bar">
+    <div class="summary-chip">
+        <div class="chip-icon all"><i class="fas fa-users"></i></div>
+        <span>Tất cả</span>
+        <span class="chip-num">@Model.Users.Count</span>
+    </div>
+    <div class="summary-chip">
+        <div class="chip-icon admin"><i class="fas fa-shield-halved"></i></div>
+        <span>Admin</span>
+        <span class="chip-num">@Model.Users.Count(u => u.Role == "Admin")</span>
+    </div>
+    <div class="summary-chip">
+        <div class="chip-icon teacher"><i class="fas fa-chalkboard-teacher"></i></div>
+        <span>Giáo viên</span>
+        <span class="chip-num">@Model.Users.Count(u => u.Role == "Teacher")</span>
+    </div>
+    <div class="summary-chip">
+        <div class="chip-icon student"><i class="fas fa-user-graduate"></i></div>
+        <span>Học sinh</span>
+        <span class="chip-num">@Model.Users.Count(u => u.Role == "Student")</span>
+    </div>
+    <div class="summary-chip">
+        <div class="chip-icon parent"><i class="fas fa-hands-holding"></i></div>
+        <span>Phụ huynh</span>
+        <span class="chip-num">@Model.Users.Count(u => u.Role == "Parent")</span>
+    </div>
+</div>
+
+<!-- ════════════════════════════════════════
+     FILTER BAR
+════════════════════════════════════════ -->
+<div class="filter-card">
+    <form method="get" id="filterForm">
+        <div class="filter-row">
+
+            <div class="filter-group">
+                <span class="filter-label">Vai trò</span>
+                <select name="roleFilter" class="filter-select" onchange="document.getElementById('filterForm').submit()">
+                    <option value="">Tất cả vai trò</option>
+                    <option value="Admin" selected="@(Model.RoleFilter == "Admin" ? "selected" : null)">Quản trị viên</option>
+                    <option value="Teacher" selected="@(Model.RoleFilter == "Teacher" ? "selected" : null)">Giáo viên</option>
+                    <option value="Student" selected="@(Model.RoleFilter == "Student" ? "selected" : null)">Học sinh</option>
+                    <option value="Parent" selected="@(Model.RoleFilter == "Parent" ? "selected" : null)">Phụ huynh</option>
+                </select>
+            </div>
+
+            <div class="filter-group">
+                <span class="filter-label">Trạng thái</span>
+                <select name="statusFilter" class="filter-select" onchange="document.getElementById('filterForm').submit()">
+                    <option value="">Tất cả</option>
+                    <option value="Active" selected="@(Model.StatusFilter == "Active" ? "selected" : null)">Đang hoạt động</option>
+                    <option value="NotActive" selected="@(Model.StatusFilter == "NotActive" ? "selected" : null)">Đã vô hiệu hóa</option>
+                </select>
+            </div>
+
+            <div class="filter-group grow">
+                <span class="filter-label">Tìm kiếm</span>
+                <div class="search-wrap">
+                    <i class="fas fa-search"></i>
+                    <input type="text"
+                           name="searchString"
+                           class="search-input"
+                           placeholder="Tên tài khoản, họ tên, số điện thoại..."
+                           value="@Model.SearchString" />
+                </div>
+            </div>
+
+            <div class="filter-group" style="flex-direction:row;gap:8px">
+                <button type="submit" class="btn-brand" style="padding:8px 18px;font-size:.83rem">
+                    <i class="fas fa-search"></i> Tìm
+                </button>
+                <a href="/Admin/Users" class="btn-outline" style="padding:8px 14px;font-size:.83rem">
+                    <i class="fas fa-rotate-right"></i>
+                </a>
+            </div>
+
+        </div>
+    </form>
+</div>
+
+<!-- ════════════════════════════════════════
+     CONTENT TOP BAR — pagesize
+════════════════════════════════════════ -->
+<div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;margin-bottom:14px">
+    <div class="pagesize-wrap">
+        <span>Hiển thị</span>
+        <select class="pagesize-select" id="pagesizeSelect">
+            <option value="20">20</option>
+            <option value="50">50</option>
+            <option value="100" selected>100</option>
+            <option value="0">Tất cả</option>
+        </select>
+        <span>bản ghi</span>
+    </div>
+    <span style="font-size:.78rem;color:var(--text-3);font-weight:500" id="showingLabel"></span>
+</div>
+
+<!-- ════════════════════════════════════════
+     USER TABLE
+════════════════════════════════════════ -->
+<div class="table-card">
+
+    <div class="table-card-hd">
+        <div class="table-card-title">
+            <div class="ct-icon"><i class="fas fa-users"></i></div>
+            Danh sách tài khoản
+        </div>
+        <span class="result-count">
+            @{
+                var filtered = Model.Users;
+                var displayCount = filtered.Count;
+            }
+            @displayCount kết quả
+        </span>
+    </div>
+
+    <div style="overflow-x:auto">
+        <table class="user-table">
+            <thead>
+                <tr>
+                    <th>Người dùng</th>
+                    <th>Tên tài khoản</th>
+                    <th>Số điện thoại</th>
+                    <th>Vai trò</th>
+                    <th>Trạng thái</th>
+                    <th style="text-align:right">Thao tác</th>
+                </tr>
+            </thead>
+            <tbody id="usersTableBody">
+                @if (Model.Users.Any())
+                {
+                    @foreach (var user in Model.Users)
+                    {
+                        var avatarClass = user.Role?.ToLower() switch
+                        {
+                            "admin" => "admin",
+                            "teacher" => "teacher",
+                            "student" => "student",
+                            "parent" => "parent",
+                            _ => ""
+                        };
+                        var initial = !string.IsNullOrEmpty(user.Fullname)
+                        ? user.Fullname.Trim().Substring(user.Fullname.Trim().LastIndexOf(' ') + 1).Substring(0, 1).ToUpper()
+                        : "?";
+
+                        <tr>
+                            <!-- User cell -->
+                            <td>
+                                <div class="user-cell">
+                                    <div class="u-avatar @avatarClass">@initial</div>
+                                    <div>
+                                        <div class="u-name">@user.Fullname</div>
+                                        <div class="u-id">#@user.AccountId</div>
+                                    </div>
+                                </div>
+                            </td>
+
+                            <!-- Username -->
+                            <td>
+                                <span style="font-weight:600;color:var(--text-1)">@user.Username</span>
+                            </td>
+
+                            <!-- Phone -->
+                            <td>
+                                <div class="phone-cell">
+                                    <i class="fas fa-phone"></i>
+                                    @(string.IsNullOrEmpty(user.Phone) ? "—" : user.Phone)
+                                </div>
+                            </td>
+
+                            <!-- Role -->
+                            <td>
+                                @if (user.Role == "Admin")
+                                {
+                                    <span class="role-bdg admin"><i class="fas fa-shield-halved"></i> Admin</span>
+                                }
+                                else if (user.Role == "Teacher")
+                                {
+                                    <span class="role-bdg teacher"><i class="fas fa-chalkboard-user"></i> Giáo viên</span>
+                                }
+                                else if (user.Role == "Student")
+                                {
+                                    <span class="role-bdg student"><i class="fas fa-user-graduate"></i> Học sinh</span>
+                                }
+                                else if (user.Role == "Parent")
+                                {
+                                    <span class="role-bdg parent"><i class="fas fa-hands-holding"></i> Phụ huynh</span>
+                                }
+                            </td>
+
+                            <!-- Status -->
+                            <td>
+                                @if (user.IsActive == "Active")
+                                {
+                                    <div class="status-pill" style="color:#059669">
+                                        <span class="s-dot active"></span> Hoạt động
+                                    </div>
+                                }
+                                else
+                                {
+                                    <div class="status-pill" style="color:#6b7280">
+                                        <span class="s-dot inactive"></span> Đã khóa
+                                    </div>
+                                }
+                            </td>
+
+                            <!-- Actions -->
+                            <td>
+                                <div class="action-group">
+                                    <a href="/Admin/Users/Edit?id=@user.AccountId"
+                                           class="act-btn edit" title="Chỉnh sửa">
+                                        <i class="fas fa-user-pen"></i>
+                                    </a>
+
+                                    @if (user.IsActive == "Active")
+                                    {
+                                        <button type="button"
+                                                class="act-btn deactivate"
+                                                title="Vô hiệu hóa"
+                                                onclick="confirmToggle(@user.AccountId, 'deactivate', '@user.Username')">
+                                            <i class="fas fa-lock"></i>
+                                        </button>
+                                    }
+                                    else
+                                    {
+                                        <button type="button"
+                                                class="act-btn activate"
+                                                title="Kích hoạt"
+                                                onclick="confirmToggle(@user.AccountId, 'activate', '@user.Username')">
+                                            <i class="fas fa-lock-open"></i>
+                                        </button>
+                                    }
+
+                                    <button type="button"
+                                            class="act-btn delete"
+                                            title="Xóa tài khoản"
+                                            onclick="confirmDelete(@user.AccountId, '@user.Username')">
+                                        <i class="fas fa-trash-can"></i>
+                                    </button>
+                                </div>
+                            </td>
+                        </tr>
+                    }
+                }
+                else
+                {
+                    <tr class="empty-row">
+                        <td colspan="6">
+                            <div class="empty-icon">
+                                <i class="fas fa-users-slash"></i>
+                            </div>
+                            <div class="empty-title">Không tìm thấy người dùng</div>
+                            <div class="empty-desc">Thử thay đổi bộ lọc hoặc từ khóa tìm kiếm</div>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+
+    <!-- Footer / pagination placeholder -->
+    @if (Model.Users.Any())
+    {
+        <div class="table-foot">
+            <span class="foot-info">
+                Hiển thị <strong id="footShowing">@Model.Users.Count</strong> / <strong>@Model.Users.Count</strong> tài khoản
+            </span>
+            <div class="pager">
+                <button class="pg-btn" disabled>
+                    <i class="fas fa-chevron-left" style="font-size:10px"></i>
+                </button>
+                <button class="pg-btn active">1</button>
+                <button class="pg-btn" disabled>
+                    <i class="fas fa-chevron-right" style="font-size:10px"></i>
+                </button>
+            </div>
+        </div>
+    }
+
+</div>
+
+<!-- ════════════════════════════════════════
+     HIDDEN ACTION FORM  (giữ nguyên logic gốc)
+════════════════════════════════════════ -->
+<form id="actionForm" method="post" style="display:none">
+    <input type="hidden" name="accountId" id="accountId" />
+    <input type="hidden" name="action" id="actionHidden" />
+</form>
+
+<!-- ════════════════════════════════════════
+     CONFIRM MODAL — thay thế confirm() mặc định
+════════════════════════════════════════ -->
+<div class="cm-backdrop" id="cmBackdrop"></div>
+<div class="cm-modal" id="cmModal" role="dialog" aria-modal="true">
+    <div class="cm-box">
+
+        <div class="cm-head">
+            <div class="cm-icon-wrap" id="cmIconWrap">
+                <i id="cmIcon" class="fas fa-trash-can"></i>
+            </div>
+            <div class="cm-head-text">
+                <h6 id="cmTitle">Xác nhận thao tác</h6>
+                <p id="cmSubtitle">Bạn có chắc muốn thực hiện?</p>
+            </div>
+        </div>
+
+        <div class="cm-body-msg" id="cmMsg"></div>
+
+        <div class="cm-foot">
+            <button class="btn-outline" id="cmCancel" style="padding:7px 16px;font-size:.82rem">
+                <i class="fas fa-times"></i> Hủy
+            </button>
+            <button class="btn-brand" id="cmConfirm" style="padding:7px 18px;font-size:.82rem">
+                <i class="fas fa-check" id="cmConfirmIcon"></i>
+                <span id="cmConfirmText">Xác nhận</span>
+            </button>
+        </div>
+
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        /* ── Toast helper ── */
+        function showToast(msg, type) {
+            var wrap = document.getElementById('toastWrap');
+            var t = document.createElement('div');
+            t.className = 'toast-item ' + (type || 'success');
+            var iconClass = type === 'error'   ? 'fa-circle-xmark'
+                          : type === 'warning' ? 'fa-triangle-exclamation'
+                          : 'fa-circle-check';
+            t.innerHTML =
+                '<i class="fas ' + iconClass + ' toast-icon"></i>' +
+                '<span>' + msg + '</span>' +
+                '<button class="toast-close" onclick="this.parentElement.remove()"><i class="fas fa-times"></i></button>';
+            wrap.appendChild(t);
+            setTimeout(function () { if (t.parentElement) t.remove(); }, 4500);
+        }
+
+        @if (TempData["SuccessMessage"] != null)
+        {
+                <text>document.addEventListener('DOMContentLoaded', function () {
+                        showToast('@Html.Raw(TempData["SuccessMessage"].ToString().Replace("'", "\\'"))', 'success');
+                    });</text>
+            }
+            @if (TempData["ErrorMessage"] != null)
+            {
+                    <text>document.addEventListener('DOMContentLoaded', function () {
+                            showToast('@Html.Raw(TempData["ErrorMessage"].ToString().Replace("'", "\\'"))', 'error');
+                        });</text>
+                }
+                @if (TempData["WarningMessage"] != null)
+                {
+                        <text>document.addEventListener('DOMContentLoaded', function () {
+                                showToast('@Html.Raw(TempData["WarningMessage"].ToString().Replace("'", "\\'"))', 'warning');
+                            });</text>
+                    }
+
+                    document.addEventListener('DOMContentLoaded', function () {
+
+                        /* ── Portal modal ra body ── */
+                        ['cmBackdrop','cmModal'].forEach(function(id) {
+                            var el = document.getElementById(id);
+                            if (el && el.parentNode !== document.body) document.body.appendChild(el);
+                        });
+
+                        /* ── Page size ── */
+                        var tbody     = document.getElementById('usersTableBody');
+                        var allRows   = tbody ? Array.from(tbody.querySelectorAll('tr:not(.empty-row)')) : [];
+                        var totalRows = allRows.length;
+                        var sel       = document.getElementById('pagesizeSelect');
+
+                        function applyPageSize() {
+                            var limit = sel ? parseInt(sel.value) : 100;
+                            var shown = 0;
+                            allRows.forEach(function(row, idx) {
+                                if (limit === 0 || idx < limit) {
+                                    row.style.display = '';
+                                    shown++;
+                                } else {
+                                    row.style.display = 'none';
+                                }
+                            });
+                            var footShowing = document.getElementById('footShowing');
+                            if (footShowing) footShowing.textContent = shown;
+                            var showingLabel = document.getElementById('showingLabel');
+                            if (showingLabel && totalRows > 0)
+                                showingLabel.textContent = shown + ' / ' + totalRows + ' bản ghi';
+                        }
+
+                        if (sel) {
+                            sel.addEventListener('change', applyPageSize);
+                            applyPageSize();
+                        }
+
+                        /* ── Import/Export dropdown ── */
+                        window.toggleIeDropdown = function(e) {
+                            e.stopPropagation();
+                            document.getElementById('ieMenu').classList.toggle('open');
+                        };
+                        document.addEventListener('click', function() {
+                            var menu = document.getElementById('ieMenu');
+                            if (menu) menu.classList.remove('open');
+                        });
+
+                        /* ── Modal refs ── */
+                        var backdrop   = document.getElementById('cmBackdrop');
+                        var modal      = document.getElementById('cmModal');
+                        var cmConfirm  = document.getElementById('cmConfirm');
+                        var pendingFn  = null;
+
+                        function openConfirm(cfg) {
+                            /* icon & color */
+                            var wrap = document.getElementById('cmIconWrap');
+                            var icon = document.getElementById('cmIcon');
+                            wrap.className = 'cm-icon-wrap ' + (cfg.type || 'danger');
+                            icon.className = 'fas ' + (cfg.icon || 'fa-trash-can');
+
+                            /* text */
+                            document.getElementById('cmTitle').textContent    = cfg.title    || 'Xác nhận';
+                            document.getElementById('cmSubtitle').textContent = cfg.subtitle || '';
+                            document.getElementById('cmMsg').innerHTML        = cfg.msg      || '';
+
+                            /* confirm button */
+                            document.getElementById('cmConfirmIcon').className = 'fas ' + (cfg.confirmIcon || 'fa-check');
+                            document.getElementById('cmConfirmText').textContent = cfg.confirmText || 'Xác nhận';
+                            cmConfirm.className = 'btn-brand';
+                            if (cfg.type === 'danger')  cmConfirm.style.background = 'linear-gradient(135deg,#f43f5e,#e03131)';
+                            else if (cfg.type === 'warning') cmConfirm.style.background = 'linear-gradient(135deg,#f59f00,#d97706)';
+                            else cmConfirm.style.background = '';
+
+                            pendingFn = cfg.onConfirm;
+                            backdrop.classList.add('cm-open');
+                            modal.classList.add('cm-open');
+                        }
+
+                        function closeConfirm() {
+                            backdrop.classList.remove('cm-open');
+                            modal.classList.remove('cm-open');
+                            pendingFn = null;
+                        }
+
+                        cmConfirm.addEventListener('click', function () {
+                            if (pendingFn) { pendingFn(); }
+                            closeConfirm();
+                        });
+                        document.getElementById('cmCancel').addEventListener('click', closeConfirm);
+                        backdrop.addEventListener('click', closeConfirm);
+                        document.addEventListener('keydown', function(e) {
+                            if (e.key === 'Escape') closeConfirm();
+                        });
+
+                        /* ── toggleStatus ── */
+                        window.confirmToggle = function(accountId, action, username) {
+                            var isActivate = (action === 'activate');
+                            openConfirm({
+                                type:        isActivate ? 'success' : 'warning',
+                                icon:        isActivate ? 'fa-lock-open' : 'fa-lock',
+                                title:       isActivate ? 'Kích hoạt tài khoản' : 'Vô hiệu hóa tài khoản',
+                                subtitle:    'Thao tác này có thể hoàn tác sau',
+                                msg:         'Bạn có chắc muốn <strong>' + (isActivate ? 'kích hoạt' : 'vô hiệu hóa') + '</strong> tài khoản <strong>' + username + '</strong>?',
+                                confirmIcon: isActivate ? 'fa-lock-open' : 'fa-lock',
+                                confirmText: isActivate ? 'Kích hoạt' : 'Vô hiệu hóa',
+                                onConfirm: function() {
+                                    document.getElementById('accountId').value   = accountId;
+                                    document.getElementById('actionHidden').value = action;
+                                    var f = document.getElementById('actionForm');
+                                    f.action = '/Admin/Users/Index?handler=ToggleStatus';
+                                    f.submit();
+                                }
+                            });
+                        };
+
+                        /* ── deleteUser ── */
+                        window.confirmDelete = function(accountId, username) {
+                            openConfirm({
+                                type:        'danger',
+                                icon:        'fa-trash-can',
+                                title:       'Xóa tài khoản',
+                                subtitle:    'Hành động này không thể hoàn tác',
+                                msg:         'Bạn có chắc muốn xóa vĩnh viễn tài khoản <strong>' + username + '</strong>? Tất cả dữ liệu liên quan sẽ bị mất.',
+                                confirmIcon: 'fa-trash-can',
+                                confirmText: 'Xóa vĩnh viễn',
+                                onConfirm: function() {
+                                    document.getElementById('accountId').value    = accountId;
+                                    document.getElementById('actionHidden').value = 'delete';
+                                    var f = document.getElementById('actionForm');
+                                    f.action = '/Admin/Users/Index?handler=Delete';
+                                    f.submit();
+                                }
+                            });
+                        };
+
+                    });
+                </script>
+            }

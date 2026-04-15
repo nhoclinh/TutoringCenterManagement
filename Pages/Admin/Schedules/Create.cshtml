@@ -1,0 +1,895 @@
+﻿@page
+@model TutoringCenterManagement.Pages.Admin.Schedules.CreateModel
+@{
+    ViewData["Title"] = "Tạo lịch học";
+}
+
+@section Styles {
+    <style>
+        /* ══════════════════════════════════════════════
+           SCHEDULES CREATE — đồng bộ design system
+        ══════════════════════════════════════════════ */
+
+        .create-layout {
+            display: grid;
+            grid-template-columns: 1fr 300px;
+            gap: 20px;
+            align-items: start;
+        }
+
+        /* ── Form cards ── */
+        .form-card {
+            background: var(--bg-card);
+            border-radius: var(--r-lg);
+            border: 1px solid var(--border);
+            box-shadow: var(--sh-sm);
+            overflow: hidden;
+            margin-bottom: 16px;
+        }
+
+            .form-card:last-child {
+                margin-bottom: 0;
+            }
+
+        .form-card-hd {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 14px 20px;
+            border-bottom: 1px solid var(--border);
+            background: linear-gradient(to right,#fafbff,#fff);
+        }
+
+        .form-card-icon {
+            width: 30px;
+            height: 30px;
+            border-radius: 8px;
+            background: rgba(232,89,12,.1);
+            color: var(--c-primary);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 13px;
+            flex-shrink: 0;
+        }
+
+        .form-card-title {
+            font-size: .92rem;
+            font-weight: 700;
+            color: var(--text-1);
+        }
+
+        .form-card-subtitle {
+            font-size: .74rem;
+            color: var(--text-3);
+            margin-top: 1px;
+        }
+
+        .form-card-body {
+            padding: 20px;
+        }
+
+        /* ── Field groups ── */
+        .field-row {
+            display: flex;
+            gap: 14px;
+            flex-wrap: wrap;
+            margin-bottom: 16px;
+        }
+
+            .field-row:last-child {
+                margin-bottom: 0;
+            }
+
+        .field-group {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+            flex: 1;
+            min-width: 180px;
+        }
+
+            .field-group.full {
+                flex: 1 0 100%;
+                min-width: 0;
+            }
+
+        .field-label {
+            font-size: .72rem;
+            font-weight: 700;
+            color: var(--text-2);
+            text-transform: uppercase;
+            letter-spacing: .5px;
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+
+            .field-label .req {
+                color: #f43f5e;
+                font-size: .9rem;
+            }
+
+            .field-label .opt {
+                color: var(--text-3);
+                font-weight: 500;
+                font-size: .68rem;
+                font-style: italic;
+                text-transform: none;
+                letter-spacing: 0;
+            }
+
+        .field-input, .field-select {
+            padding: 9px 12px;
+            border: 1.5px solid var(--border);
+            border-radius: var(--r-sm);
+            background: var(--bg-page);
+            color: var(--text-1);
+            font-size: .85rem;
+            font-family: 'Plus Jakarta Sans',system-ui,sans-serif;
+            outline: none;
+            width: 100%;
+            box-sizing: border-box;
+            transition: border-color .15s,box-shadow .15s;
+        }
+
+            .field-input:focus, .field-select:focus {
+                border-color: var(--c-primary);
+                box-shadow: 0 0 0 3px var(--c-glow);
+            }
+
+        .field-error {
+            font-size: .73rem;
+            color: #e03131;
+            display: none;
+            align-items: center;
+            gap: 4px;
+        }
+        .field-error:not(:empty) { display: flex; }
+        .field-error::before {
+            content: '\f06a';
+            font-family: 'Font Awesome 6 Free';
+            font-weight: 900;
+            font-size: 10px;
+            flex-shrink: 0;
+        }
+
+        /* ── Inline warnings ── */
+        .inline-warn {
+            display: none;
+            align-items: center;
+            gap: 7px;
+            padding: 8px 12px;
+            border-radius: var(--r-sm);
+            margin-top: 5px;
+            font-size: .77rem;
+        }
+
+            .inline-warn.show {
+                display: flex;
+            }
+
+            .inline-warn.warning {
+                background: rgba(245,159,0,.07);
+                border: 1px solid rgba(245,159,0,.25);
+                color: #92400e;
+            }
+
+                .inline-warn.warning i {
+                    color: #d97706;
+                    flex-shrink: 0;
+                }
+
+            .inline-warn.danger {
+                background: rgba(244,63,94,.07);
+                border: 1px solid rgba(244,63,94,.2);
+                color: #be123c;
+            }
+
+                .inline-warn.danger i {
+                    color: #f43f5e;
+                    flex-shrink: 0;
+                }
+
+        /* ── Validation summary ── */
+        .val-summary {
+            display: flex;
+            align-items: flex-start;
+            gap: 10px;
+            padding: 12px 16px;
+            background: rgba(244,63,94,.06);
+            border: 1px solid rgba(244,63,94,.2);
+            border-radius: var(--r-sm);
+            font-size: .82rem;
+            color: #be123c;
+            margin-bottom: 16px;
+        }
+
+            .val-summary i {
+                color: #f43f5e;
+                margin-top: 1px;
+                flex-shrink: 0;
+            }
+
+        /* ── Form actions ── */
+        .form-actions {
+            display: flex;
+            align-items: center;
+            justify-content: flex-end;
+            gap: 10px;
+            padding: 14px 20px;
+            border-top: 1px solid var(--border);
+            background: #f9fafd;
+        }
+
+        /* ── Sidebar cards ── */
+        .sidebar-card {
+            background: var(--bg-card);
+            border-radius: var(--r-lg);
+            border: 1px solid var(--border);
+            box-shadow: var(--sh-sm);
+            overflow: hidden;
+            position: sticky;
+            top: 20px;
+            margin-bottom: 16px;
+        }
+
+            .sidebar-card:last-child {
+                margin-bottom: 0;
+            }
+
+        .sidebar-hd {
+            display: flex;
+            align-items: center;
+            gap: 9px;
+            padding: 14px 16px;
+            border-bottom: 1px solid var(--border);
+            background: linear-gradient(to right,#fafbff,#fff);
+        }
+
+        .sidebar-hd-icon {
+            width: 28px;
+            height: 28px;
+            border-radius: 7px;
+            background: rgba(232,89,12,.1);
+            color: var(--c-primary);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 12px;
+        }
+
+        .sidebar-hd-title {
+            font-size: .88rem;
+            font-weight: 700;
+            color: var(--text-1);
+        }
+
+        .sidebar-body {
+            padding: 16px;
+        }
+
+        /* ── Preview rows ── */
+        .prev-row {
+            display: flex;
+            align-items: flex-start;
+            justify-content: space-between;
+            gap: 8px;
+            padding: 9px 0;
+            border-bottom: 1px solid #f0f2f8;
+            font-size: .82rem;
+        }
+
+            .prev-row:last-child {
+                border-bottom: none;
+            }
+
+        .prev-key {
+            color: var(--text-3);
+            font-weight: 600;
+            flex-shrink: 0;
+        }
+
+        .prev-val {
+            font-weight: 700;
+            color: var(--text-1);
+            text-align: right;
+        }
+
+            .prev-val.placeholder {
+                color: var(--text-3);
+                font-weight: 500;
+                font-style: italic;
+            }
+
+            .prev-val.accent {
+                color: var(--c-primary);
+                font-size: .88rem;
+            }
+
+        /* ── Mini pills in preview ── */
+        .mini-pill {
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            padding: 2px 8px;
+            border-radius: 20px;
+            font-size: .72rem;
+            font-weight: 700;
+        }
+
+            .mini-pill.day {
+                background: rgba(59,130,246,.08);
+                color: #2563eb;
+                border: 1px solid rgba(59,130,246,.18);
+            }
+
+            .mini-pill.shift {
+                background: rgba(245,159,0,.08);
+                color: #b45309;
+                border: 1px solid rgba(245,159,0,.2);
+            }
+
+            .mini-pill.room {
+                background: rgba(139,92,246,.08);
+                color: #7c3aed;
+                border: 1px solid rgba(139,92,246,.18);
+            }
+
+        /* ── Note list in sidebar ── */
+        .note-list {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+            .note-list li {
+                display: flex;
+                align-items: flex-start;
+                gap: 9px;
+                font-size: .78rem;
+                color: var(--text-2);
+                line-height: 1.45;
+            }
+
+            .note-list .ni {
+                width: 18px;
+                height: 18px;
+                border-radius: 5px;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                font-size: 9px;
+                flex-shrink: 0;
+                margin-top: 1px;
+            }
+
+        .ni.green {
+            background: rgba(16,185,129,.1);
+            color: #10b981;
+        }
+
+        .ni.blue {
+            background: rgba(59,130,246,.1);
+            color: #3b82f6;
+        }
+
+        .ni.orange {
+            background: rgba(245,159,0,.1);
+            color: #d97706;
+        }
+
+        .ni.purple {
+            background: rgba(139,92,246,.1);
+            color: #7c3aed;
+        }
+
+        @@media (max-width:900px) {
+            .create-layout {
+                grid-template-columns: 1fr;
+            }
+
+            .sidebar-card {
+                position: static;
+            }
+        }
+
+        @@media (max-width:600px) {
+            .field-row {
+                flex-direction: column;
+            }
+
+            .field-group {
+                min-width: 0;
+            }
+        }
+    </style>
+}
+
+<!-- PAGE HEADER -->
+<div class="page-header">
+    <div>
+        <h1 class="page-heading">Tạo <span>lịch học</span></h1>
+        <p class="page-subheading">
+            <i class="fas fa-circle-info" style="color:var(--c-primary)"></i>
+            Thiết lập lịch học mẫu — hệ thống tự động sinh buổi học theo tuần
+        </p>
+    </div>
+    <div class="page-actions">
+        <a href="/Admin/Schedules" class="btn-outline"
+           style="height:38px;display:inline-flex;align-items:center;box-sizing:border-box">
+            <i class="fas fa-arrow-left"></i> Quay lại
+        </a>
+    </div>
+</div>
+
+<!-- Validation summary -->
+<div asp-validation-summary="ModelOnly" class="val-summary" style="display:none">
+    <i class="fas fa-circle-exclamation"></i><div></div>
+</div>
+
+@if (!string.IsNullOrEmpty(Model.WarningMessage))
+{
+    <div class="val-summary"
+         style="background:rgba(245,159,0,.06);border-color:rgba(245,159,0,.2);color:#92400e">
+        <i class="fas fa-triangle-exclamation" style="color:#d97706"></i>
+        <span>@Model.WarningMessage</span>
+    </div>
+}
+
+<form method="post" id="createForm" asp-page="Create">
+    @Html.AntiForgeryToken()
+
+    <div class="create-layout">
+
+        <!-- ══════════ LEFT — form fields ══════════ -->
+        <div>
+
+            <!-- Card 1: Lớp & Giáo viên -->
+            <div class="form-card">
+                <div class="form-card-hd">
+                    <div class="form-card-icon"><i class="fas fa-chalkboard-user"></i></div>
+                    <div>
+                        <div class="form-card-title">Lớp học & Giáo viên</div>
+                        <div class="form-card-subtitle">Chọn lớp học và phân công giảng viên</div>
+                    </div>
+                </div>
+                <div class="form-card-body">
+
+                    <!-- Lớp học -->
+                    <div class="field-row">
+                        <div class="field-group full">
+                            <label class="field-label" for="classSelect">
+                                Lớp học <span class="req">*</span>
+                            </label>
+                            <select asp-for="Input.ClassId" id="classSelect" class="field-select" required>
+                                <option value="">— Chọn lớp học —</option>
+                                @foreach (var c in Model.Classes)
+                                {
+                                    <option value="@c.ClassId" data-subject="@c.SubjectName">
+                                        @c.ClassCode — @c.SubjectName
+                                    </option>
+                                }
+                            </select>
+                            <span asp-validation-for="Input.ClassId" class="field-error"></span>
+                        </div>
+                    </div>
+
+                    <!-- GV chính -->
+                    <div class="field-row">
+                        <div class="field-group full">
+                            <label class="field-label" for="primaryTeacherSelect">
+                                Giáo viên chính <span class="req">*</span>
+                            </label>
+                            <select asp-for="Input.PrimaryTeacherId" id="primaryTeacherSelect" class="field-select" required>
+                                <option value="">— Chọn giáo viên chính —</option>
+                                @foreach (var t in Model.Teachers)
+                                {
+                                    <option value="@t.TeacherId"
+                                            data-subjects="@string.Join("|", t.Subjects)"
+                                            data-subject-names="@string.Join("|", t.SubjectNames)">
+                                        @t.Fullname
+                                    </option>
+                                }
+                            </select>
+                            <span asp-validation-for="Input.PrimaryTeacherId" class="field-error"></span>
+                            <div class="inline-warn warning" id="primarySubjectWarn">
+                                <i class="fas fa-triangle-exclamation"></i>
+                                Giáo viên chính không dạy môn học của lớp này!
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- GV trợ giảng -->
+                    <div class="field-row">
+                        <div class="field-group full">
+                            <label class="field-label" for="assistantTeacherSelect">
+                                Giáo viên trợ giảng
+                                <span class="opt">(tùy chọn)</span>
+                            </label>
+                            <select asp-for="Input.AssistantTeacherId" id="assistantTeacherSelect" class="field-select">
+                                <option value="">— Không có trợ giảng —</option>
+                                @foreach (var t in Model.Teachers)
+                                {
+                                    <option value="@t.TeacherId"
+                                            data-subjects="@string.Join("|", t.Subjects)"
+                                            data-subject-names="@string.Join("|", t.SubjectNames)">
+                                        @t.Fullname
+                                    </option>
+                                }
+                            </select>
+                            <span asp-validation-for="Input.AssistantTeacherId" class="field-error"></span>
+                            <div class="inline-warn warning" id="assistantSubjectWarn">
+                                <i class="fas fa-triangle-exclamation"></i>
+                                Giáo viên trợ giảng không dạy môn học của lớp này!
+                            </div>
+                            <div class="inline-warn danger" id="sameTeacherError">
+                                <i class="fas fa-times-circle"></i>
+                                Giáo viên trợ giảng không được trùng với giáo viên chính!
+                            </div>
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+
+            <!-- Card 2: Lịch & Phòng học -->
+            <div class="form-card">
+                <div class="form-card-hd">
+                    <div class="form-card-icon"><i class="fas fa-calendar-week"></i></div>
+                    <div>
+                        <div class="form-card-title">Lịch & Phòng học</div>
+                        <div class="form-card-subtitle">Thứ, ca học, phòng và khoảng thời gian áp dụng</div>
+                    </div>
+                </div>
+                <div class="form-card-body">
+
+                    <!-- Thứ + Ca học -->
+                    <div class="field-row">
+                        <div class="field-group">
+                            <label class="field-label" for="dayOfWeekSelect">
+                                Thứ trong tuần <span class="req">*</span>
+                            </label>
+                            <select asp-for="Input.DayOfWeek" id="dayOfWeekSelect" class="field-select" required>
+                                <option value="">— Chọn thứ —</option>
+                                <option value="0">Thứ 2</option>
+                                <option value="1">Thứ 3</option>
+                                <option value="2">Thứ 4</option>
+                                <option value="3">Thứ 5</option>
+                                <option value="4">Thứ 6</option>
+                                <option value="5">Thứ 7</option>
+                                <option value="6">Chủ nhật</option>
+                            </select>
+                            <span asp-validation-for="Input.DayOfWeek" class="field-error"></span>
+                        </div>
+                        <div class="field-group">
+                            <label class="field-label" for="shiftSelect">
+                                Ca học <span class="req">*</span>
+                            </label>
+                            <select asp-for="Input.ShiftId" id="shiftSelect" class="field-select" required>
+                                <option value="">— Chọn ca —</option>
+                                @foreach (var s in Model.Shifts)
+                                {
+                                    <option value="@((int)s.ShiftId)">
+                                        @s.ShiftName (@s.StartTime.ToString("HH:mm")–@s.EndTime.ToString("HH:mm"))
+                                    </option>
+                                }
+                            </select>
+                            <span asp-validation-for="Input.ShiftId" class="field-error"></span>
+                        </div>
+                    </div>
+
+                    <!-- Phòng học -->
+                    <div class="field-row">
+                        <div class="field-group full">
+                            <label class="field-label" for="roomSelect">
+                                Phòng học <span class="req">*</span>
+                            </label>
+                            <select asp-for="Input.RoomId" id="roomSelect" class="field-select" required>
+                                <option value="">— Chọn phòng —</option>
+                                @foreach (var r in Model.Rooms)
+                                {
+                                    <option value="@r.RoomId">
+                                        @r.RoomCode — @r.RoomName (Sức chứa: @r.Capacity)
+                                    </option>
+                                }
+                            </select>
+                            <span asp-validation-for="Input.RoomId" class="field-error"></span>
+                        </div>
+                    </div>
+
+                    <!-- Từ ngày / Đến ngày -->
+                    <div class="field-row">
+                        <div class="field-group">
+                            <label class="field-label" for="startDate">
+                                Từ ngày <span class="req">*</span>
+                            </label>
+                            <input asp-for="Input.StartDate" type="date" id="startDate" class="field-input" required />
+                            <span asp-validation-for="Input.StartDate" class="field-error"></span>
+                        </div>
+                        <div class="field-group">
+                            <label class="field-label" for="endDate">
+                                Đến ngày <span class="req">*</span>
+                            </label>
+                            <input asp-for="Input.EndDate" type="date" id="endDate" class="field-input" required />
+                            <span asp-validation-for="Input.EndDate" class="field-error"></span>
+                        </div>
+                    </div>
+
+                </div>
+
+                <div class="form-actions">
+                    <a href="/Admin/Schedules" class="btn-outline" style="padding:8px 16px;font-size:.83rem">
+                        <i class="fas fa-times"></i> Hủy
+                    </a>
+                    <button type="submit" class="btn-brand" style="padding:8px 20px;font-size:.83rem">
+                        <i class="fas fa-calendar-plus"></i> Tạo lịch học
+                    </button>
+                </div>
+            </div>
+
+        </div>
+
+        <!-- ══════════ RIGHT — sidebar ══════════ -->
+        <div>
+
+            <!-- Preview card -->
+            <div class="sidebar-card">
+                <div class="sidebar-hd">
+                    <div class="sidebar-hd-icon"><i class="fas fa-eye"></i></div>
+                    <span class="sidebar-hd-title">Xem trước</span>
+                </div>
+                <div class="sidebar-body">
+                    <div class="prev-row">
+                        <span class="prev-key">Lớp</span>
+                        <span class="prev-val placeholder" id="prevClass">Chưa chọn</span>
+                    </div>
+                    <div class="prev-row">
+                        <span class="prev-key">Thứ</span>
+                        <span class="prev-val" id="prevDay">
+                            <span class="mini-pill day" style="display:none" id="prevDayPill"></span>
+                            <span class="prev-val placeholder" id="prevDayText">Chưa chọn</span>
+                        </span>
+                    </div>
+                    <div class="prev-row">
+                        <span class="prev-key">Ca học</span>
+                        <span class="prev-val" id="prevShift">
+                            <span class="mini-pill shift" style="display:none" id="prevShiftPill"></span>
+                            <span class="prev-val placeholder" id="prevShiftText">Chưa chọn</span>
+                        </span>
+                    </div>
+                    <div class="prev-row">
+                        <span class="prev-key">Phòng</span>
+                        <span class="prev-val" id="prevRoom">
+                            <span class="mini-pill room" style="display:none" id="prevRoomPill"></span>
+                            <span class="prev-val placeholder" id="prevRoomText">Chưa chọn</span>
+                        </span>
+                    </div>
+                    <div class="prev-row">
+                        <span class="prev-key">GV chính</span>
+                        <span class="prev-val placeholder" id="prevPrimary">Chưa chọn</span>
+                    </div>
+                    <div class="prev-row">
+                        <span class="prev-key">GV trợ giảng</span>
+                        <span class="prev-val placeholder" id="prevAssistant">Không có</span>
+                    </div>
+                    <div class="prev-row">
+                        <span class="prev-key">Từ ngày</span>
+                        <span class="prev-val placeholder" id="prevStart">—</span>
+                    </div>
+                    <div class="prev-row">
+                        <span class="prev-key">Đến ngày</span>
+                        <span class="prev-val placeholder" id="prevEnd">—</span>
+                    </div>
+                    <div class="prev-row" style="border:none">
+                        <span class="prev-key">Dự kiến</span>
+                        <span class="prev-val accent" id="prevCount">— buổi</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Note card -->
+            <div class="sidebar-card">
+                <div class="sidebar-hd">
+                    <div class="sidebar-hd-icon"><i class="fas fa-circle-info"></i></div>
+                    <span class="sidebar-hd-title">Lưu ý</span>
+                </div>
+                <div class="sidebar-body">
+                    <ul class="note-list">
+                        <li>
+                            <i class="ni green fas fa-calendar-check"></i>
+                            Buổi học được sinh tự động theo thứ đã chọn, từ ngày bắt đầu đến kết thúc
+                        </li>
+                        <li>
+                            <i class="ni blue fas fa-ban"></i>
+                            Ngày lễ sẽ tự động bỏ qua khi sinh buổi học
+                        </li>
+                        <li>
+                            <i class="ni orange fas fa-triangle-exclamation"></i>
+                            Hệ thống kiểm tra xung đột phòng học và ca học trước khi tạo
+                        </li>
+                        <li>
+                            <i class="ni purple fas fa-flag-checkered"></i>
+                            Có thể kết thúc sớm lịch học từ trang danh sách bất cứ lúc nào
+                        </li>
+                    </ul>
+                </div>
+            </div>
+
+        </div>
+    </div>
+</form>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+
+            var classSelect    = document.getElementById('classSelect');
+            var primarySel     = document.getElementById('primaryTeacherSelect');
+            var assistantSel   = document.getElementById('assistantTeacherSelect');
+            var daySelect      = document.getElementById('dayOfWeekSelect');
+            var shiftSelect    = document.getElementById('shiftSelect');
+            var roomSelect     = document.getElementById('roomSelect');
+            var startInput     = document.getElementById('startDate');
+            var endInput       = document.getElementById('endDate');
+
+            var primaryWarn    = document.getElementById('primarySubjectWarn');
+            var assistantWarn  = document.getElementById('assistantSubjectWarn');
+            var sameErr        = document.getElementById('sameTeacherError');
+
+            var dayLabels = {
+                '0':'Thứ 2','1':'Thứ 3','2':'Thứ 4',
+                '3':'Thứ 5','4':'Thứ 6','5':'Thứ 7','6':'Chủ nhật'
+            };
+
+            /* Subject map: display name → numeric index (must match CreateModel.GetSubjectName) */
+            var subjectMap = {
+                'Toán':'0','Tiếng Việt':'1','Tiếng Anh':'2',
+                'Vật lý':'3','Sinh học':'4','Hóa học':'5',
+                'Địa lý':'6','Lịch sử':'7'
+            };
+
+            /* ── Teacher / subject validation ── */
+            function getClassSubjectIdx() {
+                if (!classSelect.value) return null;
+                var name = classSelect.options[classSelect.selectedIndex].getAttribute('data-subject');
+                return subjectMap[name] != null ? subjectMap[name] : null;
+            }
+
+            function checkSubjectMatch(sel, warnEl) {
+                if (!sel.value || !classSelect.value) { warnEl.classList.remove('show'); return; }
+                var idx      = getClassSubjectIdx();
+                var subjects = (sel.options[sel.selectedIndex].getAttribute('data-subjects') || '')
+                                   .split('|').map(function (s) { return s.trim(); });
+                warnEl.classList.toggle('show', !!(idx !== null && !subjects.includes(idx)));
+            }
+
+            function checkSameTeacher() {
+                sameErr.classList.toggle('show',
+                    !!(primarySel.value && assistantSel.value
+                       && primarySel.value === assistantSel.value));
+            }
+
+            function runAllChecks() {
+                checkSubjectMatch(primarySel,   primaryWarn);
+                checkSubjectMatch(assistantSel, assistantWarn);
+                checkSameTeacher();
+            }
+
+            /* ── Estimate session count ── */
+            function estimateSessions() {
+                var start  = startInput.value;
+                var end    = endInput.value;
+                var dayVal = daySelect.value;
+                if (!start || !end || dayVal === '') {
+                    document.getElementById('prevCount').textContent = '— buổi';
+                    return;
+                }
+                var d = new Date(start), e = new Date(end);
+                if (d > e) { document.getElementById('prevCount').textContent = '⚠ Ngày không hợp lệ'; return; }
+                /* DayOfTheWeek enum: 0=Mon … 6=Sun → JS getDay: 0=Sun,1=Mon … 6=Sat */
+                var enumToJs = {'0':1,'1':2,'2':3,'3':4,'4':5,'5':6,'6':0};
+                var target = enumToJs[dayVal];
+                var count = 0;
+                while (d <= e) { if (d.getDay() === target) count++; d.setDate(d.getDate() + 1); }
+                document.getElementById('prevCount').textContent = count + ' buổi (dự kiến)';
+            }
+
+            /* ── Sidebar preview helpers ── */
+            function setText(id, val, ph) {
+                var el = document.getElementById(id);
+                if (!el) return;
+                el.textContent = val || ph;
+                el.classList.toggle('placeholder', !val);
+            }
+
+            function setPill(pillId, textId, val, ph) {
+                var pill = document.getElementById(pillId);
+                var txt  = document.getElementById(textId);
+                if (!pill || !txt) return;
+                if (val) {
+                    pill.textContent = val; pill.style.display = 'inline-flex';
+                    txt.style.display = 'none';
+                } else {
+                    pill.style.display = 'none';
+                    txt.textContent = ph; txt.style.display = 'inline'; txt.classList.add('placeholder');
+                }
+            }
+
+            function fmt(v) {
+                if (!v) return null;
+                var p = v.split('-'); return p[2] + '/' + p[1] + '/' + p[0];
+            }
+
+            function updatePreview() {
+                /* class */
+                var classTxt = classSelect.value
+                    ? classSelect.options[classSelect.selectedIndex].text.split(' — ')[0] : null;
+                setText('prevClass', classTxt, 'Chưa chọn');
+
+                /* day */
+                setPill('prevDayPill', 'prevDayText',
+                    daySelect.value ? dayLabels[daySelect.value] : null, 'Chưa chọn');
+
+                /* shift */
+                var shiftTxt = shiftSelect.value
+                    ? shiftSelect.options[shiftSelect.selectedIndex].text : null;
+                setPill('prevShiftPill', 'prevShiftText', shiftTxt, 'Chưa chọn');
+
+                /* room */
+                var roomTxt = roomSelect.value
+                    ? roomSelect.options[roomSelect.selectedIndex].text.split(' — ')[0] : null;
+                setPill('prevRoomPill', 'prevRoomText', roomTxt, 'Chưa chọn');
+
+                /* teachers */
+                var pt = primarySel.value
+                    ? primarySel.options[primarySel.selectedIndex].text : null;
+                setText('prevPrimary', pt, 'Chưa chọn');
+
+                var at = assistantSel.value
+                    ? assistantSel.options[assistantSel.selectedIndex].text : null;
+                setText('prevAssistant', at, 'Không có');
+
+                /* dates */
+                setText('prevStart', fmt(startInput.value), '—');
+                setText('prevEnd',   fmt(endInput.value),   '—');
+
+                estimateSessions();
+            }
+
+            /* ── Event listeners ── */
+            [classSelect, primarySel, assistantSel].forEach(function (el) {
+                el.addEventListener('change', function () { runAllChecks(); updatePreview(); });
+            });
+            [daySelect, shiftSelect, roomSelect].forEach(function (el) {
+                el.addEventListener('change', updatePreview);
+            });
+            [startInput, endInput].forEach(function (el) {
+                el.addEventListener('change', updatePreview);
+            });
+
+            /* ── Block submit if same teacher ── */
+            document.getElementById('createForm').addEventListener('submit', function (e) {
+                if (primarySel.value && assistantSel.value
+                    && primarySel.value === assistantSel.value) {
+                    e.preventDefault();
+                    sameErr.classList.add('show');
+                    assistantSel.focus();
+                    assistantSel.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                }
+            });
+
+            /* ── Auto show validation summary if it has content ── */
+            var vs = document.querySelector('[data-valmsg-summary]') || document.querySelector('.val-summary');
+            if (vs && vs.querySelector('ul li')) vs.style.display = 'flex';
+
+            /* ── Init ── */
+            updatePreview();
+            runAllChecks();
+        });
+    </script>
+}

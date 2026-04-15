@@ -1,0 +1,1721 @@
+﻿@page
+@model TutoringCenterManagement.Pages.Admin.Schedules.IndexModel
+@using TutoringCenterManagement.Data.Enums
+@{
+    ViewData["Title"] = "Quản lý lịch học";
+    var allTemplates = Model.TemplatesByClass.SelectMany(g => g.Templates.Select(t => new { g.ClassId, g.ClassName, g.SubjectName, t.TemplateId, t.DayOfWeek, t.ShiftName, t.ShiftTime, t.RoomCode, t.StartDate, t.EndDate, t.Status })).ToList();
+    var totalTpl = allTemplates.Count;
+    var activeCount = allTemplates.Count(t => t.Status == ScheduleTemplateStatus.Active);
+    var upcomingCnt = allTemplates.Count(t => t.Status == ScheduleTemplateStatus.Upcoming);
+    var finishedCnt = allTemplates.Count(t => t.Status == ScheduleTemplateStatus.Finished || t.Status == ScheduleTemplateStatus.FinishedEarly);
+}
+
+@functions {
+    static string DayLabel(DayOfTheWeek d) => d switch
+    {
+        DayOfTheWeek.Monday => "Thứ 2",
+        DayOfTheWeek.Tuesday => "Thứ 3",
+        DayOfTheWeek.Wednesday => "Thứ 4",
+        DayOfTheWeek.Thursday => "Thứ 5",
+        DayOfTheWeek.Friday => "Thứ 6",
+        DayOfTheWeek.Saturday => "Thứ 7",
+        DayOfTheWeek.Sunday => "CN",
+        _ => "?"
+    };
+    static string DayLabelFull(DayOfTheWeek d) => d switch
+    {
+        DayOfTheWeek.Monday => "Thứ Hai",
+        DayOfTheWeek.Tuesday => "Thứ Ba",
+        DayOfTheWeek.Wednesday => "Thứ Tư",
+        DayOfTheWeek.Thursday => "Thứ Năm",
+        DayOfTheWeek.Friday => "Thứ Sáu",
+        DayOfTheWeek.Saturday => "Thứ Bảy",
+        DayOfTheWeek.Sunday => "Chủ Nhật",
+        _ => "?"
+    };
+}
+
+@section Styles {
+    <style>
+        /* ══════════════════════════════════════════════════════
+           SCHEDULES v2 — Grid + Weekly View
+        ══════════════════════════════════════════════════════ */
+
+        /* ── Summary chips ── */
+        .summary-bar {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+            margin-bottom: 20px;
+        }
+
+        .summary-chip {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 8px 16px;
+            border-radius: var(--r-sm);
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            box-shadow: var(--sh-xs);
+            font-size: .8rem;
+            font-weight: 600;
+            color: var(--text-2);
+            cursor: default;
+            transition: box-shadow .15s,border-color .15s;
+        }
+
+            .summary-chip:hover {
+                box-shadow: var(--sh-sm);
+                border-color: #d0d5e8;
+            }
+
+            .summary-chip .chip-icon {
+                width: 28px;
+                height: 28px;
+                border-radius: 7px;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                font-size: 12px;
+                flex-shrink: 0;
+            }
+
+            .summary-chip .chip-num {
+                font-weight: 800;
+                color: var(--text-1);
+                font-size: .92rem;
+            }
+
+        .ci-all {
+            background: rgba(232,89,12,.1);
+            color: #e8590c;
+        }
+
+        .ci-active {
+            background: rgba(16,185,129,.1);
+            color: #10b981;
+        }
+
+        .ci-upcoming {
+            background: rgba(59,130,246,.1);
+            color: #3b82f6;
+        }
+
+        .ci-finished {
+            background: rgba(107,114,128,.12);
+            color: #6b7280;
+        }
+
+        /* ── Toolbar ── */
+        .sched-toolbar {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            flex-wrap: wrap;
+            margin-bottom: 16px;
+        }
+
+        .search-wrap {
+            position: relative;
+            flex: 1;
+            min-width: 200px;
+        }
+
+            .search-wrap i {
+                position: absolute;
+                left: 11px;
+                top: 50%;
+                transform: translateY(-50%);
+                color: var(--text-3);
+                font-size: 13px;
+                pointer-events: none;
+                z-index: 1;
+            }
+
+            .search-wrap:focus-within i {
+                color: var(--c-primary);
+            }
+
+        .search-input {
+            width: 100%;
+            padding: 8px 12px 8px 34px;
+            box-sizing: border-box;
+            border: 1.5px solid var(--border);
+            border-radius: var(--r-sm);
+            background: var(--bg-card);
+            color: var(--text-1);
+            font-size: .83rem;
+            font-family: 'Plus Jakarta Sans',system-ui,sans-serif;
+            outline: none;
+            transition: border-color .15s,box-shadow .15s;
+        }
+
+            .search-input:focus {
+                border-color: var(--c-primary);
+                box-shadow: 0 0 0 3px var(--c-glow);
+            }
+
+            .search-input::placeholder {
+                color: var(--text-3);
+            }
+
+        .filter-sel {
+            padding: 8px 12px;
+            border: 1.5px solid var(--border);
+            border-radius: var(--r-sm);
+            background: var(--bg-card);
+            color: var(--text-1);
+            font-size: .83rem;
+            font-family: 'Plus Jakarta Sans',system-ui,sans-serif;
+            outline: none;
+            cursor: pointer;
+            transition: border-color .15s;
+        }
+
+            .filter-sel:focus {
+                border-color: var(--c-primary);
+            }
+
+        /* ── View toggle ── */
+        .view-toggle {
+            display: flex;
+            border: 1.5px solid var(--border);
+            border-radius: var(--r-sm);
+            overflow: hidden;
+            background: var(--bg-page);
+        }
+
+        .vt-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 6px 14px;
+            font-size: .8rem;
+            font-weight: 600;
+            color: var(--text-2);
+            background: transparent;
+            border: none;
+            cursor: pointer;
+            transition: all .15s;
+        }
+
+            .vt-btn:not(:last-child) {
+                border-right: 1px solid var(--border);
+            }
+
+            .vt-btn.active {
+                background: var(--c-gradient);
+                color: #fff;
+            }
+
+            .vt-btn:not(.active):hover {
+                color: var(--c-primary);
+                background: #fff9f5;
+            }
+
+        /* ══════════════════════════════════════════════
+           GRID VIEW
+        ══════════════════════════════════════════════ */
+        #gridView {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+            gap: 14px;
+        }
+
+        .sched-card {
+            background: var(--bg-card);
+            border-radius: var(--r-lg);
+            border: 1px solid var(--border);
+            box-shadow: var(--sh-xs);
+            overflow: hidden;
+            transition: box-shadow .18s,transform .18s;
+            display: flex;
+            flex-direction: column;
+        }
+
+            .sched-card:hover {
+                box-shadow: var(--sh-md);
+                transform: translateY(-2px);
+            }
+
+        .sc-top {
+            padding: 14px 16px 12px;
+            border-bottom: 1px solid #f0f2f8;
+            display: flex;
+            align-items: flex-start;
+            justify-content: space-between;
+            gap: 8px;
+        }
+
+        .sc-class-name {
+            font-size: .92rem;
+            font-weight: 800;
+            color: var(--text-1);
+            line-height: 1.2;
+        }
+
+        .sc-subj-pill {
+            display: inline-flex;
+            align-items: center;
+            gap: 3px;
+            margin-top: 4px;
+            padding: 2px 8px;
+            border-radius: 20px;
+            background: rgba(232,89,12,.08);
+            color: var(--c-primary);
+            font-size: .68rem;
+            font-weight: 700;
+            border: 1px solid rgba(232,89,12,.15);
+            white-space: nowrap;
+        }
+
+        .sc-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            padding: 3px 9px;
+            border-radius: var(--r-sm);
+            font-size: .68rem;
+            font-weight: 700;
+            border: 1px solid transparent;
+            flex-shrink: 0;
+        }
+
+            .sc-badge i {
+                font-size: 8px;
+            }
+
+            .sc-badge.active {
+                background: #ecfdf5;
+                color: #059669;
+                border-color: #a7f3d0;
+            }
+
+            .sc-badge.upcoming {
+                background: #eff6ff;
+                color: #1d4ed8;
+                border-color: #bfdbfe;
+            }
+
+            .sc-badge.finished {
+                background: #f3f4f6;
+                color: #6b7280;
+                border-color: #e5e7eb;
+            }
+
+            .sc-badge.early {
+                background: #fff1f2;
+                color: #e03131;
+                border-color: #fecdd3;
+            }
+
+        .sc-body {
+            padding: 12px 16px;
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .sc-row {
+            display: flex;
+            align-items: center;
+            gap: 9px;
+            font-size: .81rem;
+        }
+
+        .sc-row-icon {
+            width: 22px;
+            height: 22px;
+            border-radius: 5px;
+            flex-shrink: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 10px;
+        }
+
+        .ri-day {
+            background: rgba(59,130,246,.08);
+            color: #3b82f6;
+        }
+
+        .ri-time {
+            background: rgba(245,159,0,.08);
+            color: #d97706;
+        }
+
+        .ri-room {
+            background: rgba(139,92,246,.08);
+            color: #7c3aed;
+        }
+
+        .ri-date {
+            background: rgba(16,185,129,.08);
+            color: #10b981;
+        }
+
+        .sc-row-label {
+            color: var(--text-3);
+            font-weight: 600;
+            font-size: .73rem;
+            width: 52px;
+            flex-shrink: 0;
+        }
+
+        .sc-row-val {
+            color: var(--text-1);
+            font-weight: 700;
+        }
+
+        .sc-foot {
+            padding: 10px 16px;
+            border-top: 1px solid #f0f2f8;
+            display: flex;
+            align-items: center;
+            justify-content: flex-end;
+            gap: 6px;
+            background: #fafbff;
+        }
+
+        .act-btn {
+            width: 30px;
+            height: 30px;
+            border-radius: 7px;
+            border: 1.5px solid var(--border);
+            background: #fff;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 11px;
+            cursor: pointer;
+            transition: all .14s;
+            color: var(--text-2);
+        }
+
+            .act-btn:hover {
+                transform: translateY(-1px);
+                box-shadow: 0 4px 12px rgba(0,0,0,.09);
+            }
+
+            .act-btn.finish:hover {
+                border-color: #f59f00;
+                color: #d97706;
+                background: #fffbeb;
+            }
+
+            .act-btn.delete:hover {
+                border-color: #f43f5e;
+                color: #e03131;
+                background: #fff1f2;
+            }
+
+        /* ── "hidden by filter" ── */
+        .sched-card.filtered-out {
+            display: none;
+        }
+
+        /* ── empty state inside grid ── */
+        .grid-empty {
+            grid-column: 1/-1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 64px 20px;
+            gap: 10px;
+        }
+
+            .grid-empty .ge-icon {
+                width: 60px;
+                height: 60px;
+                border-radius: 16px;
+                background: var(--bg-page);
+                border: 1px solid var(--border);
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                font-size: 24px;
+                color: var(--text-3);
+                margin-bottom: 4px;
+            }
+
+            .grid-empty p {
+                font-size: .92rem;
+                font-weight: 700;
+                color: var(--text-2);
+                margin: 0;
+            }
+
+            .grid-empty span {
+                font-size: .8rem;
+                color: var(--text-3);
+            }
+
+        /* ══════════════════════════════════════════════
+           WEEKLY GRID VIEW
+        ══════════════════════════════════════════════ */
+        #weeklyView {
+        }
+        /* display controlled by JS inline style */
+
+        .weekly-wrap {
+            background: var(--bg-card);
+            border-radius: var(--r-lg);
+            border: 1px solid var(--border);
+            box-shadow: var(--sh-sm);
+            overflow: hidden;
+        }
+
+        .weekly-grid {
+            display: grid;
+            grid-template-columns: 70px repeat(7, 1fr);
+            border-bottom: 1px solid var(--border);
+        }
+
+        .wg-hd-corner {
+            background: #f4f6fc;
+            border-right: 1px solid var(--border);
+            border-bottom: 2px solid var(--border);
+            padding: 12px 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: .68rem;
+            font-weight: 700;
+            color: var(--text-3);
+            text-transform: uppercase;
+        }
+
+        .wg-hd-day {
+            background: #f4f6fc;
+            border-right: 1px solid var(--border);
+            border-bottom: 2px solid var(--border);
+            padding: 12px 6px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 3px;
+        }
+
+            .wg-hd-day:last-child {
+                border-right: none;
+            }
+
+        .wg-day-name {
+            font-size: .72rem;
+            font-weight: 800;
+            color: var(--text-2);
+            text-transform: uppercase;
+        }
+
+        .wg-day-badge {
+            width: 26px;
+            height: 26px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: .7rem;
+            font-weight: 700;
+        }
+
+            .wg-day-badge.today {
+                background: var(--c-primary);
+                color: #fff;
+            }
+
+            .wg-day-badge:not(.today) {
+                color: var(--text-3);
+            }
+        /* weekend headers */
+        .wg-hd-day.weekend .wg-day-name {
+            color: #e03131;
+        }
+
+        .wg-time-col {
+            border-right: 1px solid var(--border);
+            display: flex;
+            flex-direction: column;
+        }
+
+        .wg-time-slot {
+            height: 90px;
+            border-bottom: 1px solid #f0f2f8;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: .68rem;
+            font-weight: 700;
+            color: var(--text-3);
+            padding: 4px 6px;
+            text-align: center;
+        }
+
+            .wg-time-slot:last-child {
+                border-bottom: none;
+            }
+
+        .wg-day-col {
+            border-right: 1px solid var(--border);
+            display: flex;
+            flex-direction: column;
+            position: relative;
+        }
+
+            .wg-day-col:last-child {
+                border-right: none;
+            }
+
+        .wg-cell {
+            height: 90px;
+            border-bottom: 1px solid #f0f2f8;
+            position: relative;
+            padding: 4px;
+            box-sizing: border-box;
+        }
+
+            .wg-cell:last-child {
+                border-bottom: none;
+            }
+
+            .wg-cell.weekend-bg {
+                background: rgba(248,113,113,.025);
+            }
+
+        /* ── Event card inside weekly grid ── */
+        .wg-event {
+            height: 100%;
+            border-radius: 6px;
+            padding: 6px 8px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            gap: 2px;
+            border-left: 3px solid transparent;
+            font-size: .72rem;
+            cursor: pointer;
+            transition: filter .12s,transform .12s;
+            overflow: hidden;
+        }
+
+            .wg-event:hover {
+                filter: brightness(.95);
+                transform: scale(1.01);
+            }
+
+            .wg-event .ev-class {
+                font-weight: 800;
+                font-size: .78rem;
+                white-space: nowrap;
+                overflow: hidden;
+                text-overflow: ellipsis;
+            }
+
+            .wg-event .ev-shift {
+                font-weight: 600;
+                opacity: .75;
+                font-size: .68rem;
+            }
+
+            .wg-event .ev-room {
+                font-weight: 600;
+                opacity: .65;
+                font-size: .65rem;
+            }
+
+            /* status colors */
+            .wg-event.active {
+                background: #ecfdf5;
+                border-color: #10b981;
+                color: #065f46;
+            }
+
+            .wg-event.upcoming {
+                background: #eff6ff;
+                border-color: #3b82f6;
+                color: #1e3a8a;
+            }
+
+            .wg-event.finished {
+                background: #f3f4f6;
+                border-color: #9ca3af;
+                color: #374151;
+            }
+
+            .wg-event.early {
+                background: #fff1f2;
+                border-color: #f43f5e;
+                color: #881337;
+            }
+
+        .wg-empty-cell {
+            height: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: .65rem;
+            color: var(--text-3);
+            opacity: .4;
+        }
+
+        /* ── Weekly legend ── */
+        .weekly-legend {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+            flex-wrap: wrap;
+            padding: 12px 20px;
+            border-top: 1px solid var(--border);
+            background: #fafbff;
+            font-size: .74rem;
+            font-weight: 600;
+            color: var(--text-2);
+        }
+
+        .wl-item {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        .wl-dot {
+            width: 10px;
+            height: 10px;
+            border-radius: 3px;
+        }
+
+            .wl-dot.active {
+                background: #10b981;
+            }
+
+            .wl-dot.upcoming {
+                background: #3b82f6;
+            }
+
+            .wl-dot.finished {
+                background: #9ca3af;
+            }
+
+            .wl-dot.early {
+                background: #f43f5e;
+            }
+
+        /* ── Modals ── */
+        .cm-backdrop {
+            visibility: hidden;
+            opacity: 0;
+            position: fixed;
+            inset: 0;
+            z-index: 9990;
+            background: rgba(15,17,23,.52);
+            backdrop-filter: blur(3px);
+            transition: opacity .2s,visibility .2s;
+        }
+
+        .cm-modal {
+            visibility: hidden;
+            opacity: 0;
+            position: fixed;
+            inset: 0;
+            z-index: 9991;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 16px;
+            transition: opacity .2s,visibility .2s;
+            pointer-events: none;
+        }
+
+            .cm-backdrop.cm-open, .cm-modal.cm-open {
+                visibility: visible;
+                opacity: 1;
+                pointer-events: all;
+            }
+
+        .cm-box {
+            background: #fff;
+            border-radius: var(--r-xl);
+            box-shadow: 0 24px 56px rgba(0,0,0,.18),0 8px 20px rgba(0,0,0,.08);
+            width: 100%;
+            overflow: hidden;
+            transform: scale(.94) translateY(10px);
+            transition: transform .22s cubic-bezier(.34,1.4,.64,1);
+        }
+
+        .cm-modal.cm-open .cm-box {
+            transform: scale(1) translateY(0);
+        }
+
+        .cm-box-sm {
+            max-width: 380px;
+        }
+
+        .cm-box-md {
+            max-width: 460px;
+        }
+
+        .cm-head {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 18px 20px 14px;
+        }
+
+        .cm-icon-wrap {
+            width: 42px;
+            height: 42px;
+            border-radius: var(--r-md);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 18px;
+            flex-shrink: 0;
+        }
+
+            .cm-icon-wrap.danger {
+                background: #fff1f2;
+                color: #e03131;
+            }
+
+            .cm-icon-wrap.warning {
+                background: #fffbeb;
+                color: #d97706;
+            }
+
+            .cm-icon-wrap.info {
+                background: #eff6ff;
+                color: #3b82f6;
+            }
+
+        .cm-head-text h6 {
+            font-size: .95rem;
+            font-weight: 800;
+            color: var(--text-1);
+            margin: 0 0 2px;
+        }
+
+        .cm-head-text p {
+            font-size: .8rem;
+            color: var(--text-2);
+            margin: 0;
+        }
+
+        .cm-body-msg {
+            padding: 4px 20px 14px;
+            font-size: .83rem;
+            color: var(--text-2);
+            line-height: 1.6;
+        }
+
+            .cm-body-msg strong {
+                color: var(--text-1);
+            }
+
+        .cm-foot {
+            display: flex;
+            justify-content: flex-end;
+            gap: 8px;
+            padding: 14px 20px;
+            border-top: 1px solid var(--border);
+            background: #f9fafd;
+        }
+
+        /* detail modal body */
+        .cm-detail-body {
+            padding: 6px 20px 16px;
+        }
+
+        .cm-detail-row {
+            display: flex;
+            align-items: flex-start;
+            gap: 10px;
+            padding: 9px 0;
+            border-bottom: 1px solid #f0f2f8;
+            font-size: .83rem;
+        }
+
+            .cm-detail-row:last-child {
+                border-bottom: none;
+            }
+
+        .cm-dr-icon {
+            width: 28px;
+            height: 28px;
+            border-radius: 6px;
+            flex-shrink: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 11px;
+        }
+
+        .cm-dr-label {
+            font-size: .65rem;
+            font-weight: 700;
+            color: var(--text-3);
+            text-transform: uppercase;
+            letter-spacing: .4px;
+            margin-bottom: 2px;
+        }
+
+        .cm-dr-val {
+            font-weight: 700;
+            color: var(--text-1);
+            font-size: .85rem;
+        }
+
+        /* finish-early field */
+        .cm-field {
+            padding: 0 20px 14px;
+        }
+
+            .cm-field label {
+                display: block;
+                font-size: .72rem;
+                font-weight: 700;
+                color: var(--text-2);
+                text-transform: uppercase;
+                letter-spacing: .5px;
+                margin-bottom: 6px;
+            }
+
+            .cm-field input[type=date] {
+                width: 100%;
+                box-sizing: border-box;
+                padding: 9px 12px;
+                border: 1.5px solid var(--border);
+                border-radius: var(--r-sm);
+                background: var(--bg-page);
+                color: var(--text-1);
+                font-size: .85rem;
+                font-family: 'Plus Jakarta Sans',system-ui,sans-serif;
+                outline: none;
+                transition: border-color .15s;
+            }
+
+                .cm-field input[type=date]:focus {
+                    border-color: var(--c-primary);
+                    box-shadow: 0 0 0 3px var(--c-glow);
+                }
+
+        .cm-field-hint {
+            font-size: .72rem;
+            color: var(--text-3);
+            margin-top: 5px;
+        }
+
+        .warn-box {
+            margin: 0 20px 14px;
+            padding: 11px 14px;
+            background: rgba(245,159,0,.07);
+            border: 1px solid rgba(245,159,0,.25);
+            border-radius: var(--r-sm);
+            font-size: .8rem;
+            color: #92400e;
+            display: flex;
+            align-items: flex-start;
+            gap: 9px;
+        }
+
+            .warn-box i {
+                color: #d97706;
+                flex-shrink: 0;
+                margin-top: 1px;
+            }
+
+            .warn-box.info-box {
+                background: rgba(59,130,246,.06);
+                border-color: rgba(59,130,246,.2);
+                color: #1e3a8a;
+            }
+
+                .warn-box.info-box i {
+                    color: #3b82f6;
+                }
+
+        /* toast */
+        .toast-wrap {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            z-index: 9999;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .t-item {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 12px 16px;
+            border-radius: var(--r-sm);
+            font-size: .83rem;
+            font-weight: 600;
+            box-shadow: 0 8px 24px rgba(0,0,0,.14);
+            min-width: 280px;
+            animation: slideIn .3s ease;
+            border: 1px solid transparent;
+        }
+
+            .t-item.success {
+                background: #ecfdf5;
+                color: #059669;
+                border-color: #a7f3d0;
+            }
+
+            .t-item.error {
+                background: #fff1f2;
+                color: #e03131;
+                border-color: #fecdd3;
+            }
+
+        .t-close {
+            margin-left: auto;
+            background: none;
+            border: none;
+            color: inherit;
+            opacity: .5;
+            cursor: pointer;
+            padding: 0;
+            font-size: 12px;
+        }
+
+            .t-close:hover {
+                opacity: 1;
+            }
+
+        @@keyframes slideIn {
+            from {
+                transform: translateX(30px);
+                opacity: 0;
+            }
+
+            to {
+                transform: translateX(0);
+                opacity: 1;
+            }
+        }
+
+        /* result count badge */
+        .result-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            padding: 4px 12px;
+            background: var(--bg-page);
+            border: 1px solid var(--border);
+            border-radius: 50px;
+            font-size: .75rem;
+            font-weight: 600;
+            color: var(--text-3);
+        }
+
+            .result-badge strong {
+                color: var(--text-1);
+            }
+
+        @@media (max-width:900px) {
+            #gridView {
+                grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+            }
+
+            .weekly-grid {
+                grid-template-columns: 50px repeat(7, 1fr);
+            }
+
+            .wg-event .ev-shift, .wg-event .ev-room {
+                display: none;
+            }
+        }
+
+        @@media (max-width:600px) {
+            #gridView {
+                grid-template-columns: 1fr;
+            }
+
+            .sched-toolbar {
+                flex-direction: column;
+                align-items: stretch;
+            }
+
+            .view-toggle {
+                align-self: flex-end;
+            }
+        }
+    </style>
+}
+
+<!-- TOAST -->
+<div class="toast-wrap" id="toastWrap"></div>
+
+<!-- PAGE HEADER -->
+<div class="page-header">
+    <div>
+        <h1 class="page-heading">Quản lý <span>lịch học</span></h1>
+        <p class="page-subheading">
+            <i class="fas fa-circle-info" style="color:var(--c-primary)"></i>
+            Lịch học mẫu theo tuần — tự động sinh buổi học định kỳ
+        </p>
+    </div>
+    <div class="page-actions">
+        <a href="/Admin/Schedules/Create" class="btn-brand">
+            <i class="fas fa-plus"></i> Tạo lịch học
+        </a>
+    </div>
+</div>
+
+<!-- SUMMARY CHIPS -->
+<div class="summary-bar">
+    <div class="summary-chip">
+        <div class="chip-icon ci-all"><i class="fas fa-calendar-alt"></i></div>
+        <span>Tổng</span>
+        <span class="chip-num">@totalTpl</span>
+    </div>
+    <div class="summary-chip">
+        <div class="chip-icon ci-active"><i class="fas fa-circle-dot"></i></div>
+        <span>Đang hoạt động</span>
+        <span class="chip-num">@activeCount</span>
+    </div>
+    <div class="summary-chip">
+        <div class="chip-icon ci-upcoming"><i class="fas fa-clock"></i></div>
+        <span>Sắp diễn ra</span>
+        <span class="chip-num">@upcomingCnt</span>
+    </div>
+    <div class="summary-chip">
+        <div class="chip-icon ci-finished"><i class="fas fa-flag-checkered"></i></div>
+        <span>Đã kết thúc</span>
+        <span class="chip-num">@finishedCnt</span>
+    </div>
+</div>
+
+<!-- TOOLBAR -->
+<div class="sched-toolbar">
+    <div class="search-wrap">
+        <i class="fas fa-search"></i>
+        <input type="text" class="search-input" id="searchInput"
+               placeholder="Tìm lớp học, ca học, phòng..." autocomplete="off" />
+    </div>
+
+    <select class="filter-sel" id="filterClass">
+        <option value="">Tất cả lớp</option>
+        @foreach (var c in Model.Classes)
+        {
+            <option value="@c.ClassId">@c.ClassCode</option>
+        }
+    </select>
+
+    <select class="filter-sel" id="filterStatus">
+        <option value="">Tất cả trạng thái</option>
+        <option value="active">Đang hoạt động</option>
+        <option value="upcoming">Sắp diễn ra</option>
+        <option value="finished">Đã kết thúc</option>
+        <option value="early">Kết thúc sớm</option>
+    </select>
+
+    <span class="result-badge" id="resultBadge">
+        <i class="fas fa-layer-group" style="font-size:10px"></i>
+        Hiển thị <strong id="resultCount">@totalTpl</strong> / @totalTpl lịch
+    </span>
+
+    <div class="view-toggle">
+        <button class="vt-btn active" id="btnGrid" onclick="switchView('grid')">
+            <i class="fas fa-grip"></i> Thẻ
+        </button>
+        <button class="vt-btn" id="btnWeekly" onclick="switchView('weekly')">
+            <i class="fas fa-table-cells"></i> Tuần
+        </button>
+    </div>
+</div>
+
+<!-- ═══════════════════════════════════════════
+     GRID VIEW
+═══════════════════════════════════════════ -->
+<div id="gridView" style="display:grid">
+    @if (allTemplates.Any())
+    {
+        @foreach (var t in allTemplates)
+        {
+            var badgeCls = t.Status switch
+            {
+                ScheduleTemplateStatus.Active => "active",
+                ScheduleTemplateStatus.Upcoming => "upcoming",
+                ScheduleTemplateStatus.FinishedEarly => "early",
+                _ => "finished"
+            };
+            var badgeIcon = t.Status switch
+            {
+                ScheduleTemplateStatus.Active => "fa-circle-dot",
+                ScheduleTemplateStatus.Upcoming => "fa-clock",
+                ScheduleTemplateStatus.FinishedEarly => "fa-flag-checkered",
+                _ => "fa-check-circle"
+            };
+            var badgeLabel = t.Status switch
+            {
+                ScheduleTemplateStatus.Active => "Đang hoạt động",
+                ScheduleTemplateStatus.Upcoming => "Sắp diễn ra",
+                ScheduleTemplateStatus.FinishedEarly => "Kết thúc sớm",
+                _ => "Đã kết thúc"
+            };
+            var canFinish = t.Status == ScheduleTemplateStatus.Active || t.Status == ScheduleTemplateStatus.Upcoming;
+            var classNameJs = t.ClassName.Replace("'", "\\'");
+            var endDateJs = t.EndDate.ToString("yyyy-MM-dd");
+            var startDateJs = t.StartDate.ToString("yyyy-MM-dd");
+            var dayLabel = DayLabel(t.DayOfWeek);
+            var dayLabelFull = DayLabelFull(t.DayOfWeek);
+
+            <div class="sched-card"
+                 data-class-id="@t.ClassId"
+                 data-status="@badgeCls"
+                 data-search="@t.ClassName.ToLower() @t.SubjectName.ToLower() @t.ShiftName.ToLower() @t.RoomCode.ToLower() @dayLabel.ToLower()"
+                 onclick="openDetail(@t.TemplateId)">
+
+                <div class="sc-top">
+                    <div>
+                        <div class="sc-class-name">@t.ClassName</div>
+                        <span class="sc-subj-pill">
+                            <i class="fas fa-book" style="font-size:8px"></i> @t.SubjectName
+                        </span>
+                    </div>
+                    <span class="sc-badge @badgeCls">
+                        <i class="fas @badgeIcon"></i> @badgeLabel
+                    </span>
+                </div>
+
+                <div class="sc-body">
+                    <div class="sc-row">
+                        <div class="sc-row-icon ri-day"><i class="fas fa-calendar-week"></i></div>
+                        <span class="sc-row-label">Thứ</span>
+                        <span class="sc-row-val">@dayLabelFull</span>
+                    </div>
+                    <div class="sc-row">
+                        <div class="sc-row-icon ri-time"><i class="fas fa-clock"></i></div>
+                        <span class="sc-row-label">Ca học</span>
+                        <span class="sc-row-val">@t.ShiftName <span style="color:var(--text-3);font-weight:500;font-size:.75rem">(@t.ShiftTime)</span></span>
+                    </div>
+                    <div class="sc-row">
+                        <div class="sc-row-icon ri-room"><i class="fas fa-door-open"></i></div>
+                        <span class="sc-row-label">Phòng</span>
+                        <span class="sc-row-val">@t.RoomCode</span>
+                    </div>
+                    <div class="sc-row">
+                        <div class="sc-row-icon ri-date"><i class="fas fa-calendar-range"></i></div>
+                        <span class="sc-row-label">Thời gian</span>
+                        <span class="sc-row-val" style="font-size:.75rem">
+                            @t.StartDate.ToString("dd/MM/yyyy") → @t.EndDate.ToString("dd/MM/yyyy")
+                        </span>
+                    </div>
+                </div>
+
+                <div class="sc-foot" onclick="event.stopPropagation()">
+                    @if (canFinish)
+                    {
+                        <button class="act-btn finish" title="Kết thúc sớm"
+                                onclick="openFinishEarly(@t.TemplateId, '@classNameJs', '@startDateJs', '@endDateJs')">
+                            <i class="fas fa-flag-checkered"></i>
+                        </button>
+                    }
+                    <button class="act-btn delete" title="Xóa lịch học"
+                            onclick="openDelete(@t.TemplateId, '@classNameJs', '@dayLabelFull')">
+                        <i class="fas fa-trash-can"></i>
+                    </button>
+                </div>
+            </div>
+        }
+
+        <!-- empty sentinel (shown when all filtered out) -->
+        <div class="grid-empty" id="gridEmpty" style="display:none">
+            <div class="ge-icon"><i class="fas fa-magnifying-glass"></i></div>
+            <p>Không tìm thấy lịch học</p>
+            <span>Thử thay đổi bộ lọc hoặc từ khóa tìm kiếm</span>
+        </div>
+    }
+    else
+    {
+        <div class="grid-empty">
+            <div class="ge-icon"><i class="fas fa-calendar-times"></i></div>
+            <p>Chưa có lịch học nào</p>
+            <span>Tạo lịch học mẫu để tự động sinh buổi học định kỳ</span>
+            <a href="/Admin/Schedules/Create" class="btn-brand" style="margin-top:12px;padding:8px 18px;font-size:.83rem">
+                <i class="fas fa-plus"></i> Tạo lịch học đầu tiên
+            </a>
+        </div>
+    }
+</div>
+
+<!-- ═══════════════════════════════════════════
+     WEEKLY VIEW
+═══════════════════════════════════════════ -->
+<div id="weeklyView" style="display:none">
+    <div class="weekly-wrap">
+        @{
+            // Build shift slots — collect unique shifts across all templates
+            var shifts = allTemplates
+            .Select(t => new { t.ShiftName, t.ShiftTime })
+            .Distinct()
+            .OrderBy(s => s.ShiftTime)
+            .ToList();
+
+            // DayOfTheWeek enum 0=Mon..6=Sun
+            var days = new[] {
+                DayOfTheWeek.Monday, DayOfTheWeek.Tuesday, DayOfTheWeek.Wednesday,
+                DayOfTheWeek.Thursday, DayOfTheWeek.Friday, DayOfTheWeek.Saturday,
+                DayOfTheWeek.Sunday
+                };
+        }
+
+        <!-- Header row -->
+        <div class="weekly-grid">
+            <div class="wg-hd-corner">Ca / Thứ</div>
+            @foreach (var day in days)
+            {
+                var isWeekend = day == DayOfTheWeek.Saturday || day == DayOfTheWeek.Sunday;
+                <div class="wg-hd-day @(isWeekend ? "weekend" : "")">
+                    <span class="wg-day-name">@DayLabel(day)</span>
+                </div>
+            }
+        </div>
+
+        <!-- Body rows: one per shift -->
+        @if (shifts.Any())
+        {
+            @foreach (var shift in shifts)
+            {
+                <div class="weekly-grid" style="border-bottom:1px solid var(--border)">
+                    <div class="wg-time-col">
+                        <div class="wg-time-slot">
+                            <div>
+                                <div style="font-weight:800;font-size:.72rem;color:var(--text-2)">@shift.ShiftName</div>
+                                <div style="font-size:.65rem;color:var(--text-3);margin-top:2px">@shift.ShiftTime</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    @foreach (var day in days)
+                    {
+                        var isWeekend = day == DayOfTheWeek.Saturday || day == DayOfTheWeek.Sunday;
+                        var eventsHere = allTemplates.Where(t => t.DayOfWeek == day && t.ShiftName == shift.ShiftName).ToList();
+
+                        <div class="wg-day-col">
+                            <div class="wg-cell @(isWeekend ? "weekend-bg" : "")">
+                                @if (eventsHere.Any())
+                                {
+                                    @foreach (var ev in eventsHere)
+                                    {
+                                        var evCls = ev.Status switch
+                                        {
+                                            ScheduleTemplateStatus.Active => "active",
+                                            ScheduleTemplateStatus.Upcoming => "upcoming",
+                                            ScheduleTemplateStatus.FinishedEarly => "early",
+                                            _ => "finished"
+                                        };
+                                        <div class="wg-event @evCls" onclick="openDetail(@ev.TemplateId)"
+                                             title="@ev.ClassName — @ev.ShiftName (@ev.ShiftTime) — @ev.RoomCode">
+                                            <div class="ev-class">@ev.ClassName</div>
+                                            <div class="ev-shift">@ev.ShiftTime</div>
+                                            <div class="ev-room"><i class="fas fa-door-open" style="font-size:8px"></i> @ev.RoomCode</div>
+                                        </div>
+                                    }
+                                }
+                            </div>
+                        </div>
+                    }
+                </div>
+            }
+        }
+        else
+        {
+            <div style="padding:48px 20px;text-align:center;color:var(--text-3);font-size:.85rem">
+                Chưa có lịch học nào để hiển thị
+            </div>
+        }
+
+        <!-- Legend -->
+        <div class="weekly-legend">
+            <span style="font-weight:700;color:var(--text-2)">Chú thích:</span>
+            <span class="wl-item"><span class="wl-dot active"></span> Đang hoạt động</span>
+            <span class="wl-item"><span class="wl-dot upcoming"></span> Sắp diễn ra</span>
+            <span class="wl-item"><span class="wl-dot early"></span> Kết thúc sớm</span>
+            <span class="wl-item"><span class="wl-dot finished"></span> Đã kết thúc</span>
+            <span style="margin-left:auto;font-size:.72rem;color:var(--text-3)">
+                Click vào ô lịch để xem chi tiết
+            </span>
+        </div>
+    </div>
+</div>
+
+<!-- ═══════════════════════════════════════════
+     MODAL — Detail / Quick action
+═══════════════════════════════════════════ -->
+<div class="cm-backdrop" id="detBackdrop"></div>
+<div class="cm-modal" id="detModal" role="dialog" aria-modal="true">
+    <div class="cm-box cm-box-md">
+        <div class="cm-head">
+            <div class="cm-icon-wrap info"><i class="fas fa-calendar-alt"></i></div>
+            <div class="cm-head-text">
+                <h6 id="detTitle">Chi tiết lịch học</h6>
+                <p id="detSubtitle">—</p>
+            </div>
+            <button type="button" id="detClose"
+                    style="margin-left:auto;background:none;border:none;cursor:pointer;color:var(--text-3);font-size:14px;padding:4px">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
+        <div class="cm-detail-body">
+            <div class="cm-detail-row">
+                <div class="cm-dr-icon" style="background:rgba(232,89,12,.1);color:var(--c-primary)"><i class="fas fa-chalkboard"></i></div>
+                <div><div class="cm-dr-label">Lớp học</div><div class="cm-dr-val" id="detClass">—</div></div>
+            </div>
+            <div class="cm-detail-row">
+                <div class="cm-dr-icon" style="background:rgba(59,130,246,.1);color:#3b82f6"><i class="fas fa-calendar-week"></i></div>
+                <div><div class="cm-dr-label">Ngày học</div><div class="cm-dr-val" id="detDay">—</div></div>
+            </div>
+            <div class="cm-detail-row">
+                <div class="cm-dr-icon" style="background:rgba(245,159,0,.1);color:#d97706"><i class="fas fa-clock"></i></div>
+                <div><div class="cm-dr-label">Ca học</div><div class="cm-dr-val" id="detShift">—</div></div>
+            </div>
+            <div class="cm-detail-row">
+                <div class="cm-dr-icon" style="background:rgba(139,92,246,.1);color:#7c3aed"><i class="fas fa-door-open"></i></div>
+                <div><div class="cm-dr-label">Phòng học</div><div class="cm-dr-val" id="detRoom">—</div></div>
+            </div>
+            <div class="cm-detail-row">
+                <div class="cm-dr-icon" style="background:rgba(16,185,129,.1);color:#10b981"><i class="fas fa-calendar-range"></i></div>
+                <div><div class="cm-dr-label">Thời gian áp dụng</div><div class="cm-dr-val" id="detDates">—</div></div>
+            </div>
+            <div class="cm-detail-row">
+                <div class="cm-dr-icon" style="background:#f4f6fc;color:var(--text-2)"><i class="fas fa-circle-info"></i></div>
+                <div><div class="cm-dr-label">Trạng thái</div><div class="cm-dr-val" id="detStatus">—</div></div>
+            </div>
+        </div>
+        <div class="cm-foot">
+            <button type="button" class="btn-outline" id="detClose2" style="padding:7px 14px;font-size:.82rem">
+                <i class="fas fa-times"></i> Đóng
+            </button>
+            <button type="button" class="btn-outline" id="detFinishBtn"
+                    style="padding:7px 14px;font-size:.82rem;border-color:#f59f00;color:#d97706;background:#fffbeb;display:none">
+                <i class="fas fa-flag-checkered"></i> Kết thúc sớm
+            </button>
+            <button type="button" class="btn-brand" id="detDeleteBtn"
+                    style="padding:7px 16px;font-size:.82rem;background:linear-gradient(135deg,#f43f5e,#e03131)">
+                <i class="fas fa-trash-can"></i> Xóa
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- MODAL — Kết thúc sớm -->
+<div class="cm-backdrop" id="feBackdrop"></div>
+<div class="cm-modal" id="feModal" role="dialog" aria-modal="true">
+    <div class="cm-box cm-box-md">
+        <div class="cm-head">
+            <div class="cm-icon-wrap warning"><i class="fas fa-flag-checkered"></i></div>
+            <div class="cm-head-text">
+                <h6>Kết thúc sớm lịch học</h6>
+                <p id="feSubtitle">—</p>
+            </div>
+        </div>
+        <form method="post" action="/Admin/Schedules/Index?handler=FinishEarly" id="feForm">
+            @Html.AntiForgeryToken()
+            <input type="hidden" name="templateId" id="feTemplateId" />
+            <div class="warn-box" style="margin-top:4px">
+                <i class="fas fa-triangle-exclamation"></i>
+                <span>Tất cả buổi học <strong>chưa diễn ra</strong> sau ngày kết thúc sớm sẽ bị chuyển sang <strong>Đã huỷ</strong>.</span>
+            </div>
+            <div class="cm-field">
+                <label for="feEarlyEndDate">Ngày kết thúc sớm <span style="color:#f43f5e">*</span></label>
+                <input type="date" id="feEarlyEndDate" name="earlyEndDate" required />
+                <div class="cm-field-hint" id="feDateHint"></div>
+            </div>
+            <div class="cm-foot">
+                <button type="button" class="btn-outline" id="feCancel" style="padding:7px 14px;font-size:.82rem">
+                    <i class="fas fa-times"></i> Hủy
+                </button>
+                <button type="submit" class="btn-brand"
+                        style="padding:7px 18px;font-size:.82rem;background:linear-gradient(135deg,#f59f00,#d97706)">
+                    <i class="fas fa-flag-checkered"></i> Xác nhận
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- MODAL — Xóa -->
+<div class="cm-backdrop" id="delBackdrop"></div>
+<div class="cm-modal" id="delModal" role="dialog" aria-modal="true">
+    <div class="cm-box cm-box-sm">
+        <div class="cm-head">
+            <div class="cm-icon-wrap danger"><i class="fas fa-trash-can"></i></div>
+            <div class="cm-head-text">
+                <h6>Xóa lịch học</h6>
+                <p>Hành động này không thể hoàn tác</p>
+            </div>
+        </div>
+        <div class="cm-body-msg" id="delMsg">Bạn có chắc muốn xóa lịch học này?</div>
+        <div class="warn-box info-box" style="margin-top:0">
+            <i class="fas fa-circle-info"></i>
+            <span>Lưu ý: Các buổi học đã sinh ra sẽ <strong>không bị xóa</strong>.</span>
+        </div>
+        <div class="cm-foot">
+            <button type="button" class="btn-outline" id="delCancel" style="padding:7px 14px;font-size:.82rem">
+                <i class="fas fa-times"></i> Hủy
+            </button>
+            <button type="button" id="delConfirm" class="btn-brand"
+                    style="padding:7px 18px;font-size:.82rem;background:linear-gradient(135deg,#f43f5e,#e03131)">
+                <i class="fas fa-trash-can"></i> Xóa
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- Hidden delete form -->
+<form id="deleteForm" method="post" action="/Admin/Schedules/Index?handler=Delete" style="display:none">
+    @Html.AntiForgeryToken()
+    <input type="hidden" name="templateId" id="delTemplateId" />
+</form>
+
+@section Scripts {
+    <script>
+        (function () {
+
+        // ── Data store (Razor → JS) ──────────────────────────────
+        var TEMPLATES = [
+        @foreach (var t in allTemplates)
+        {
+                var badgeCls = t.Status switch
+                {
+                        ScheduleTemplateStatus.Active => "active",
+                        ScheduleTemplateStatus.Upcoming => "upcoming",
+                        ScheduleTemplateStatus.FinishedEarly => "early",
+                        _ => "finished"
+                };
+                var badgeLabel = t.Status switch
+                {
+                        ScheduleTemplateStatus.Active => "Đang hoạt động",
+                        ScheduleTemplateStatus.Upcoming => "Sắp diễn ra",
+                        ScheduleTemplateStatus.FinishedEarly => "Kết thúc sớm",
+                        _ => "Đã kết thúc"
+                };
+                var dayLabelFull = DayLabelFull(t.DayOfWeek);
+                var canFinish = t.Status == ScheduleTemplateStatus.Active || t.Status == ScheduleTemplateStatus.Upcoming;
+                var classNameJs = t.ClassName.Replace("'", "\\'");
+                var subjJs = t.SubjectName.Replace("'", "\\'");
+                var shiftNameJs = t.ShiftName.Replace("'", "\\'");
+                var shiftTimeJs = t.ShiftTime.Replace("'", "\\'");
+                <text>
+                {
+                    id: @t.TemplateId,
+                    classId: @t.ClassId,
+                    className: '@classNameJs',
+                    subjectName: '@subjJs',
+                    dayLabel: '@dayLabelFull',
+                    shiftName: '@shiftNameJs',
+                    shiftTime: '@shiftTimeJs',
+                    roomCode: '@t.RoomCode',
+                    startDate: '@t.StartDate.ToString("dd/MM/yyyy")',
+                    endDate: '@t.EndDate.ToString("dd/MM/yyyy")',
+                    startDateJs: '@t.StartDate.ToString("yyyy-MM-dd")',
+                    endDateJs: '@t.EndDate.ToString("yyyy-MM-dd")',
+                    status: '@badgeCls',
+                    statusLabel: '@badgeLabel',
+                    canFinish: @(canFinish ? "true" : "false")
+                },
+                </text>
+        }
+        ];
+
+        // ── View toggle — defined outside DOMContentLoaded so onclick attrs can call it ──
+        window.switchView = function (v) {
+            document.getElementById('gridView').style.display   = v === 'grid'   ? 'grid'  : 'none';
+            document.getElementById('weeklyView').style.display = v === 'weekly' ? 'block' : 'none';
+            document.getElementById('btnGrid').classList.toggle('active',   v === 'grid');
+            document.getElementById('btnWeekly').classList.toggle('active', v === 'weekly');
+            var rb = document.getElementById('resultBadge');
+            if (rb) rb.style.display = v === 'grid' ? '' : 'none';
+        };
+
+        // ── Toast ────────────────────────────────────────────────
+        function showToast(msg, type) {
+            var wrap = document.getElementById('toastWrap');
+            var t = document.createElement('div');
+            t.className = 't-item ' + (type || 'success');
+            t.innerHTML = '<i class="fas ' + (type === 'error' ? 'fa-circle-xmark' : 'fa-circle-check') + '"></i>'
+                        + '<span>' + msg + '</span>'
+                        + '<button class="t-close" onclick="this.parentElement.remove()"><i class="fas fa-times"></i></button>';
+            wrap.appendChild(t);
+            setTimeout(function () { if (t.parentNode) { t.style.transition='opacity .4s'; t.style.opacity='0'; setTimeout(function(){ t.remove(); },400); } }, 4000);
+        }
+
+        document.addEventListener('DOMContentLoaded', function () {
+
+            // Portal modals
+            ['detBackdrop','detModal','feBackdrop','feModal','delBackdrop','delModal'].forEach(function(id){
+                var el = document.getElementById(id);
+                if (el && el.parentNode !== document.body) document.body.appendChild(el);
+            });
+
+            // TempData toasts
+            @if (TempData["SuccessMessage"] != null)
+            {
+                    <text>showToast('@Html.Raw(TempData["SuccessMessage"].ToString().Replace("'", "\\'"))', 'success');</text>
+            }
+            @if (TempData["ErrorMessage"] != null)
+            {
+                    <text>showToast('@Html.Raw(TempData["ErrorMessage"].ToString().Replace("'", "\\'"))', 'error');</text>
+            }
+
+            // ── Filter + Search ──────────────────────────────────
+            var cards = Array.from(document.querySelectorAll('.sched-card'));
+            var searchInput  = document.getElementById('searchInput');
+            var filterClass  = document.getElementById('filterClass');
+            var filterStatus = document.getElementById('filterStatus');
+            var resultCount  = document.getElementById('resultCount');
+            var gridEmpty    = document.getElementById('gridEmpty');
+
+            function applyFilters() {
+                var q       = searchInput.value.toLowerCase().trim();
+                var cls     = filterClass.value;
+                var status  = filterStatus.value;
+                var visible = 0;
+
+                cards.forEach(function (card) {
+                    var matchQ      = !q      || card.getAttribute('data-search').includes(q);
+                    var matchCls    = !cls    || card.getAttribute('data-class-id') === cls;
+                    var matchStatus = !status || card.getAttribute('data-status') === status;
+                    var show = matchQ && matchCls && matchStatus;
+                    card.classList.toggle('filtered-out', !show);
+                    if (show) visible++;
+                });
+
+                resultCount.textContent = visible;
+                if (gridEmpty) gridEmpty.style.display = visible === 0 && cards.length > 0 ? 'flex' : 'none';
+            }
+
+            searchInput.addEventListener('input', applyFilters);
+            filterClass.addEventListener('change', applyFilters);
+            filterStatus.addEventListener('change', applyFilters);
+
+            // ── Detail modal ─────────────────────────────────────
+            var detBackdrop = document.getElementById('detBackdrop');
+            var detModal    = document.getElementById('detModal');
+            var currentTpl  = null;
+
+            window.openDetail = function (templateId) {
+                var tpl = TEMPLATES.find(function(t){ return t.id === templateId; });
+                if (!tpl) return;
+                currentTpl = tpl;
+
+                document.getElementById('detTitle').textContent    = tpl.className + ' — ' + tpl.dayLabel;
+                document.getElementById('detSubtitle').textContent = tpl.subjectName;
+                document.getElementById('detClass').textContent    = tpl.className;
+                document.getElementById('detDay').textContent      = tpl.dayLabel;
+                document.getElementById('detShift').textContent    = tpl.shiftName + ' (' + tpl.shiftTime + ')';
+                document.getElementById('detRoom').textContent     = tpl.roomCode;
+                document.getElementById('detDates').textContent    = tpl.startDate + ' → ' + tpl.endDate;
+
+                var statusHtml = {
+                    active  : '<span class="sc-badge active"><i class="fas fa-circle-dot"></i> Đang hoạt động</span>',
+                    upcoming: '<span class="sc-badge upcoming"><i class="fas fa-clock"></i> Sắp diễn ra</span>',
+                    finished: '<span class="sc-badge finished"><i class="fas fa-check-circle"></i> Đã kết thúc</span>',
+                    early   : '<span class="sc-badge early"><i class="fas fa-flag-checkered"></i> Kết thúc sớm</span>'
+                };
+                document.getElementById('detStatus').innerHTML = statusHtml[tpl.status] || tpl.statusLabel;
+
+                document.getElementById('detFinishBtn').style.display = tpl.canFinish ? '' : 'none';
+
+                detBackdrop.classList.add('cm-open');
+                detModal.classList.add('cm-open');
+            };
+
+            function closeDetail() {
+                detBackdrop.classList.remove('cm-open');
+                detModal.classList.remove('cm-open');
+                currentTpl = null;
+            }
+
+            document.getElementById('detClose').addEventListener('click', closeDetail);
+            document.getElementById('detClose2').addEventListener('click', closeDetail);
+            detBackdrop.addEventListener('click', closeDetail);
+
+            document.getElementById('detFinishBtn').addEventListener('click', function () {
+                if (!currentTpl) return;
+                closeDetail();
+                openFinishEarly(currentTpl.id, currentTpl.className, currentTpl.startDateJs, currentTpl.endDateJs);
+            });
+
+            document.getElementById('detDeleteBtn').addEventListener('click', function () {
+                if (!currentTpl) return;
+                closeDetail();
+                openDelete(currentTpl.id, currentTpl.className, currentTpl.dayLabel);
+            });
+
+            // ── Finish-early modal ────────────────────────────────
+            var feBackdrop = document.getElementById('feBackdrop');
+            var feModal    = document.getElementById('feModal');
+
+            window.openFinishEarly = function (templateId, className, startStr, endStr) {
+                document.getElementById('feTemplateId').value = templateId;
+                document.getElementById('feSubtitle').textContent = 'Lớp ' + className;
+
+                var today  = new Date().toISOString().split('T')[0];
+                var ed = new Date(endStr); ed.setDate(ed.getDate() - 1);
+                var maxStr = ed.toISOString().split('T')[0];
+                var minStr = today >= startStr ? today : startStr;
+
+                var inp = document.getElementById('feEarlyEndDate');
+                inp.min = minStr; inp.max = maxStr;
+                inp.value = today <= maxStr ? today : maxStr;
+
+                var fmt = function(s){ var p=s.split('-'); return p[2]+'/'+p[1]+'/'+p[0]; };
+                document.getElementById('feDateHint').textContent = 'Từ ' + fmt(minStr) + ' đến ' + fmt(maxStr);
+
+                feBackdrop.classList.add('cm-open');
+                feModal.classList.add('cm-open');
+                inp.focus();
+            };
+
+            function closeFinishEarly() {
+                feBackdrop.classList.remove('cm-open');
+                feModal.classList.remove('cm-open');
+            }
+            document.getElementById('feCancel').addEventListener('click', closeFinishEarly);
+            feBackdrop.addEventListener('click', closeFinishEarly);
+
+            // ── Delete modal ──────────────────────────────────────
+            var delBackdrop  = document.getElementById('delBackdrop');
+            var delModal     = document.getElementById('delModal');
+            var pendingDelId = null;
+
+            window.openDelete = function (templateId, className, dayLabel) {
+                pendingDelId = templateId;
+                document.getElementById('delMsg').innerHTML =
+                    'Xóa lịch học lớp <strong>' + className + '</strong> — ' + dayLabel + '?';
+                delBackdrop.classList.add('cm-open');
+                delModal.classList.add('cm-open');
+            };
+
+            function closeDelete() {
+                delBackdrop.classList.remove('cm-open');
+                delModal.classList.remove('cm-open');
+                pendingDelId = null;
+            }
+            document.getElementById('delCancel').addEventListener('click', closeDelete);
+            delBackdrop.addEventListener('click', closeDelete);
+            document.getElementById('delConfirm').addEventListener('click', function () {
+                if (pendingDelId !== null) {
+                    document.getElementById('delTemplateId').value = pendingDelId;
+                    document.getElementById('deleteForm').submit();
+                }
+            });
+
+            // ── ESC closes all modals ─────────────────────────────
+            document.addEventListener('keydown', function (e) {
+                if (e.key === 'Escape') { closeDetail(); closeFinishEarly(); closeDelete(); }
+            });
+
+        }); // DOMContentLoaded
+
+        }());
+    </script>
+}

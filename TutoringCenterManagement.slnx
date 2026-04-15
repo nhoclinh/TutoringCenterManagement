@@ -1,0 +1,4 @@
+<Solution>
+  <Project Path="../TutoringCenterManagement.Tests/TutoringCenterManagement.Tests.csproj" Id="722c6f0a-1921-4c41-9e21-dce863527bc0" />
+  <Project Path="TutoringCenterManagement.csproj" />
+</Solution>

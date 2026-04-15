@@ -1,0 +1,1157 @@
+﻿@page
+@model TutoringCenterManagement.Pages.Admin.Sessions.EditModel
+@{
+    ViewData["Title"] = "Chỉnh sửa buổi học";
+    var isTemplate = Model.Input.IsFromTemplate;
+}
+
+@section Styles {
+    <style>
+        /* ════════════════════════════════════
+           SESSION EDIT — đồng bộ design system
+        ════════════════════════════════════ */
+
+        .edit-layout {
+            display: grid;
+            grid-template-columns: 1fr 320px;
+            gap: 20px;
+            align-items: start;
+        }
+
+        /* ── Form card ── */
+        .form-card {
+            background: var(--bg-card);
+            border-radius: var(--r-lg);
+            border: 1px solid var(--border);
+            box-shadow: var(--sh-sm);
+            overflow: hidden;
+            margin-bottom: 18px;
+        }
+
+        .form-card-hd {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 13px 20px;
+            border-bottom: 1px solid var(--border);
+            background: linear-gradient(to right, #fafbff, #fff);
+        }
+
+        .form-card-icon {
+            width: 32px;
+            height: 32px;
+            border-radius: 8px;
+            background: rgba(232,89,12,.1);
+            color: var(--c-primary);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 14px;
+            flex-shrink: 0;
+        }
+
+            .form-card-icon.blue {
+                background: rgba(59,130,246,.1);
+                color: #3b82f6;
+            }
+
+            .form-card-icon.green {
+                background: rgba(16,185,129,.1);
+                color: #10b981;
+            }
+
+            .form-card-icon.purple {
+                background: rgba(109,40,217,.1);
+                color: #6d28d9;
+            }
+
+        .form-card-title {
+            font-size: .9rem;
+            font-weight: 700;
+            color: var(--text-1);
+        }
+
+        .form-card-subtitle {
+            font-size: .73rem;
+            color: var(--text-3);
+            margin-top: 2px;
+        }
+
+        .form-card-body {
+            padding: 22px 24px;
+        }
+
+        .form-actions {
+            display: flex;
+            align-items: center;
+            justify-content: flex-end;
+            gap: 10px;
+            padding: 15px 24px;
+            border-top: 1px solid var(--border);
+            background: #f9fafd;
+        }
+
+        /* ── Section label ── */
+        .section-label {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: .67rem;
+            font-weight: 800;
+            color: var(--text-3);
+            text-transform: uppercase;
+            letter-spacing: .8px;
+            margin-bottom: 15px;
+        }
+
+            .section-label::after {
+                content: '';
+                flex: 1;
+                height: 1px;
+                background: var(--border);
+            }
+
+            .section-label .sl-icon {
+                width: 20px;
+                height: 20px;
+                border-radius: 5px;
+                background: rgba(232,89,12,.1);
+                color: var(--c-primary);
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                font-size: 9px;
+                flex-shrink: 0;
+            }
+
+        /* ── Form grid ── */
+        .form-row-2 {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 16px;
+            margin-bottom: 16px;
+        }
+
+        .form-row-3 {
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr;
+            gap: 16px;
+            margin-bottom: 16px;
+        }
+
+        .form-row-1 {
+            margin-bottom: 16px;
+        }
+
+        .field-group {
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+        }
+
+        .field-label {
+            font-size: .74rem;
+            font-weight: 700;
+            color: var(--text-2);
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+
+            .field-label .req {
+                color: #f43f5e;
+            }
+
+            .field-label .opt {
+                color: var(--text-3);
+                font-weight: 500;
+            }
+
+        .field-input,
+        .field-select,
+        .field-textarea {
+            padding: 9px 12px;
+            border: 1.5px solid var(--border);
+            border-radius: var(--r-sm);
+            background: var(--bg-page);
+            color: var(--text-1);
+            font-size: .84rem;
+            font-family: 'Plus Jakarta Sans', system-ui, sans-serif;
+            outline: none;
+            transition: border-color .15s, box-shadow .15s;
+            width: 100%;
+            box-sizing: border-box;
+        }
+
+            .field-input:focus,
+            .field-select:focus,
+            .field-textarea:focus {
+                border-color: var(--c-primary);
+                box-shadow: 0 0 0 3px var(--c-glow);
+                background: #fff;
+            }
+
+            .field-input[readonly] {
+                background: #f4f6fc;
+                color: var(--text-2);
+                cursor: not-allowed;
+                border-style: dashed;
+            }
+
+        .field-select {
+            cursor: pointer;
+            -webkit-appearance: none;
+            appearance: none;
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='10' viewBox='0 0 24 24' fill='none' stroke='%239aa0b4' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E");
+            background-repeat: no-repeat;
+            background-position: right 10px center;
+            padding-right: 30px;
+        }
+
+        .field-textarea {
+            resize: vertical;
+            min-height: 72px;
+            line-height: 1.6;
+        }
+
+        .field-hint {
+            font-size: .71rem;
+            color: var(--text-3);
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+
+        .field-error {
+            font-size: .71rem;
+            color: #e03131;
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+
+        /* ── Template notice banner ── */
+        .template-notice {
+            display: flex;
+            align-items: flex-start;
+            gap: 12px;
+            padding: 13px 18px;
+            margin-bottom: 18px;
+            background: rgba(59,130,246,.05);
+            border: 1px solid rgba(59,130,246,.2);
+            border-radius: var(--r-md);
+            border-left: 4px solid #3b82f6;
+        }
+
+        .template-notice-icon {
+            width: 34px;
+            height: 34px;
+            border-radius: 8px;
+            background: rgba(59,130,246,.1);
+            color: #3b82f6;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 14px;
+            flex-shrink: 0;
+        }
+
+        .template-notice-text {
+            font-size: .82rem;
+            color: var(--text-2);
+            line-height: 1.6;
+        }
+
+            .template-notice-text strong {
+                color: #1d4ed8;
+            }
+
+        /* ── Locked field display ── */
+        .locked-field {
+            display: flex;
+            align-items: center;
+            gap: 9px;
+            padding: 9px 13px;
+            background: #f4f6fc;
+            border: 1.5px dashed var(--border);
+            border-radius: var(--r-sm);
+            font-size: .84rem;
+            color: var(--text-2);
+            font-weight: 600;
+        }
+
+            .locked-field i {
+                color: var(--text-3);
+                font-size: 12px;
+                flex-shrink: 0;
+            }
+
+        /* ── Status select colors ── */
+        .status-select option[value="0"] {
+            color: #1d4ed8;
+        }
+
+        .status-select option[value="1"] {
+            color: #059669;
+        }
+
+        .status-select option[value="2"] {
+            color: #5b21b6;
+        }
+
+        .status-select option[value="3"] {
+            color: #be123c;
+        }
+
+        /* ── Status preview badge ── */
+        .sess-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: .75rem;
+            font-weight: 700;
+            white-space: nowrap;
+        }
+
+            .sess-badge.scheduled {
+                background: rgba(59,130,246,.1);
+                color: #1d4ed8;
+            }
+
+            .sess-badge.ongoing {
+                background: rgba(16,185,129,.1);
+                color: #059669;
+            }
+
+            .sess-badge.completed {
+                background: rgba(109,40,217,.1);
+                color: #5b21b6;
+            }
+
+            .sess-badge.cancelled {
+                background: rgba(244,63,94,.1);
+                color: #be123c;
+            }
+
+        /* ── Side panel ── */
+        .side-card {
+            background: var(--bg-card);
+            border-radius: var(--r-lg);
+            border: 1px solid var(--border);
+            box-shadow: var(--sh-sm);
+            overflow: hidden;
+            margin-bottom: 16px;
+        }
+
+        .side-card-hd {
+            display: flex;
+            align-items: center;
+            gap: 9px;
+            padding: 12px 17px;
+            border-bottom: 1px solid var(--border);
+            background: linear-gradient(to right, #fafbff, #fff);
+        }
+
+        .side-card-icon {
+            width: 27px;
+            height: 27px;
+            border-radius: 7px;
+            background: rgba(232,89,12,.1);
+            color: var(--c-primary);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 11px;
+            flex-shrink: 0;
+        }
+
+        .side-card-title {
+            font-size: .84rem;
+            font-weight: 700;
+            color: var(--text-1);
+        }
+
+        .side-card-body {
+            padding: 16px;
+        }
+
+        /* ── Session info card (readonly snapshot) ── */
+        .sess-preview-hd {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 13px 15px;
+            margin-bottom: 12px;
+            background: var(--bg-page);
+            border-radius: var(--r-md);
+            border: 1px solid var(--border);
+        }
+
+        .sess-avatar {
+            width: 42px;
+            height: 42px;
+            border-radius: 10px;
+            background: linear-gradient(135deg, #e8590c, #f59f00);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 17px;
+            color: #fff;
+            flex-shrink: 0;
+            box-shadow: 0 3px 10px var(--c-glow);
+        }
+
+        .sess-preview-class {
+            font-size: .88rem;
+            font-weight: 700;
+            color: var(--text-1);
+        }
+
+        .sess-preview-sub {
+            font-size: .71rem;
+            color: var(--text-3);
+            margin-top: 2px;
+        }
+
+        .prev-row {
+            display: flex;
+            align-items: flex-start;
+            justify-content: space-between;
+            padding: 8px 0;
+            border-bottom: 1px solid #f0f2f8;
+            font-size: .79rem;
+        }
+
+            .prev-row:last-child {
+                border-bottom: none;
+            }
+
+        .prev-lbl {
+            color: var(--text-3);
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        .prev-val {
+            color: var(--text-1);
+            font-weight: 700;
+            text-align: right;
+            max-width: 170px;
+        }
+
+            .prev-val.empty {
+                color: var(--text-3);
+                font-style: italic;
+                font-weight: 400;
+            }
+
+        /* ── Meta row ── */
+        .meta-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 8px 0;
+            border-bottom: 1px solid #f0f2f8;
+            font-size: .79rem;
+        }
+
+            .meta-row:last-child {
+                border-bottom: none;
+            }
+
+        .meta-lbl {
+            color: var(--text-3);
+            font-weight: 600;
+        }
+
+        .meta-val {
+            color: var(--text-1);
+            font-weight: 700;
+        }
+
+        /* ── ID chip ── */
+        .id-chip {
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            padding: 3px 9px;
+            border-radius: var(--r-sm);
+            background: rgba(232,89,12,.08);
+            border: 1px solid rgba(232,89,12,.2);
+            color: var(--c-primary);
+            font-size: .72rem;
+            font-weight: 800;
+            font-family: 'Courier New', monospace;
+        }
+
+        /* ── Changed badge ── */
+        .changed-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            padding: 3px 9px;
+            border-radius: 50px;
+            font-size: .68rem;
+            font-weight: 700;
+            background: #fffbeb;
+            color: #d97706;
+            border: 1px solid #fde68a;
+            margin-left: 6px;
+        }
+
+        /* ── Teacher pair ── */
+        .teacher-pair {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .teacher-item {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 10px 12px;
+            border-radius: var(--r-md);
+            border: 1px solid var(--border);
+            background: var(--bg-page);
+        }
+
+            .teacher-item.primary {
+                border-left: 3px solid #e8590c;
+            }
+
+            .teacher-item.assistant {
+                border-left: 3px solid #3b82f6;
+            }
+
+        .teacher-badge {
+            font-size: .66rem;
+            font-weight: 700;
+            padding: 2px 7px;
+            border-radius: 50px;
+            white-space: nowrap;
+            flex-shrink: 0;
+        }
+
+            .teacher-badge.primary {
+                background: rgba(232,89,12,.1);
+                color: #e8590c;
+            }
+
+            .teacher-badge.assistant {
+                background: rgba(59,130,246,.1);
+                color: #3b82f6;
+            }
+
+        .teacher-name {
+            font-size: .8rem;
+            font-weight: 600;
+            color: var(--text-1);
+            flex: 1;
+        }
+
+        /* ── Conflict warning ── */
+        .conflict-warn {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 10px 13px;
+            margin-top: 8px;
+            background: #fff1f2;
+            border: 1px solid #fecdd3;
+            border-radius: var(--r-sm);
+            font-size: .76rem;
+            font-weight: 600;
+            color: #be123c;
+        }
+
+        /* ── Template pill / standalone pill ── */
+        .type-pill {
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            padding: 3px 10px;
+            border-radius: 50px;
+            font-size: .7rem;
+            font-weight: 700;
+        }
+
+            .type-pill.template {
+                background: rgba(16,185,129,.1);
+                color: #059669;
+                border: 1px solid rgba(16,185,129,.25);
+            }
+
+            .type-pill.standalone {
+                background: rgba(245,159,0,.1);
+                color: #b45309;
+                border: 1px solid rgba(245,159,0,.25);
+            }
+
+        /* ── Responsive ── */
+        @@media (max-width: 960px) {
+            .edit-layout {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        @@media (max-width: 600px) {
+            .form-row-2, .form-row-3 {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+}
+
+<!-- ════════════════════════════════════════
+     PAGE HEADER
+════════════════════════════════════════ -->
+<div class="page-header">
+    <div>
+        <h1 class="page-heading">Chỉnh sửa <span>buổi học</span></h1>
+        <p class="page-subheading">
+            <i class="fas fa-circle-info" style="color:var(--c-primary)"></i>
+            Cập nhật thông tin buổi học &nbsp;
+            <span class="id-chip"><i class="fas fa-hashtag"></i>@Model.Input.SessionId</span>
+            &nbsp;
+            @if (isTemplate)
+            {
+                <span class="type-pill template"><i class="fas fa-calendar-alt"></i> Từ lịch mẫu</span>
+            }
+            else
+            {
+                <span class="type-pill standalone"><i class="fas fa-star"></i> Buổi lẻ</span>
+            }
+        </p>
+    </div>
+    <div class="page-actions">
+        <a href="/Admin/Sessions" class="btn-outline">
+            <i class="fas fa-arrow-left"></i> Quay lại
+        </a>
+    </div>
+</div>
+
+<!-- Template notice -->
+@if (isTemplate)
+{
+    <div class="template-notice">
+        <div class="template-notice-icon"><i class="fas fa-lock"></i></div>
+        <div class="template-notice-text">
+            <strong>Buổi học từ lịch mẫu</strong> — Lớp, ngày học, ca học và phòng đã được cố định theo lịch mẫu.
+            Bạn chỉ có thể chỉnh sửa <strong>Giáo viên</strong>, <strong>Trạng thái</strong> và <strong>Ghi chú</strong>.
+        </div>
+    </div>
+}
+
+<!-- ════════════════════════════════════════
+     LAYOUT
+════════════════════════════════════════ -->
+<div class="edit-layout">
+
+    <!-- ══════════════════
+         FORM
+    ══════════════════ -->
+    <form method="post" id="editSessionForm" novalidate>
+        @Html.AntiForgeryToken()
+        <input type="hidden" asp-for="Input.SessionId" />
+        <input type="hidden" asp-for="Input.IsFromTemplate" />
+
+        <!-- Card 1: Lớp học & Lịch -->
+        <div class="form-card">
+            <div class="form-card-hd">
+                <div class="form-card-icon"><i class="fas fa-calendar-day"></i></div>
+                <div>
+                    <div class="form-card-title">Thông tin buổi học</div>
+                    <div class="form-card-subtitle">
+                        @if (isTemplate)
+                        {
+                            <text>Chỉ đọc — được cố định từ lịch mẫu</text>
+                        }
+                        else
+                        {
+
+                            <text>Lớp, ngày, ca học và phòng</text>
+                        }
+                    </div>
+                </div>
+            </div>
+            <div class="form-card-body">
+
+                <div class="section-label">
+                    <span class="sl-icon"><i class="fas fa-school"></i></span>
+                    Lớp học & Ngày
+                </div>
+
+                <div class="form-row-2">
+                    <!-- Lớp học: luôn readonly -->
+                    <div class="field-group">
+                        <label class="field-label">Lớp học</label>
+                        <div class="locked-field">
+                            <i class="fas fa-lock"></i>
+                            <span>@Model.Input.ClassName</span>
+                        </div>
+                    </div>
+
+                    <!-- Ngày học -->
+                    <div class="field-group">
+                        <label class="field-label">
+                            Ngày học @if (!isTemplate) {
+                            <span class="req">*</span>
+                                                        }
+                        </label>
+                        @if (isTemplate)
+                        {
+                            <div class="locked-field">
+                                <i class="fas fa-lock"></i>
+                                <span>@Model.Input.SessionDate.ToString("dd/MM/yyyy")</span>
+                            </div>
+                        }
+                        else
+                        {
+                            <input asp-for="Input.SessionDate"
+                                   type="date"
+                                   class="field-input"
+                                   id="sessionDate"
+                                   required />
+                            <span asp-validation-for="Input.ClassId" class="field-error"></span>
+                        }
+                    </div>
+                </div>
+
+                <div class="section-label" style="margin-top:4px">
+                    <span class="sl-icon"><i class="fas fa-clock"></i></span>
+                    Ca học & Phòng
+                </div>
+
+                <div class="form-row-2" style="margin-bottom:0">
+                    <!-- Ca học -->
+                    <div class="field-group">
+                        <label class="field-label">
+                            Ca học @if (!isTemplate) {
+                            <span class="req">*</span>
+                                                        }
+                        </label>
+                        @if (isTemplate)
+                        {
+                            <div class="locked-field">
+                                <i class="fas fa-lock"></i>
+                                <span>@Model.Input.ShiftName</span>
+                            </div>
+                        }
+                        else
+                        {
+                            <select asp-for="Input.ShiftId"
+                                    class="field-select"
+                                    id="shiftSelect"
+                                    required>
+                                @foreach (var s in Model.Shifts)
+                                {
+                                    <option value="@((int)s.ShiftId)">
+                                        @s.ShiftName (@s.StartTime.ToString("HH:mm")–@s.EndTime.ToString("HH:mm"))
+                                    </option>
+                                }
+                            </select>
+                        }
+                    </div>
+
+                    <!-- Phòng học -->
+                    <div class="field-group">
+                        <label class="field-label">
+                            Phòng học @if (!isTemplate) {
+                            <span class="req">*</span>
+                                                        }
+                        </label>
+                        @if (isTemplate)
+                        {
+                            <div class="locked-field">
+                                <i class="fas fa-lock"></i>
+                                <span>@Model.Input.RoomName</span>
+                            </div>
+                        }
+                        else
+                        {
+                            <select asp-for="Input.RoomId"
+                                    class="field-select"
+                                    id="roomSelect"
+                                    required>
+                                @foreach (var r in Model.Rooms)
+                                {
+                                    <option value="@r.RoomId">@r.RoomCode — @r.RoomName</option>
+                                }
+                            </select>
+                        }
+                    </div>
+                </div>
+
+            </div>
+        </div>
+
+        <!-- Card 2: Giáo viên -->
+        <div class="form-card">
+            <div class="form-card-hd">
+                <div class="form-card-icon blue"><i class="fas fa-chalkboard-teacher"></i></div>
+                <div>
+                    <div class="form-card-title">Phân công giáo viên</div>
+                    <div class="form-card-subtitle">Có thể thay đổi giáo viên chính và trợ giảng</div>
+                </div>
+            </div>
+            <div class="form-card-body">
+
+                <div class="section-label">
+                    <span class="sl-icon" style="background:rgba(59,130,246,.1);color:#3b82f6"><i class="fas fa-user-tie"></i></span>
+                    Giáo viên chính
+                </div>
+
+                <div class="form-row-1">
+                    <div class="field-group">
+                        <label class="field-label">Giáo viên chính <span class="req">*</span></label>
+                        <select asp-for="Input.PrimaryTeacherId"
+                                class="field-select"
+                                id="primaryTeacher"
+                                required>
+                            <option value="">— Chọn giáo viên chính —</option>
+                            @foreach (var t in Model.Teachers)
+                            {
+                                <option value="@t.TeacherId">@t.Fullname</option>
+                            }
+                        </select>
+                        <span asp-validation-for="Input.ClassId" class="field-error"></span>
+                    </div>
+                </div>
+
+                <div class="section-label" style="margin-top:4px">
+                    <span class="sl-icon" style="background:rgba(16,185,129,.1);color:#10b981"><i class="fas fa-user-plus"></i></span>
+                    Giáo viên trợ giảng
+                </div>
+
+                <div class="form-row-1" style="margin-bottom:0">
+                    <div class="field-group">
+                        <label class="field-label">Giáo viên trợ giảng <span class="opt">(tùy chọn)</span></label>
+                        <select asp-for="Input.AssistantTeacherId"
+                                class="field-select"
+                                id="assistantTeacher">
+                            <option value="">— Không có trợ giảng —</option>
+                            @foreach (var t in Model.Teachers)
+                            {
+                                <option value="@t.TeacherId">@t.Fullname</option>
+                            }
+                        </select>
+                        <span asp-validation-for="Input.ClassId" class="field-error"></span>
+                        <span class="field-hint">
+                            <i class="fas fa-info-circle" style="color:#3b82f6"></i>
+                            Giáo viên trợ giảng không được trùng với giáo viên chính
+                        </span>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+
+        <!-- Card 3: Trạng thái & Ghi chú -->
+        <div class="form-card">
+            <div class="form-card-hd">
+                <div class="form-card-icon purple"><i class="fas fa-sliders"></i></div>
+                <div>
+                    <div class="form-card-title">Trạng thái & Ghi chú</div>
+                    <div class="form-card-subtitle">Cập nhật tiến trình buổi học</div>
+                </div>
+            </div>
+            <div class="form-card-body">
+
+                <div class="form-row-2" style="margin-bottom:0">
+                    <div class="field-group">
+                        <label class="field-label">Trạng thái <span class="req">*</span></label>
+                        <select asp-for="Input.Status"
+                                class="field-select status-select"
+                                id="statusSelect"
+                                required>
+                            <option value="0">📅 Đã lên lịch</option>
+                            <option value="1">🟢 Đang diễn ra</option>
+                            <option value="2">✅ Hoàn thành</option>
+                            <option value="3">🚫 Đã hủy</option>
+                        </select>
+                        <span asp-validation-for="Input.ClassId" class="field-error"></span>
+                    </div>
+
+                    <div class="field-group">
+                        <label class="field-label">Ghi chú <span class="opt">(tùy chọn)</span></label>
+                        <textarea asp-for="Input.Note"
+                                  class="field-textarea"
+                                  id="noteInput"
+                                  placeholder="Ghi chú thêm..."></textarea>
+                    </div>
+                </div>
+
+            </div>
+            <div class="form-actions">
+                <a href="/Admin/Sessions" class="btn-outline">
+                    <i class="fas fa-times"></i> Hủy
+                </a>
+                <button type="submit" class="btn-brand" id="btnSubmit">
+                    <i class="fas fa-floppy-disk"></i> Lưu thay đổi
+                </button>
+            </div>
+        </div>
+
+    </form>
+
+    <!-- ══════════════════
+         SIDE PANEL
+    ══════════════════ -->
+    <div>
+
+        <!-- Session snapshot -->
+        <div class="side-card">
+            <div class="side-card-hd">
+                <div class="side-card-icon"><i class="fas fa-eye"></i></div>
+                <span class="side-card-title">
+                    Xem trước
+                    <span class="changed-badge" id="changedBadge" style="display:none">
+                        <i class="fas fa-pen"></i> Đã sửa
+                    </span>
+                </span>
+            </div>
+            <div class="side-card-body">
+                <div class="sess-preview-hd">
+                    <div class="sess-avatar"><i class="fas fa-chalkboard"></i></div>
+                    <div>
+                        <div class="sess-preview-class">@Model.Input.ClassName</div>
+                        <div class="sess-preview-sub" id="prevStatusBadge">—</div>
+                    </div>
+                </div>
+
+                <div class="prev-row">
+                    <span class="prev-lbl"><i class="fas fa-calendar" style="color:var(--c-primary)"></i> Ngày học</span>
+                    <span class="prev-val" id="prevDate">@Model.Input.SessionDate.ToString("dd/MM/yyyy")</span>
+                </div>
+                <div class="prev-row">
+                    <span class="prev-lbl"><i class="fas fa-clock" style="color:#f59f00"></i> Ca học</span>
+                    <span class="prev-val" id="prevShift">@(isTemplate? Model.Input.ShiftName : "—")</span>
+                </div>
+                <div class="prev-row">
+                    <span class="prev-lbl"><i class="fas fa-door-open" style="color:#3b82f6"></i> Phòng</span>
+                    <span class="prev-val" id="prevRoom">@(isTemplate? Model.Input.RoomName : "—")</span>
+                </div>
+                <div class="prev-row">
+                    <span class="prev-lbl"><i class="fas fa-user-tie" style="color:#e8590c"></i> GV chính</span>
+                    <span class="prev-val empty" id="prevPrimary">Chưa chọn</span>
+                </div>
+                <div class="prev-row">
+                    <span class="prev-lbl"><i class="fas fa-user-plus" style="color:#10b981"></i> Trợ giảng</span>
+                    <span class="prev-val empty" id="prevAssistant">Không có</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Meta info -->
+        <div class="side-card">
+            <div class="side-card-hd">
+                <div class="side-card-icon" style="background:rgba(59,130,246,.1);color:#3b82f6">
+                    <i class="fas fa-circle-info"></i>
+                </div>
+                <span class="side-card-title">Thông tin bản ghi</span>
+            </div>
+            <div class="side-card-body">
+                <div class="meta-row">
+                    <span class="meta-lbl">Mã buổi học</span>
+                    <span class="id-chip"><i class="fas fa-hashtag"></i>@Model.Input.SessionId</span>
+                </div>
+                <div class="meta-row">
+                    <span class="meta-lbl">Loại buổi</span>
+                    @if (isTemplate)
+                    {
+                        <span class="type-pill template"><i class="fas fa-calendar-alt"></i> Lịch mẫu</span>
+                    }
+                    else
+                    {
+                        <span class="type-pill standalone"><i class="fas fa-star"></i> Buổi lẻ</span>
+                    }
+                </div>
+                <div class="meta-row" style="border-bottom:none">
+                    <span class="meta-lbl">Thao tác</span>
+                    <span class="meta-val" style="color:#d97706">Chỉnh sửa</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Teacher pair (live) -->
+        <div class="side-card" id="teacherPairCard" style="display:none">
+            <div class="side-card-hd">
+                <div class="side-card-icon" style="background:rgba(59,130,246,.1);color:#3b82f6">
+                    <i class="fas fa-users"></i>
+                </div>
+                <span class="side-card-title">Giáo viên phân công</span>
+            </div>
+            <div class="side-card-body">
+                <div class="teacher-pair" id="teacherPairList"></div>
+                <div class="conflict-warn" id="conflictWarn" style="display:none">
+                    <i class="fas fa-triangle-exclamation"></i>
+                    Giáo viên chính và trợ giảng không được trùng nhau!
+                </div>
+            </div>
+        </div>
+
+    </div>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+    <script>
+        (function () {
+
+            var primaryTeacher   = document.getElementById('primaryTeacher');
+            var assistantTeacher = document.getElementById('assistantTeacher');
+            var statusSelect     = document.getElementById('statusSelect');
+            var sessionDate      = document.getElementById('sessionDate');
+            var shiftSelect      = document.getElementById('shiftSelect');
+            var roomSelect       = document.getElementById('roomSelect');
+            var noteInput        = document.getElementById('noteInput');
+            var btnSubmit        = document.getElementById('btnSubmit');
+            var assistantError   = document.getElementById('assistantError');
+            var conflictWarn     = document.getElementById('conflictWarn');
+            var changedBadge     = document.getElementById('changedBadge');
+            var teacherPairCard  = document.getElementById('teacherPairCard');
+            var teacherPairList  = document.getElementById('teacherPairList');
+
+            /* Preview elements */
+            var prevDate        = document.getElementById('prevDate');
+            var prevShift       = document.getElementById('prevShift');
+            var prevRoom        = document.getElementById('prevRoom');
+            var prevPrimary     = document.getElementById('prevPrimary');
+            var prevAssistant   = document.getElementById('prevAssistant');
+            var prevStatusBadge = document.getElementById('prevStatusBadge');
+
+            /* Snapshot for change detection */
+            var origPrimary   = primaryTeacher   ? primaryTeacher.value   : '';
+            var origAssistant = assistantTeacher ? assistantTeacher.value : '';
+            var origStatus    = statusSelect     ? statusSelect.value     : '';
+            var origNote      = noteInput        ? noteInput.value        : '';
+
+            var isTemplate = @(isTemplate ? "true" : "false");
+
+            var statusMap = {
+                '0': { cls: 'scheduled', label: '<i class="fas fa-calendar-check"></i> Đã lên lịch' },
+                '1': { cls: 'ongoing',   label: '<i class="fas fa-circle-dot"></i> Đang diễn ra' },
+                '2': { cls: 'completed', label: '<i class="fas fa-check-circle"></i> Hoàn thành' },
+                '3': { cls: 'cancelled', label: '<i class="fas fa-ban"></i> Đã hủy' }
+            };
+
+            var dow = ['CN','T2','T3','T4','T5','T6','T7'];
+
+            function selText(el) {
+                return el && el.value ? el.options[el.selectedIndex].text : '';
+            }
+
+            function setVal(el, txt, emptyTxt) {
+                if (!el) return;
+                if (txt) {
+                    el.innerHTML  = txt;
+                    el.classList.remove('empty');
+                } else {
+                    el.textContent = emptyTxt || '—';
+                    el.classList.add('empty');
+                }
+            }
+
+            function fmtDate(val) {
+                if (!val) return '';
+                var d = new Date(val + 'T00:00:00');
+                return dow[d.getDay()] + ' ' + d.toLocaleDateString('vi-VN', { day:'2-digit', month:'2-digit', year:'numeric' });
+            }
+
+            function updatePreview() {
+                var primary   = selText(primaryTeacher);
+                var assistant = assistantTeacher && assistantTeacher.value ? selText(assistantTeacher) : '';
+                var status    = statusSelect ? statusSelect.value : '';
+                var note      = noteInput   ? noteInput.value.trim() : '';
+
+                /* Change detection */
+                var changed = primary   !== (origPrimary   && selText(primaryTeacher))
+                           || status    !== origStatus
+                           || note      !== origNote
+                           || (assistantTeacher && assistantTeacher.value !== origAssistant);
+                if (changedBadge) changedBadge.style.display = changed ? 'inline-flex' : 'none';
+
+                /* Date preview (standalone only) */
+                if (!isTemplate && sessionDate && prevDate) {
+                    prevDate.textContent = sessionDate.value ? fmtDate(sessionDate.value) : '—';
+                }
+
+                /* Shift & Room preview (standalone only) */
+                if (!isTemplate) {
+                    setVal(prevShift, selText(shiftSelect) || '', 'Chưa chọn');
+                    setVal(prevRoom,
+                        roomSelect && roomSelect.value
+                            ? roomSelect.options[roomSelect.selectedIndex].text.split(' (')[0]
+                            : '', 'Chưa chọn');
+                }
+
+                /* Teachers */
+                setVal(prevPrimary,   primary   || '', 'Chưa chọn');
+                setVal(prevAssistant, assistant || '', 'Không có');
+
+                /* Status badge */
+                if (status && statusMap[status]) {
+                    var s = statusMap[status];
+                    prevStatusBadge.innerHTML = '<span class="sess-badge ' + s.cls + '">' + s.label + '</span>';
+                }
+
+                /* Conflict */
+                var conflict = primaryTeacher && assistantTeacher
+                            && primaryTeacher.value && assistantTeacher.value
+                            && primaryTeacher.value === assistantTeacher.value;
+                if (conflictWarn)  conflictWarn.style.display  = conflict ? 'flex' : 'none';
+                if (assistantError) assistantError.style.display = conflict ? 'flex' : 'none';
+                if (btnSubmit) btnSubmit.disabled = !!conflict;
+
+                /* Teacher pair card */
+                if (!primary && !assistant) {
+                    teacherPairCard.style.display = 'none';
+                } else {
+                    teacherPairCard.style.display = 'block';
+                    var html = '';
+                    if (primary) {
+                        html += '<div class="teacher-item primary">' +
+                            '<span class="teacher-badge primary">Chính</span>' +
+                            '<span class="teacher-name">' + primary + '</span>' +
+                            '<i class="fas fa-chalkboard-teacher" style="color:#e8590c;font-size:12px"></i>' +
+                            '</div>';
+                    }
+                    if (assistant) {
+                        html += '<div class="teacher-item assistant">' +
+                            '<span class="teacher-badge assistant">Trợ giảng</span>' +
+                            '<span class="teacher-name">' + assistant + '</span>' +
+                            '<i class="fas fa-user-plus" style="color:#3b82f6;font-size:12px"></i>' +
+                            '</div>';
+                    }
+                    teacherPairList.innerHTML = html;
+                }
+            }
+
+            /* Bind */
+            [primaryTeacher, assistantTeacher, statusSelect, sessionDate, shiftSelect, roomSelect]
+                .forEach(function (el) { if (el) el.addEventListener('change', updatePreview); });
+            if (noteInput) noteInput.addEventListener('input', updatePreview);
+            if (sessionDate) sessionDate.addEventListener('input', updatePreview);
+
+            /* Submit validation */
+            document.getElementById('editSessionForm').addEventListener('submit', function (e) {
+                var pId = primaryTeacher   ? primaryTeacher.value   : '';
+                var aId = assistantTeacher ? assistantTeacher.value : '';
+                if (pId && aId && pId === aId) {
+                    e.preventDefault();
+                    if (conflictWarn)  conflictWarn.style.display  = 'flex';
+                    if (assistantError) assistantError.style.display = 'flex';
+                }
+            });
+
+            /* Init */
+            updatePreview();
+
+        })();
+    </script>
+}

@@ -1,0 +1,348 @@
+﻿@page
+@model TutoringCenterManagement.Pages.Admin.TeacherMonthlyReportModel
+@{
+    ViewData["Title"] = "Báo cáo buổi dạy giáo viên";
+    var mn = new[]{"","T1","T2","T3","T4","T5","T6","T7","T8","T9","T10","T11","T12"};
+    var hasData = Model.Rows.Any(r => r.TotalSessions > 0);
+    var maxCompleted = Model.Rows.Any() ? Math.Max(Model.Rows.Max(r => r.Completed), 1) : 1;
+}
+
+@section Styles {
+<style>
+/* ═══════════════════════════════════════════
+   TEACHER MONTHLY REPORT
+═══════════════════════════════════════════ */
+.tmr-topbar {
+    display:flex; align-items:center; gap:10px; flex-wrap:wrap;
+    margin-bottom:22px; padding:13px 18px;
+    background:var(--bg-card); border-radius:var(--r-lg);
+    border:1px solid var(--border); box-shadow:var(--sh-xs);
+}
+.tmr-topbar-icon {
+    width:32px; height:32px; border-radius:8px;
+    background:rgba(59,130,246,.1); color:#3b82f6;
+    display:flex; align-items:center; justify-content:center; font-size:13px; flex-shrink:0;
+}
+.tmr-title     { font-size:.82rem; font-weight:800; color:var(--text-1); }
+.tmr-sub       { font-size:.7rem; color:var(--text-3); margin-top:1px; }
+.tmr-sep       { width:1px; height:28px; background:var(--border); margin:0 4px; flex-shrink:0; }
+.tmr-sel {
+    height:36px; padding:0 30px 0 11px;
+    border:1.5px solid var(--border); border-radius:var(--r-sm);
+    background:#f8f9fc; color:var(--text-1);
+    font-size:.82rem; font-family:inherit; font-weight:600;
+    outline:none; cursor:pointer; -webkit-appearance:none; appearance:none;
+    background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='10' viewBox='0 0 24 24' fill='none' stroke='%239aa0b4' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E");
+    background-repeat:no-repeat; background-position:right 9px center;
+    transition:border-color .15s;
+}
+.tmr-sel:focus { border-color:#3b82f6; background-color:#fff; }
+.period-pill {
+    margin-left:auto; display:inline-flex; align-items:center; gap:6px;
+    padding:5px 14px; border-radius:50px;
+    background:rgba(59,130,246,.08); border:1px solid rgba(59,130,246,.2);
+    font-size:.78rem; font-weight:700; color:#3b82f6; white-space:nowrap;
+}
+
+/* ── KPI strip ─────────────────────────────── */
+.kpi-strip { display:grid; grid-template-columns:repeat(3,1fr); gap:12px; margin-bottom:18px; }
+.kpi-card {
+    background:var(--bg-card); border-radius:var(--r-lg);
+    border:1px solid var(--border); box-shadow:var(--sh-xs);
+    padding:16px 18px 14px; position:relative; overflow:hidden;
+    transition:box-shadow .2s,transform .2s;
+}
+.kpi-card:hover { box-shadow:var(--sh-md); transform:translateY(-2px); }
+.kpi-card::after { content:''; position:absolute; top:0;left:0;right:0;height:3px; }
+.kc-blue::after   { background:linear-gradient(90deg,#3b82f6,#60a5fa); }
+.kc-green::after  { background:linear-gradient(90deg,#10b981,#34d399); }
+.kc-purple::after { background:linear-gradient(90deg,#8b5cf6,#a78bfa); }
+.kpi-row  { display:flex; align-items:flex-start; justify-content:space-between; gap:8px; }
+.kpi-icon { width:38px; height:38px; border-radius:10px; flex-shrink:0; display:flex; align-items:center; justify-content:center; font-size:15px; }
+.kc-blue   .kpi-icon { background:rgba(59,130,246,.1);  color:#3b82f6; }
+.kc-green  .kpi-icon { background:rgba(16,185,129,.1);  color:#10b981; }
+.kc-purple .kpi-icon { background:rgba(139,92,246,.1);  color:#8b5cf6; }
+.kpi-val { font-size:1.9rem; font-weight:800; color:var(--text-1); line-height:1.05; letter-spacing:-.5px; margin-top:10px; }
+.kpi-lbl { font-size:.7rem; font-weight:700; color:var(--text-3); text-transform:uppercase; letter-spacing:.5px; }
+.kpi-foot { font-size:.72rem; color:var(--text-3); margin-top:6px; }
+
+/* ── Table card ────────────────────────────── */
+.cc {
+    background:var(--bg-card); border-radius:var(--r-lg);
+    border:1px solid var(--border); box-shadow:var(--sh-sm);
+    display:flex; flex-direction:column; overflow:hidden; margin-bottom:14px;
+}
+.cc-hd {
+    display:flex; align-items:center; justify-content:space-between;
+    padding:13px 18px 11px; border-bottom:1px solid var(--border);
+    background:linear-gradient(to right,#fafbff,#fff); gap:10px; flex-wrap:wrap;
+}
+.cc-hd-l { display:flex; align-items:center; gap:9px; }
+.cc-ico {
+    width:28px; height:28px; border-radius:7px; flex-shrink:0;
+    background:rgba(59,130,246,.1); color:#3b82f6;
+    display:flex; align-items:center; justify-content:center; font-size:12px;
+}
+.cc-title    { font-size:.88rem; font-weight:700; color:var(--text-1); }
+.cc-subtitle { font-size:.7rem; color:var(--text-3); margin-top:1px; }
+.cc-body.p0  { padding:0; }
+
+/* ── Teacher table ─────────────────────────── */
+.tmr-table { width:100%; border-collapse:collapse; font-size:.82rem; }
+.tmr-table thead th {
+    padding:9px 14px; text-align:left;
+    font-size:.68rem; font-weight:700; color:var(--text-3);
+    text-transform:uppercase; letter-spacing:.5px;
+    background:#f8f9fc; border-bottom:1px solid var(--border);
+    white-space:nowrap;
+}
+.tmr-table thead th.num { text-align:right; }
+.tmr-table tbody tr {
+    border-bottom:1px solid var(--border);
+    transition:background .15s;
+}
+.tmr-table tbody tr:last-child { border-bottom:none; }
+.tmr-table tbody tr:hover { background:#fafbff; }
+.tmr-table tbody tr.zero-row { opacity:.5; }
+.tmr-table tbody td { padding:10px 14px; vertical-align:middle; }
+.tmr-table tbody td.num { text-align:right; }
+
+/* Avatar + name */
+.t-av {
+    width:32px; height:32px; border-radius:50%; flex-shrink:0;
+    background:linear-gradient(135deg,#3b82f6,#6366f1);
+    color:#fff; font-size:.72rem; font-weight:700;
+    display:inline-flex; align-items:center; justify-content:center;
+}
+.t-av.zero { background:linear-gradient(135deg,#cbd5e1,#94a3b8); }
+.t-name-cell { display:flex; align-items:center; gap:9px; }
+.t-name      { font-weight:600; color:var(--text-1); }
+.t-classes   { font-size:.7rem; color:var(--text-3); margin-top:2px; }
+
+/* Status badges */
+.s-badge {
+    display:inline-flex; align-items:center; justify-content:center;
+    min-width:28px; padding:2px 8px; border-radius:5px;
+    font-size:.75rem; font-weight:700;
+}
+.s-completed { background:rgba(16,185,129,.1);  color:#059669; }
+.s-scheduled { background:rgba(59,130,246,.1);  color:#2563eb; }
+.s-cancelled { background:rgba(244,63,94,.1);   color:#e11d48; }
+.s-ongoing   { background:rgba(245,159,0,.1);   color:#d97706; }
+
+/* Bar */
+.t-bar-wrap  { display:flex; align-items:center; gap:8px; min-width:120px; }
+.t-bar-track { flex:1; height:6px; background:#f1f5f9; border-radius:3px; overflow:hidden; }
+.t-bar-fill  { height:100%; border-radius:3px; background:linear-gradient(90deg,#3b82f6,#6366f1); transition:width .4s ease; }
+
+/* Rank */
+.t-rank { display:inline-flex; align-items:center; justify-content:center; width:24px; font-size:.8rem; font-weight:700; }
+
+/* Zero badge */
+.zero-label { font-size:.72rem; color:#94a3b8; font-style:italic; }
+
+/* Export btn */
+.export-btn {
+    display:inline-flex; align-items:center; gap:6px;
+    padding:7px 14px; border-radius:var(--r-sm);
+    background:rgba(16,185,129,.1); border:1px solid rgba(16,185,129,.3);
+    color:#059669; font-size:.78rem; font-weight:700;
+    cursor:pointer; transition:all .15s; text-decoration:none;
+}
+.export-btn:hover { background:rgba(16,185,129,.2); }
+
+@@media print {
+    .tmr-topbar form, .export-btn, .period-pill { display:none !important; }
+    .cc { box-shadow:none !important; border:1px solid #e5e7eb !important; }
+    body { background:#fff !important; }
+}
+</style>
+}
+
+<!-- ════════ BACK BUTTON ════════ -->
+<div style="margin-bottom:14px">
+    <a href="/Admin/Reports/Index?FilterYear=@Model.FilterYear&FilterMonth=@Model.FilterMonth"
+       style="display:inline-flex;align-items:center;gap:7px;
+              padding:7px 15px;border-radius:var(--r-sm);
+              background:var(--bg-card);border:1.5px solid var(--border);
+              color:var(--text-2);font-size:.8rem;font-weight:700;text-decoration:none;
+              box-shadow:var(--sh-xs);transition:all .15s"
+       onmouseover="this.style.background='#f0f4ff';this.style.borderColor='#3b82f6';this.style.color='#2563eb'"
+       onmouseout="this.style.background='var(--bg-card)';this.style.borderColor='var(--border)';this.style.color='var(--text-2)'">
+        <i class="fas fa-arrow-left" style="font-size:11px"></i> Quay lại Thống kê
+    </a>
+</div>
+
+<!-- ════════ TOP BAR ════════ -->
+<form method="get" class="tmr-topbar">
+    <div class="tmr-topbar-icon"><i class="fas fa-chalkboard-user"></i></div>
+    <div>
+        <div class="tmr-title">Báo cáo buổi dạy giáo viên</div>
+        <div class="tmr-sub">Thống kê số buổi dạy theo tháng của từng giáo viên</div>
+    </div>
+    <div class="tmr-sep"></div>
+
+    <!-- Month -->
+    <select name="FilterMonth" class="tmr-sel" onchange="this.form.submit()">
+        @foreach (var y in Model.AvailableYears)
+        {
+            <option value="@(y)" selected="@(Model.FilterYear == y ? "selected" : null)">@(y)</option>
+        }
+
+    </select>
+
+    <!-- Year -->
+    <select name="FilterYear" class="tmr-sel" onchange="this.form.submit()">
+        @foreach (var y in Model.AvailableYears)
+        {
+            <option value="@(y)" selected="@(Model.FilterYear == y ? "selected" : null)">@(y)</option>
+        }
+    </select>
+
+    <div class="period-pill">
+        <i class="fas fa-calendar-alt"></i>
+        @Model.PeriodLabel
+    </div>
+
+    <a href="javascript:window.print()" class="export-btn" style="margin-left:8px">
+        <i class="fas fa-print"></i> In báo cáo
+    </a>
+</form>
+
+<!-- ════════ KPI STRIP ════════ -->
+<div class="kpi-strip">
+    <div class="kpi-card kc-blue">
+        <div class="kpi-row">
+            <div>
+                <div class="kpi-lbl">Tổng buổi hoàn thành</div>
+                <div class="kpi-val">@Model.TotalSessions</div>
+            </div>
+            <div class="kpi-icon"><i class="fas fa-check-circle"></i></div>
+        </div>
+        <div class="kpi-foot">Buổi dạy đã hoàn thành trong @Model.PeriodLabel</div>
+    </div>
+    <div class="kpi-card kc-green">
+        <div class="kpi-row">
+            <div>
+                <div class="kpi-lbl">Giáo viên có buổi dạy</div>
+                <div class="kpi-val">@Model.TotalTeachers</div>
+            </div>
+            <div class="kpi-icon"><i class="fas fa-user-tie"></i></div>
+        </div>
+        <div class="kpi-foot">Trên tổng @Model.Rows.Count giáo viên</div>
+    </div>
+    <div class="kpi-card kc-purple">
+        <div class="kpi-row">
+            <div>
+                <div class="kpi-lbl">Trung bình buổi / GV</div>
+                @{
+                    var avg = Model.TotalTeachers > 0
+                        ? Math.Round((double)Model.TotalSessions / Model.TotalTeachers, 1)
+                        : 0;
+                }
+                <div class="kpi-val">@avg</div>
+            </div>
+            <div class="kpi-icon"><i class="fas fa-chart-bar"></i></div>
+        </div>
+        <div class="kpi-foot">Buổi hoàn thành trung bình mỗi giáo viên</div>
+    </div>
+</div>
+
+<!-- ════════ TABLE ════════ -->
+<div class="cc">
+    <div class="cc-hd">
+        <div class="cc-hd-l">
+            <div class="cc-ico"><i class="fas fa-table-list"></i></div>
+            <div>
+                <div class="cc-title">Chi tiết buổi dạy từng giáo viên</div>
+                <div class="cc-subtitle">@Model.PeriodLabel — Giáo viên không có buổi dạy hiển thị ở cuối</div>
+            </div>
+        </div>
+    </div>
+    <div class="cc-body p0">
+        @if(hasData || Model.Rows.Any()){
+        <table class="tmr-table">
+            <thead>
+                <tr>
+                    <th style="width:36px">#</th>
+                    <th>Giáo viên</th>
+                    <th class="num">Hoàn thành</th>
+                    <th class="num">Đã lên lịch</th>
+                    <th class="num">Đã hủy</th>
+                    <th class="num">Tổng buổi</th>
+                    <th>Tiến độ</th>
+                </tr>
+            </thead>
+            <tbody>
+                @{ int rank = 0; }
+                @foreach(var r in Model.Rows){
+                    bool isZero = r.TotalSessions == 0;
+                    if(!isZero) rank++;
+                    string rankLabel = isZero ? "—" : rank == 1 ? "🥇" : rank == 2 ? "🥈" : rank == 3 ? "🥉" : rank.ToString();
+                    double barPct = maxCompleted > 0 ? (double)r.Completed / maxCompleted * 100 : 0;
+
+                    <tr class="@(isZero ? "zero-row" : "")">
+                        <td><span class="t-rank">@rankLabel</span></td>
+                        <td>
+                            <div class="t-name-cell">
+                                <div class="t-av @(isZero ? "zero" : "")">@r.Initials</div>
+                                <div>
+                                    <div class="t-name">@r.TeacherName</div>
+                                    @if(!isZero){
+                                        <div class="t-classes">@r.ClassCount lớp</div>
+                                    }
+                                </div>
+                            </div>
+                        </td>
+                        <td class="num">
+                            @if(r.Completed > 0){
+                                <span class="s-badge s-completed">@r.Completed</span>
+                            } else {
+                                <span class="zero-label">0</span>
+                            }
+                        </td>
+                        <td class="num">
+                            @if(r.Scheduled > 0){
+                                <span class="s-badge s-scheduled">@r.Scheduled</span>
+                            } else {
+                                <span class="zero-label">0</span>
+                            }
+                        </td>
+                        <td class="num">
+                            @if(r.Cancelled > 0){
+                                <span class="s-badge s-cancelled">@r.Cancelled</span>
+                            } else {
+                                <span class="zero-label">0</span>
+                            }
+                        </td>
+                        <td class="num" style="font-weight:700;color:var(--text-1)">
+                            @if(isZero){
+                                <span class="zero-label">Không có</span>
+                            } else {
+                                @r.TotalSessions
+                            }
+                        </td>
+                        <td>
+                            @if(!isZero){
+                                <div class="t-bar-wrap">
+                                    <div class="t-bar-track">
+                                        <div class="t-bar-fill" style="width:@(barPct.ToString("F1"))%"></div>
+                                    </div>
+                                    <span style="font-size:.72rem;font-weight:700;color:var(--text-2);min-width:24px">@r.Completed</span>
+                                </div>
+                            } else {
+                                <span class="zero-label">—</span>
+                            }
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+        } else {
+            <div style="text-align:center;padding:60px 20px;color:var(--text-3);font-size:.85rem">
+                <i class="fas fa-chalkboard-user" style="font-size:36px;opacity:.2;display:block;margin-bottom:12px"></i>
+                Không có dữ liệu buổi dạy trong <strong>@Model.PeriodLabel</strong>
+            </div>
+        }
+    </div>
+</div>

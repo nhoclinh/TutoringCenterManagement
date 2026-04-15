@@ -1,0 +1,757 @@
+﻿@page
+@model TutoringCenterManagement.Pages.Admin.Rooms.IndexModel
+@{
+    ViewData["Title"] = "Quản lý phòng học";
+
+    var totalRooms    = Model.Rooms.Count;
+    var totalCapacity = Model.Rooms.Sum(r => r.Capacity);
+    var avgCapacity   = totalRooms > 0 ? (int)Math.Round((double)totalCapacity / totalRooms) : 0;
+    var maxRoom       = Model.Rooms.OrderByDescending(r => r.Capacity).FirstOrDefault();
+}
+
+@section Styles {
+<style>
+/* ════════════════════════════════════
+   ROOMS PAGE — đồng bộ design system
+════════════════════════════════════ */
+
+/* ── Summary chips ── */
+.summary-bar { display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 20px; }
+
+.summary-chip {
+    display: flex; align-items: center; gap: 8px;
+    padding: 8px 14px; border-radius: var(--r-sm);
+    background: var(--bg-card); border: 1px solid var(--border);
+    box-shadow: var(--sh-xs); font-size: .8rem; font-weight: 600;
+    color: var(--text-2); white-space: nowrap;
+}
+
+    .summary-chip .chip-icon {
+        width: 26px; height: 26px; border-radius: 6px;
+        display: flex; align-items: center; justify-content: center;
+        font-size: 11px; flex-shrink: 0;
+    }
+
+.chip-icon.rooms    { background: rgba(232,89,12,.1);   color: #e8590c; }
+.chip-icon.capacity { background: rgba(59,130,246,.1);  color: #3b82f6; }
+.chip-icon.avg      { background: rgba(16,185,129,.1);  color: #10b981; }
+.chip-icon.largest  { background: rgba(245,159,0,.1);   color: #f59f00; }
+
+.summary-chip .chip-num { font-weight: 800; color: var(--text-1); font-size: .88rem; }
+
+/* ── IE dropdown button ── */
+.ie-dropdown { position: relative; display: inline-block; }
+
+.ie-menu {
+    display: none;
+    position: absolute;
+    top: calc(100% + 6px);
+    right: 0;
+    min-width: 210px;
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: var(--r-md);
+    box-shadow: 0 8px 28px rgba(0,0,0,.11);
+    z-index: 500;
+    overflow: hidden;
+    animation: ieMenuIn .15s ease;
+}
+
+.ie-dropdown.open .ie-menu { display: block; }
+
+.ie-item {
+    display: flex; align-items: center; gap: 10px;
+    padding: 10px 14px;
+    font-size: .83rem; font-weight: 600; color: var(--text-2);
+    text-decoration: none; border-bottom: 1px solid var(--border);
+    transition: background .12s;
+}
+
+    .ie-item:last-child { border-bottom: none; }
+    .ie-item:hover { background: #f5f7ff; color: var(--c-primary); }
+
+.ie-item-icon {
+    width: 28px; height: 28px; border-radius: 7px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 12px; flex-shrink: 0;
+}
+
+.ie-item-icon.green { background: #dcfce7; color: #059669; }
+.ie-item-icon.blue  { background: #dbeafe; color: #2563eb; }
+.ie-item-icon.slate { background: #e2e8f0; color: #475569; }
+
+.ie-item-title {
+    font-weight: 700;
+    color: var(--text-1);
+    font-size: .83rem;
+}
+
+.ie-item-desc {
+    font-size: .72rem;
+    color: var(--text-3);
+    margin-top: 1px;
+}
+
+@@keyframes ieMenuIn {
+    from { opacity: 0; transform: translateY(-6px); }
+    to   { opacity: 1; transform: translateY(0); }
+}
+
+/* ── Filter card ── */
+.filter-card {
+    background: var(--bg-card); border-radius: var(--r-lg);
+    border: 1px solid var(--border); box-shadow: var(--sh-sm);
+    padding: 14px 20px; margin-bottom: 20px;
+}
+
+.filter-row { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+
+.search-wrap { position: relative; flex: 1; min-width: 200px; }
+
+    .search-wrap .s-icon {
+        position: absolute; left: 0px; top: 0; bottom: 0;
+        display: flex; align-items: center; color: var(--text-3);
+        font-size: 12px; pointer-events: none; transition: color .15s;
+    }
+
+    .search-wrap:focus-within .s-icon { color: var(--c-primary); }
+
+.search-input {
+    width: 100%; height: 36px; padding: 0 11px 0 32px;
+    border: 1.5px solid var(--border); border-radius: var(--r-sm);
+    background: #f8f9fc; color: var(--text-1); font-size: .83rem;
+    font-family: 'Plus Jakarta Sans', system-ui, sans-serif;
+    outline: none; box-sizing: border-box;
+    transition: border-color .15s, background .15s, box-shadow .15s;
+}
+
+    .search-input:focus { border-color: var(--c-primary); background: #fff; box-shadow: inset 0 0 0 2px rgba(232,89,12,.12); }
+    .search-input::placeholder { color: var(--text-3); font-size: .8rem; }
+
+.sort-select {
+    height: 36px; padding: 0 30px 0 11px;
+    border: 1.5px solid var(--border); border-radius: var(--r-sm);
+    background: #f8f9fc; color: var(--text-1); font-size: .83rem;
+    font-family: 'Plus Jakarta Sans', system-ui, sans-serif; font-weight: 500;
+    outline: none; cursor: pointer; -webkit-appearance: none; appearance: none;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='10' viewBox='0 0 24 24' fill='none' stroke='%239aa0b4' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E");
+    background-repeat: no-repeat; background-position: right 9px center;
+    transition: border-color .15s;
+}
+
+    .sort-select:hover { border-color: #c4c9d8; }
+    .sort-select:focus { border-color: var(--c-primary); box-shadow: inset 0 0 0 2px rgba(232,89,12,.12); outline: none; }
+
+.filter-count {
+    font-size: .75rem; font-weight: 600; color: var(--text-3);
+    background: var(--bg-page); border: 1px solid var(--border);
+    padding: 4px 12px; border-radius: 50px; white-space: nowrap;
+}
+
+/* ── Table card ── */
+.table-card {
+    background: var(--bg-card); border-radius: var(--r-lg);
+    border: 1px solid var(--border); box-shadow: var(--sh-sm); overflow: hidden;
+}
+
+.table-card-hd {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 14px 20px; border-bottom: 1px solid var(--border);
+    background: linear-gradient(to right, #fafbff, #fff);
+    flex-wrap: wrap; gap: 10px;
+}
+
+.table-card-title { display: flex; align-items: center; gap: 9px; font-size: .92rem; font-weight: 700; color: var(--text-1); }
+
+.ct-icon {
+    width: 28px; height: 28px; border-radius: 7px;
+    background: rgba(232,89,12,.1); color: var(--c-primary);
+    display: flex; align-items: center; justify-content: center; font-size: 12px;
+}
+
+/* ── Room table ── */
+.room-table { width: 100%; border-collapse: separate; border-spacing: 0; table-layout: fixed; }
+
+    .room-table thead th {
+        padding: 11px 14px; font-size: .7rem; font-weight: 700;
+        text-transform: uppercase; letter-spacing: .7px;
+        color: var(--text-2); background: #f4f6fc;
+        border-bottom: 2px solid var(--border); white-space: nowrap;
+    }
+
+        .room-table thead th:first-child { padding-left: 20px; }
+        .room-table thead th:last-child  { padding-right: 20px; text-align: right; }
+
+    .room-table tbody td {
+        padding: 14px 14px; font-size: .83rem; color: var(--text-1);
+        border-bottom: 1px solid #f0f2f8; vertical-align: middle;
+    }
+
+        .room-table tbody td:first-child { padding-left: 20px; }
+        .room-table tbody td:last-child  { padding-right: 20px; }
+
+    .room-table tbody tr:last-child td { border-bottom: none; }
+    .room-table tbody tr:hover td { background: #f8faff; }
+
+    .room-table .col-room     { width: auto; }
+    .room-table .col-code     { width: 110px; }
+    .room-table .col-capacity { width: 180px; }
+    .room-table .col-note     { width: 220px; }
+    .room-table .col-actions  { width: 100px; }
+
+/* ── Room cell ── */
+.room-cell { display: flex; align-items: center; gap: 11px; }
+
+.room-avatar {
+    width: 38px; height: 38px; border-radius: 10px;
+    background: linear-gradient(135deg, var(--c-primary), #f59f00);
+    box-shadow: 0 2px 8px var(--c-glow);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 15px; color: #fff; flex-shrink: 0;
+}
+
+    .room-avatar.sm { background: linear-gradient(135deg,#10b981,#34d399); box-shadow: 0 2px 8px rgba(16,185,129,.25); }
+    .room-avatar.md { background: linear-gradient(135deg,#3b82f6,#60a5fa); box-shadow: 0 2px 8px rgba(59,130,246,.25); }
+    .room-avatar.lg { background: linear-gradient(135deg,#e8590c,#f59f00); box-shadow: 0 2px 8px rgba(232,89,12,.25); }
+    .room-avatar.xl { background: linear-gradient(135deg,#f43f5e,#fb7185); box-shadow: 0 2px 8px rgba(244,63,94,.25); }
+
+.room-name { font-weight: 700; color: var(--text-1); font-size: .86rem; }
+.room-id   { font-size: .7rem; color: var(--text-3); margin-top: 1px; }
+
+/* ── Code badge ── */
+.code-badge {
+    display: inline-flex; align-items: center; gap: 5px;
+    padding: 4px 10px; border-radius: var(--r-sm);
+    background: rgba(232,89,12,.08); border: 1px solid rgba(232,89,12,.2);
+    color: var(--c-primary); font-size: .75rem; font-weight: 800;
+    letter-spacing: .5px; font-family: 'Courier New', monospace;
+}
+
+/* ── Capacity bar ── */
+.capacity-wrap  { display: flex; flex-direction: column; gap: 5px; }
+.capacity-top   { display: flex; align-items: center; justify-content: space-between; }
+.capacity-num   { font-size: .82rem; font-weight: 700; color: var(--text-1); }
+.capacity-lbl   { font-size: .68rem; color: var(--text-3); font-weight: 500; }
+.cap-bar        { height: 5px; border-radius: 99px; background: #eef0f8; overflow: hidden; }
+.cap-fill       { height: 100%; border-radius: 99px; transition: width .4s ease; }
+
+    .cap-fill.sm { background: linear-gradient(90deg,#10b981,#34d399); }
+    .cap-fill.md { background: linear-gradient(90deg,#3b82f6,#60a5fa); }
+    .cap-fill.lg { background: linear-gradient(90deg,#e8590c,#f59f00); }
+    .cap-fill.xl { background: linear-gradient(90deg,#f43f5e,#fb7185); }
+
+/* ── Note cell ── */
+.note-text  { font-size: .8rem; color: var(--text-2); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 200px; }
+.note-empty { color: var(--text-3); font-style: italic; font-size: .78rem; }
+
+/* ── Action buttons ── */
+.action-group { display: flex; align-items: center; justify-content: flex-end; gap: 5px; }
+
+.act-btn {
+    width: 34px; height: 34px; border-radius: var(--r-sm);
+    display: inline-flex; align-items: center; justify-content: center;
+    border: 1.5px solid var(--border); background: #fff; font-size: 13px;
+    cursor: pointer; text-decoration: none !important; color: var(--text-2);
+    flex-shrink: 0; transition: all .15s;
+}
+
+    .act-btn:hover { transform: translateY(-1px); box-shadow: 0 4px 12px rgba(0,0,0,.1); }
+    .act-btn.edit:hover   { border-color: #3b82f6; color: #3b82f6; background: #eff6ff; }
+    .act-btn.delete:hover { border-color: #f43f5e; color: #e03131; background: #fff1f2; }
+
+/* ── Empty state ── */
+.empty-row td { padding: 64px 20px !important; text-align: center; background: transparent !important; border-bottom: none !important; }
+.empty-icon   { width: 64px; height: 64px; border-radius: 50%; background: var(--bg-page); margin: 0 auto 14px; display: flex; align-items: center; justify-content: center; font-size: 24px; color: var(--text-3); }
+.empty-title  { font-size: .95rem; font-weight: 700; color: var(--text-1); margin-bottom: 6px; }
+.empty-desc   { font-size: .8rem; color: var(--text-2); }
+
+/* ── Table footer ── */
+.table-foot { display: flex; align-items: center; justify-content: space-between; padding: 13px 20px; border-top: 1px solid var(--border); background: #f9fafd; flex-wrap: wrap; gap: 10px; }
+.foot-info  { font-size: .78rem; color: var(--text-2); font-weight: 500; }
+
+/* ── Toast ── */
+.toast-wrap { position: fixed; top: 20px; right: 20px; z-index: 9999; display: flex; flex-direction: column; gap: 8px; }
+
+.toast-item {
+    display: flex; align-items: center; gap: 10px;
+    padding: 12px 16px; border-radius: var(--r-md);
+    background: #fff; border: 1px solid var(--border);
+    box-shadow: 0 8px 24px rgba(0,0,0,.12);
+    font-size: .83rem; font-weight: 600; color: var(--text-1);
+    min-width: 260px; max-width: 360px;
+    animation: toastIn .3s cubic-bezier(.34,1.4,.64,1);
+}
+
+    .toast-item.success { border-left: 4px solid #10b981; }
+    .toast-item.error   { border-left: 4px solid #f43f5e; }
+
+.toast-icon { font-size: 16px; flex-shrink: 0; }
+.toast-item.success .toast-icon { color: #10b981; }
+.toast-item.error   .toast-icon { color: #f43f5e; }
+.toast-close { margin-left: auto; background: none; border: none; color: var(--text-3); cursor: pointer; font-size: 12px; padding: 0 2px; flex-shrink: 0; }
+.toast-close:hover { color: var(--text-1); }
+
+@@keyframes toastIn {
+    from { opacity: 0; transform: translateX(20px); }
+    to   { opacity: 1; transform: translateX(0); }
+}
+
+/* ── Confirm modal ── */
+.cm-backdrop {
+    visibility: hidden; opacity: 0; pointer-events: none;
+    position: fixed; inset: 0; z-index: 9990;
+    background: rgba(15,17,23,.52);
+    backdrop-filter: blur(3px); -webkit-backdrop-filter: blur(3px);
+    transition: opacity .2s, visibility .2s;
+}
+
+.cm-modal {
+    visibility: hidden; opacity: 0; pointer-events: none;
+    position: fixed; inset: 0; z-index: 9991;
+    display: flex; align-items: center; justify-content: center;
+    padding: 16px; transition: opacity .2s, visibility .2s;
+}
+
+    .cm-backdrop.cm-open, .cm-modal.cm-open { visibility: visible; opacity: 1; pointer-events: all; }
+
+.cm-box {
+    background: #fff; border-radius: var(--r-xl);
+    box-shadow: 0 24px 56px rgba(0,0,0,.18), 0 8px 20px rgba(0,0,0,.08);
+    width: 100%; max-width: 380px; overflow: hidden;
+    transform: scale(.94) translateY(10px);
+    transition: transform .22s cubic-bezier(.34,1.4,.64,1);
+}
+
+.cm-modal.cm-open .cm-box { transform: scale(1) translateY(0); }
+
+.cm-head { display: flex; align-items: center; gap: 12px; padding: 18px 20px 14px; }
+
+.cm-icon-wrap { width: 42px; height: 42px; border-radius: var(--r-md); display: flex; align-items: center; justify-content: center; font-size: 18px; flex-shrink: 0; background: #fff1f2; color: #e03131; }
+
+.cm-head-text h6 { font-size: .95rem; font-weight: 800; color: var(--text-1); margin: 0 0 2px; }
+.cm-head-text p  { font-size: .8rem; color: var(--text-2); margin: 0; }
+
+.cm-body-msg { padding: 4px 20px 16px; font-size: .83rem; color: var(--text-2); line-height: 1.6; }
+.cm-body-msg strong { color: var(--text-1); }
+
+.cm-foot { display: flex; justify-content: flex-end; gap: 8px; padding: 14px 20px; border-top: 1px solid var(--border); background: #f9fafd; }
+
+/* ── Responsive ── */
+@@media (max-width: 768px) {
+    .summary-bar { gap: 8px; }
+    .filter-row  { flex-direction: column; align-items: stretch; }
+    .search-wrap { min-width: unset; }
+    .room-table .col-note     { display: none; }
+    .room-table .col-code     { width: 90px; }
+    .room-table .col-capacity { width: 140px; }
+}
+
+@@media (max-width: 500px) { .room-table .col-capacity { display: none; } }
+</style>
+}
+
+<div class="toast-wrap" id="toastWrap"></div>
+
+<!-- ════════════════════════════════════════
+     PAGE HEADER
+════════════════════════════════════════ -->
+<div class="page-header">
+    <div>
+        <h1 class="page-heading">Quản lý <span>phòng học</span></h1>
+        <p class="page-subheading">
+            <i class="fas fa-circle-info" style="color:var(--c-primary)"></i>
+            Tổng cộng <strong style="color:var(--text-1)">@totalRooms</strong> phòng học ·
+            Tổng sức chứa <strong style="color:var(--text-1)">@totalCapacity</strong> chỗ
+        </p>
+    </div>
+    <div class="page-actions">
+
+        <!-- ── IE dropdown ── -->
+        <div class="ie-dropdown" id="ieDropdownWrap">
+            <button class="btn-outline" id="ieDropdownBtn"
+                    style="padding:0 16px;white-space:nowrap;display:flex;align-items:center;height:38px;box-sizing:border-box"
+                    onclick="toggleIeMenu(event)">
+                <i class="fas fa-file-excel"></i> Import / Export
+                <i class="fas fa-chevron-down" style="font-size:10px;margin-left:4px"></i>
+            </button>
+            <div class="ie-menu" id="ieMenu">
+                <a href="/Admin/Rooms/ImportExport?handler=Export" class="ie-item">
+                    <i class="fas fa-file-arrow-down" style="color:#10b981"></i>
+                    <div>
+                        <div class="ie-item-title">Export Excel</div>
+                        <div class="ie-item-desc">Tải xuống toàn bộ danh sách</div>
+                    </div>
+                </a>
+                <a href="/Admin/Rooms/ImportExport" class="ie-item">
+                    <i class="fas fa-file-arrow-up" style="color:#3b82f6"></i>
+                    <div>
+                        <div class="ie-item-title">Import Excel</div>
+                        <div class="ie-item-desc">Thêm phòng học hàng loạt</div>
+                    </div>
+                </a>
+                <a href="/Admin/Rooms/ImportExport?handler=Template" class="ie-item">
+                    <i class="fas fa-file-alt" style="color:#f59f00"></i>
+                    <div>
+                        <div class="ie-item-title">Tải file mẫu</div>
+                        <div class="ie-item-desc">Template trống để nhập liệu</div>
+                    </div>
+                </a>
+            </div>
+        </div>
+
+        <a href="/Admin/Rooms/Create" class="btn-brand" style="height:38px;display:inline-flex;align-items:center;box-sizing:border-box;">
+            <i class="fas fa-plus"></i> Thêm phòng
+        </a>
+    </div>
+</div>
+
+<!-- ════════════════════════════════════════
+     SUMMARY CHIPS
+════════════════════════════════════════ -->
+<div class="summary-bar">
+    <div class="summary-chip">
+        <div class="chip-icon rooms"><i class="fas fa-door-open"></i></div>
+        <span>Tổng phòng</span>
+        <span class="chip-num">@totalRooms</span>
+    </div>
+    <div class="summary-chip">
+        <div class="chip-icon capacity"><i class="fas fa-users"></i></div>
+        <span>Tổng sức chứa</span>
+        <span class="chip-num">@totalCapacity</span>
+    </div>
+    <div class="summary-chip">
+        <div class="chip-icon avg"><i class="fas fa-chart-bar"></i></div>
+        <span>Trung bình</span>
+        <span class="chip-num">@avgCapacity chỗ</span>
+    </div>
+    @if (maxRoom != null)
+    {
+        <div class="summary-chip">
+            <div class="chip-icon largest"><i class="fas fa-trophy"></i></div>
+            <span>Lớn nhất</span>
+            <span class="chip-num">@maxRoom.RoomCode (@maxRoom.Capacity)</span>
+        </div>
+    }
+</div>
+
+<!-- ════════════════════════════════════════
+     FILTER / SEARCH
+════════════════════════════════════════ -->
+<div class="filter-card">
+    <div class="filter-row">
+        <div class="search-wrap">
+            <span class="s-icon"><i class="fas fa-search"></i></span>
+            <input type="text" id="roomSearch" class="search-input"
+                   placeholder="Tìm theo mã phòng, tên phòng..." />
+        </div>
+        <select id="roomSort" class="sort-select">
+            <option value="default">Sắp xếp mặc định</option>
+            <option value="name-asc">Tên A → Z</option>
+            <option value="name-desc">Tên Z → A</option>
+            <option value="cap-asc">Sức chứa tăng dần</option>
+            <option value="cap-desc">Sức chứa giảm dần</option>
+            <option value="code-asc">Mã phòng A → Z</option>
+        </select>
+        <span class="filter-count" id="filterCount">@totalRooms phòng</span>
+    </div>
+</div>
+
+<!-- ════════════════════════════════════════
+     ROOM TABLE
+════════════════════════════════════════ -->
+<div class="table-card">
+
+    <div class="table-card-hd">
+        <div class="table-card-title">
+            <div class="ct-icon"><i class="fas fa-door-open"></i></div>
+            Danh sách phòng học
+        </div>
+        <span style="font-size:.75rem;color:var(--text-3);font-weight:500">
+            Tổng sức chứa:
+            <strong style="color:var(--text-1)">@totalCapacity chỗ</strong>
+        </span>
+    </div>
+
+    <div style="overflow-x:auto">
+        <table class="room-table" id="roomTable">
+            <colgroup>
+                <col class="col-room">
+                <col class="col-code">
+                <col class="col-capacity">
+                <col class="col-note">
+                <col class="col-actions">
+            </colgroup>
+            <thead>
+                <tr>
+                    <th class="col-room">Phòng học</th>
+                    <th class="col-code">Mã phòng</th>
+                    <th class="col-capacity">Sức chứa</th>
+                    <th class="col-note">Ghi chú</th>
+                    <th class="col-actions">Thao tác</th>
+                </tr>
+            </thead>
+            <tbody id="roomTableBody">
+                @if (Model.Rooms.Any())
+                {
+                    @foreach (var room in Model.Rooms)
+                    {
+                        var capClass = room.Capacity <= 15 ? "sm"
+                                     : room.Capacity <= 25 ? "md"
+                                     : room.Capacity <= 35 ? "lg"
+                                     : "xl";
+
+                        var capPct = maxRoom != null && maxRoom.Capacity > 0
+                            ? (int)Math.Min(100, Math.Round((double)room.Capacity / maxRoom.Capacity * 100))
+                            : 0;
+
+                        <tr data-name="@room.RoomName.ToLower()"
+                            data-code="@room.RoomCode.ToLower()"
+                            data-capacity="@room.Capacity">
+
+                            <td class="col-room">
+                                <div class="room-cell">
+                                    <div class="room-avatar @capClass">
+                                        <i class="fas fa-door-open"></i>
+                                    </div>
+                                    <div>
+                                        <div class="room-name">@room.RoomName</div>
+                                        <div class="room-id">#@room.RoomId</div>
+                                    </div>
+                                </div>
+                            </td>
+
+                            <td class="col-code">
+                                <span class="code-badge">@room.RoomCode</span>
+                            </td>
+
+                            <td class="col-capacity">
+                                <div class="capacity-wrap">
+                                    <div class="capacity-top">
+                                        <span class="capacity-num">@room.Capacity</span>
+                                        <span class="capacity-lbl">chỗ ngồi</span>
+                                    </div>
+                                    <div class="cap-bar">
+                                        <div class="cap-fill @capClass" style="width:@(capPct)%"></div>
+                                    </div>
+                                </div>
+                            </td>
+
+                            <td class="col-note">
+                                @if (!string.IsNullOrEmpty(room.Note))
+                                {
+                                    <span class="note-text" title="@room.Note">@room.Note</span>
+                                }
+                                else
+                                {
+                                    <span class="note-empty">—</span>
+                                }
+                            </td>
+
+                            <td class="col-actions">
+                                <div class="action-group">
+                                    <a href="/Admin/Rooms/Edit?id=@room.RoomId"
+                                       class="act-btn edit" title="Chỉnh sửa">
+                                        <i class="fas fa-pen-to-square"></i>
+                                    </a>
+                                    <button type="button"
+                                            class="act-btn delete"
+                                            title="Xóa phòng"
+                                            onclick="confirmDelete(@room.RoomId, '@room.RoomCode', '@room.RoomName.Replace("'","\\'")')">
+                                        <i class="fas fa-trash-can"></i>
+                                    </button>
+                                </div>
+                            </td>
+                        </tr>
+                    }
+                }
+                else
+                {
+                    <tr class="empty-row">
+                        <td colspan="5">
+                            <div class="empty-icon"><i class="fas fa-door-open"></i></div>
+                            <div class="empty-title">Chưa có phòng học nào</div>
+                            <div class="empty-desc">Bấm "Thêm phòng" để tạo phòng học đầu tiên</div>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+
+    @if (Model.Rooms.Any())
+    {
+        <div class="table-foot">
+            <span class="foot-info" id="footInfo">
+                Hiển thị <strong>@totalRooms</strong> phòng học
+            </span>
+        </div>
+    }
+
+</div>
+
+<!-- Delete form (hidden) -->
+<form id="deleteForm" method="post" style="display:none">
+    <input type="hidden" name="roomId" id="roomId" />
+    @Html.AntiForgeryToken()
+</form>
+
+<!-- Confirm modal -->
+<div class="cm-backdrop" id="cmBackdrop"></div>
+<div class="cm-modal" id="cmModal" role="dialog" aria-modal="true">
+    <div class="cm-box">
+        <div class="cm-head">
+            <div class="cm-icon-wrap"><i class="fas fa-trash-can"></i></div>
+            <div class="cm-head-text">
+                <h6>Xóa phòng học</h6>
+                <p>Hành động này không thể hoàn tác</p>
+            </div>
+        </div>
+        <div class="cm-body-msg" id="cmMsg"></div>
+        <div class="cm-foot">
+            <button class="btn-outline" id="cmCancel" style="padding:7px 16px;font-size:.82rem">
+                <i class="fas fa-times"></i> Hủy
+            </button>
+            <button class="btn-brand" id="cmConfirm"
+                    style="padding:7px 18px;font-size:.82rem;background:linear-gradient(135deg,#f43f5e,#e03131)">
+                <i class="fas fa-trash-can"></i> Xóa phòng
+            </button>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+<script>
+(function () {
+
+    /* ── Toast ── */
+    function showToast(msg, type) {
+        var wrap = document.getElementById('toastWrap');
+        var t = document.createElement('div');
+        t.className = 'toast-item ' + (type || 'success');
+        t.innerHTML =
+            '<i class="fas ' + (type === 'error' ? 'fa-circle-xmark' : 'fa-circle-check') + ' toast-icon"></i>' +
+            '<span>' + msg + '</span>' +
+            '<button class="toast-close" onclick="this.parentElement.remove()"><i class="fas fa-times"></i></button>';
+        wrap.appendChild(t);
+        setTimeout(function () { if (t.parentElement) t.remove(); }, 4000);
+    }
+
+    @if (TempData["SuccessMessage"] != null)
+    {
+        <text>document.addEventListener('DOMContentLoaded', function () {
+            showToast('@Html.Raw(TempData["SuccessMessage"].ToString().Replace("'","\\'"  ))', 'success');
+        });</text>
+    }
+    @if (TempData["ErrorMessage"] != null)
+    {
+        <text>document.addEventListener('DOMContentLoaded', function () {
+            showToast('@Html.Raw(TempData["ErrorMessage"].ToString().Replace("'","\\'"  ))', 'error');
+        });</text>
+    }
+
+    /* ── IE dropdown ── */
+    window.toggleIeMenu = function (e) {
+        e.stopPropagation();
+        document.getElementById('ieDropdownWrap').classList.toggle('open');
+    };
+    document.addEventListener('click', function () {
+        document.getElementById('ieDropdownWrap')?.classList.remove('open');
+    });
+
+    /* ── Portal modal ── */
+    document.addEventListener('DOMContentLoaded', function () {
+        ['cmBackdrop', 'cmModal'].forEach(function (id) {
+            var el = document.getElementById(id);
+            if (el && el.parentNode !== document.body) document.body.appendChild(el);
+        });
+    });
+
+    /* ── Confirm delete modal ── */
+    var pendingId = null;
+
+    window.confirmDelete = function (roomId, roomCode, roomName) {
+        pendingId = roomId;
+        document.getElementById('cmMsg').innerHTML =
+            'Bạn có chắc muốn xóa phòng <strong>' + roomCode + '</strong> — ' + roomName + '? ' +
+            'Tất cả dữ liệu liên quan sẽ bị mất.';
+        document.getElementById('cmBackdrop').classList.add('cm-open');
+        document.getElementById('cmModal').classList.add('cm-open');
+    };
+
+    function closeModal() {
+        document.getElementById('cmBackdrop').classList.remove('cm-open');
+        document.getElementById('cmModal').classList.remove('cm-open');
+        pendingId = null;
+    }
+
+    document.getElementById('cmConfirm').addEventListener('click', function () {
+        if (pendingId !== null) {
+            document.getElementById('roomId').value = pendingId;
+            var f = document.getElementById('deleteForm');
+            f.action = '/Admin/Rooms/Index?handler=Delete';
+            f.submit();
+        }
+        closeModal();
+    });
+    document.getElementById('cmCancel').addEventListener('click', closeModal);
+    document.getElementById('cmBackdrop').addEventListener('click', closeModal);
+    document.addEventListener('keydown', function (e) { if (e.key === 'Escape') closeModal(); });
+
+    /* ── Client-side search + sort ── */
+    var searchInput = document.getElementById('roomSearch');
+    var sortSelect  = document.getElementById('roomSort');
+    var tbody       = document.getElementById('roomTableBody');
+    var footInfo    = document.getElementById('footInfo');
+    var filterCount = document.getElementById('filterCount');
+    var allRows     = Array.from(tbody ? tbody.querySelectorAll('tr[data-name]') : []);
+
+    function applyFilter() {
+        var q    = searchInput ? searchInput.value.trim().toLowerCase() : '';
+        var sort = sortSelect  ? sortSelect.value : 'default';
+
+        var visible = allRows.filter(function (row) {
+            if (!q) return true;
+            return row.dataset.name.includes(q) || row.dataset.code.includes(q);
+        });
+
+        visible.sort(function (a, b) {
+            switch (sort) {
+                case 'name-asc':  return a.dataset.name.localeCompare(b.dataset.name, 'vi');
+                case 'name-desc': return b.dataset.name.localeCompare(a.dataset.name, 'vi');
+                case 'cap-asc':   return parseInt(a.dataset.capacity) - parseInt(b.dataset.capacity);
+                case 'cap-desc':  return parseInt(b.dataset.capacity) - parseInt(a.dataset.capacity);
+                case 'code-asc':  return a.dataset.code.localeCompare(b.dataset.code, 'vi');
+                default:          return 0;
+            }
+        });
+
+        allRows.forEach(function (r) { r.style.display = 'none'; });
+        visible.forEach(function (r) { r.style.display = ''; tbody.appendChild(r); });
+
+        var cnt = visible.length;
+        if (filterCount) filterCount.textContent = cnt + ' phòng';
+        if (footInfo) footInfo.innerHTML = 'Hiển thị <strong>' + cnt + '</strong> phòng học';
+
+        var jsEmpty = tbody.querySelector('.js-empty');
+        if (cnt === 0 && allRows.length > 0) {
+            if (!jsEmpty) {
+                var tr = document.createElement('tr');
+                tr.className = 'empty-row js-empty';
+                tr.innerHTML = '<td colspan="5">' +
+                    '<div class="empty-icon"><i class="fas fa-magnifying-glass"></i></div>' +
+                    '<div class="empty-title">Không tìm thấy phòng học</div>' +
+                    '<div class="empty-desc">Thử thay đổi từ khoá tìm kiếm</div>' +
+                    '</td>';
+                tbody.appendChild(tr);
+            }
+        } else {
+            if (jsEmpty) jsEmpty.remove();
+        }
+    }
+
+    if (searchInput) searchInput.addEventListener('input', applyFilter);
+    if (sortSelect)  sortSelect.addEventListener('change', applyFilter);
+
+})();
+</script>
+}

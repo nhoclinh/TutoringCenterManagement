@@ -1,0 +1,641 @@
+﻿@page
+@model TutoringCenterManagement.Pages.Account.LoginModel
+@{
+    Layout = null;
+}
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Đăng nhập | TÂM TRÍ</title>
+
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="~/lib/bootstrap/css/bootstrap.min.css" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
+
+    <style>
+        /* ═══════════════════════════════════
+                   TOKENS  — đồng bộ với _Layout
+                ═══════════════════════════════════ */
+        :root {
+            --c-primary: #e8590c;
+            --c-secondary: #f59f00;
+            --c-gradient: linear-gradient(135deg, #e8590c 0%, #f59f00 100%);
+            --c-glow: rgba(232, 89, 12, .22);
+            --sb-bg: #0f1117;
+            --bg-page: #eef1f8;
+            --bg-card: #ffffff;
+            --text-1: #181b27;
+            --text-2: #5a6277;
+            --text-3: #9aa0b4;
+            --border: #e4e8f2;
+            --r-sm: 8px;
+            --r-md: 12px;
+            --r-lg: 16px;
+            --r-xl: 24px;
+            --sh-md: 0 4px 20px rgba(0,0,0,.09), 0 2px 8px rgba(0,0,0,.04);
+            --sh-lg: 0 20px 60px rgba(0,0,0,.14), 0 6px 20px rgba(0,0,0,.07);
+            --ease: cubic-bezier(.4, 0, .2, 1);
+        }
+
+        /* ═══════════════════════════════════
+                   BASE
+                ═══════════════════════════════════ */
+        *, *::before, *::after {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        html, body {
+            height: 100%;
+            font-family: 'Plus Jakarta Sans', system-ui, sans-serif;
+            font-size: 14px;
+            line-height: 1.5;
+            -webkit-font-smoothing: antialiased;
+            background: var(--bg-page);
+        }
+
+        body {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            padding: 20px;
+            /* Subtle animated mesh background — same feel as the app */
+            background-color: var(--bg-page);
+            background-image: radial-gradient(ellipse at 15% 20%, rgba(232,89,12,.08) 0%, transparent 55%), radial-gradient(ellipse at 85% 80%, rgba(245,159,0,.07) 0%, transparent 55%), radial-gradient(ellipse at 80% 10%, rgba(59,130,246,.05) 0%, transparent 50%);
+        }
+
+        /* ═══════════════════════════════════
+                   CARD SHELL
+                ═══════════════════════════════════ */
+        .login-shell {
+            display: flex;
+            width: 100%;
+            max-width: 820px;
+            min-height: 500px;
+            border-radius: var(--r-xl);
+            overflow: hidden;
+            box-shadow: var(--sh-lg);
+            animation: cardIn .45s var(--ease) both;
+        }
+
+        @@keyframes cardIn {
+            from {
+                opacity: 0;
+                transform: translateY(18px) scale(.98);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0) scale(1);
+            }
+        }
+
+        /* ═══════════════════════════════════
+                   LEFT PANEL  — dark brand side
+                ═══════════════════════════════════ */
+        .brand-panel {
+            flex: 1;
+            background: var(--sb-bg);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 48px 36px;
+            position: relative;
+            overflow: hidden;
+        }
+
+            /* Decorative glowing orbs */
+            .brand-panel::before {
+                content: '';
+                position: absolute;
+                width: 320px;
+                height: 320px;
+                border-radius: 50%;
+                background: radial-gradient(circle, rgba(232,89,12,.18) 0%, transparent 70%);
+                top: -80px;
+                left: -80px;
+                pointer-events: none;
+            }
+
+            .brand-panel::after {
+                content: '';
+                position: absolute;
+                width: 240px;
+                height: 240px;
+                border-radius: 50%;
+                background: radial-gradient(circle, rgba(245,159,0,.14) 0%, transparent 70%);
+                bottom: -60px;
+                right: -60px;
+                pointer-events: none;
+            }
+
+        /* Logo icon */
+        .brand-logo-icon {
+            width: 64px;
+            height: 64px;
+            background: var(--c-gradient);
+            border-radius: 18px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #fff;
+            font-size: 26px;
+            box-shadow: 0 8px 28px var(--c-glow);
+            margin-bottom: 24px;
+            position: relative;
+            z-index: 1;
+            animation: iconPop .5s .2s var(--ease) both;
+        }
+        @@keyframes iconPop {
+            from {
+                transform: scale(.7);
+                opacity: 0;
+            }
+
+            to {
+                transform: scale(1);
+                opacity: 1;
+            }
+        }
+
+        .brand-sub {
+            font-size: .72rem;
+            color: rgba(255,255,255,.45);
+            letter-spacing: .5px;
+            text-transform: uppercase;
+            margin-bottom: 6px;
+            position: relative;
+            z-index: 1;
+        }
+
+        .brand-name {
+            font-size: 2.4rem;
+            font-weight: 800;
+            letter-spacing: -1px;
+            line-height: 1;
+            margin-bottom: 12px;
+            position: relative;
+            z-index: 1;
+            /* gradient text */
+            background: var(--c-gradient);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .brand-tagline {
+            font-size: .78rem;
+            color: rgba(255,255,255,.35);
+            letter-spacing: .3px;
+            position: relative;
+            z-index: 1;
+        }
+
+        /* Decorative separator line */
+        .brand-divider {
+            width: 48px;
+            height: 3px;
+            background: var(--c-gradient);
+            border-radius: 2px;
+            margin: 20px 0;
+            position: relative;
+            z-index: 1;
+        }
+
+        /* Feature bullets */
+        .brand-features {
+            list-style: none;
+            position: relative;
+            z-index: 1;
+            width: 100%;
+        }
+
+            .brand-features li {
+                display: flex;
+                align-items: center;
+                gap: 10px;
+                font-size: .78rem;
+                color: rgba(255,255,255,.5);
+                padding: 5px 0;
+            }
+
+                .brand-features li i {
+                    width: 20px;
+                    height: 20px;
+                    border-radius: 6px;
+                    background: rgba(232,89,12,.18);
+                    color: var(--c-secondary);
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    font-size: 10px;
+                    flex-shrink: 0;
+                }
+
+        /* ═══════════════════════════════════
+                   RIGHT PANEL  — form side
+                ═══════════════════════════════════ */
+        .form-panel {
+            width: 360px;
+            flex-shrink: 0;
+            background: var(--bg-card);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            padding: 48px 40px;
+        }
+
+        .form-heading {
+            font-size: 1.35rem;
+            font-weight: 800;
+            color: var(--text-1);
+            letter-spacing: -.4px;
+            margin-bottom: 4px;
+        }
+
+        .form-subheading {
+            font-size: .8rem;
+            color: var(--text-2);
+            margin-bottom: 28px;
+        }
+
+        /* ── Error alert ── */
+        .login-error {
+            display: flex;
+            align-items: center;
+            gap: 9px;
+            padding: 10px 14px;
+            border-radius: var(--r-md);
+            background: #fff1f2;
+            border: 1px solid #fecdd3;
+            color: #be123c;
+            font-size: .8rem;
+            font-weight: 500;
+            margin-bottom: 20px;
+        }
+
+            .login-error i {
+                font-size: 13px;
+                flex-shrink: 0;
+            }
+
+        /* ── Field label ── */
+        .field-label {
+            display: block;
+            font-size: .72rem;
+            font-weight: 700;
+            color: var(--text-2);
+            text-transform: uppercase;
+            letter-spacing: .6px;
+            margin-bottom: 7px;
+        }
+
+        /* ── Input wrapper — same style as layout ── */
+        .input-wrap {
+            position: relative;
+            margin-bottom: 18px;
+        }
+
+            .input-wrap .input-icon {
+                position: absolute;
+                left: 13px;
+                top: 50%;
+                transform: translateY(-50%);
+                color: var(--text-3);
+                font-size: 13px;
+                pointer-events: none;
+                transition: color .15s;
+            }
+            /* Icon turns brand color when input is focused */
+            .input-wrap:focus-within .input-icon {
+                color: var(--c-primary);
+            }
+
+        /* The actual input — mirrors layout's .form-control */
+        .login-input {
+            width: 100%;
+            padding: 10px 14px 10px 38px;
+            border: 1.5px solid var(--border);
+            border-radius: var(--r-sm);
+            background: #fff;
+            color: var(--text-1);
+            font-size: .88rem;
+            font-family: 'Plus Jakarta Sans', system-ui, sans-serif;
+            outline: none;
+            transition: border-color .15s, box-shadow .15s;
+        }
+
+            .login-input::placeholder {
+                color: var(--text-3);
+            }
+
+            .login-input:focus {
+                border-color: var(--c-primary);
+                box-shadow: 0 0 0 3px var(--c-glow);
+            }
+
+        /* Password toggle eye button */
+        .btn-eye {
+            position: absolute;
+            right: 12px;
+            top: 50%;
+            transform: translateY(-50%);
+            border: none;
+            background: none;
+            color: var(--text-3);
+            cursor: pointer;
+            padding: 3px;
+            font-size: 13px;
+            transition: color .15s;
+        }
+
+            .btn-eye:hover {
+                color: var(--c-primary);
+            }
+
+        /* Padding-right for password field so text doesn't go under the eye */
+        .login-input.has-eye {
+            padding-right: 38px;
+        }
+
+        /* ── Remember me ── */
+        .remember-row {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 24px;
+            margin-top: -6px;
+        }
+
+            .remember-row input[type="checkbox"] {
+                width: 15px;
+                height: 15px;
+                border: 1.5px solid var(--border);
+                border-radius: 4px;
+                accent-color: var(--c-primary);
+                cursor: pointer;
+            }
+
+            .remember-row label {
+                font-size: .78rem;
+                color: var(--text-2);
+                cursor: pointer;
+                user-select: none;
+            }
+
+        /* ── Login button — mirrors .btn-brand in layout ── */
+        .btn-login {
+            width: 100%;
+            padding: 11px 20px;
+            border-radius: var(--r-sm);
+            background: var(--c-gradient);
+            color: #fff;
+            font-weight: 700;
+            font-size: .88rem;
+            font-family: 'Plus Jakarta Sans', system-ui, sans-serif;
+            letter-spacing: .3px;
+            border: none;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            box-shadow: 0 4px 14px var(--c-glow);
+            transition: filter .15s, box-shadow .15s, transform .15s;
+        }
+
+            .btn-login:hover {
+                filter: brightness(1.08);
+                box-shadow: 0 6px 22px rgba(232,89,12,.35);
+                transform: translateY(-1px);
+            }
+
+            .btn-login:active {
+                transform: translateY(0);
+                filter: brightness(.97);
+            }
+
+        /* ── Demo credentials box ── */
+        .demo-box {
+            margin-top: 22px;
+            padding: 10px 14px;
+            background: #f9fafd;
+            border: 1px dashed var(--border);
+            border-radius: var(--r-md);
+            font-size: .74rem;
+            color: var(--text-2);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+            .demo-box i {
+                color: var(--c-secondary);
+                flex-shrink: 0;
+            }
+
+            .demo-box strong {
+                color: var(--text-1);
+            }
+
+        /* ═══════════════════════════════════
+                   RESPONSIVE  — stack on mobile
+                ═══════════════════════════════════ */
+        @@media (max-width: 640px) {
+            body {
+                padding: 16px;
+                align-items: flex-start;
+                padding-top: 32px;
+            }
+
+            .login-shell {
+                flex-direction: column;
+                max-width: 420px;
+                min-height: unset;
+                margin: 0 auto;
+            }
+
+            .brand-panel {
+                padding: 32px 28px 28px;
+                /* Compact horizontal layout on mobile */
+                flex-direction: row;
+                align-items: center;
+                gap: 16px;
+                justify-content: flex-start;
+            }
+
+                .brand-panel::before, .brand-panel::after {
+                    display: none;
+                }
+
+            .brand-logo-icon {
+                width: 48px;
+                height: 48px;
+                font-size: 20px;
+                border-radius: 14px;
+                margin-bottom: 0;
+                flex-shrink: 0;
+            }
+
+            .brand-text-group {
+                text-align: left;
+            }
+
+            .brand-sub {
+                font-size: .65rem;
+                margin-bottom: 2px;
+            }
+
+            .brand-name {
+                font-size: 1.6rem;
+                margin-bottom: 2px;
+            }
+
+            .brand-tagline {
+                font-size: .7rem;
+            }
+
+            .brand-divider, .brand-features {
+                display: none;
+            }
+
+            .form-panel {
+                width: 100%;
+                padding: 32px 28px;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="login-shell">
+
+        <!-- ══════ LEFT — Brand panel ══════ -->
+        <div class="brand-panel">
+            <div class="brand-logo-icon">
+                <i class="fas fa-graduation-cap"></i>
+            </div>
+
+            <div class="brand-text-group" style="text-align:center">
+                <p class="brand-sub">Trung tâm bồi dưỡng văn hóa</p>
+                <h1 class="brand-name">TÂM TRÍ</h1>
+                <p class="brand-tagline">Khai Tâm · Sáng Trí · Thành Tài</p>
+            </div>
+
+            <div class="brand-divider"></div>
+
+            <ul class="brand-features">
+                <li>
+                    <i class="fas fa-calendar-alt"></i>
+                    Quản lý lịch học & buổi học
+                </li>
+                <li>
+                    <i class="fas fa-clipboard-check"></i>
+                    Điểm danh học sinh theo buổi
+                </li>
+                <li>
+                    <i class="fas fa-chart-bar"></i>
+                    Thống kê & báo cáo chuyên cần
+                </li>
+                <li>
+                    <i class="fas fa-users"></i>
+                    Quản lý giáo viên & học sinh
+                </li>
+            </ul>
+        </div>
+
+        <!-- ══════ RIGHT — Form panel ══════ -->
+        <div class="form-panel">
+
+            <h2 class="form-heading">Chào mừng trở lại</h2>
+            <p class="form-subheading">Đăng nhập để tiếp tục quản lý hệ thống</p>
+
+            @if (TempData["LoginError"] != null)
+            {
+                <div class="login-error">
+                    <i class="fas fa-circle-exclamation"></i>
+                    @TempData["LoginError"]
+                </div>
+            }
+
+            <form method="post" autocomplete="off">
+
+                <!-- Username -->
+                <div>
+                    <label asp-for="Input.Username" class="field-label">Tên đăng nhập</label>
+                    <div class="input-wrap">
+                        <i class="fas fa-user input-icon"></i>
+                        <input asp-for="Input.Username"
+                               class="login-input"
+                               placeholder="Nhập tên đăng nhập"
+                               autocomplete="username" />
+                    </div>
+                </div>
+
+                <!-- Password -->
+                <div>
+                    <label asp-for="Input.Password" class="field-label">Mật khẩu</label>
+                    <div class="input-wrap">
+                        <i class="fas fa-lock input-icon"></i>
+                        <input asp-for="Input.Password"
+                               id="pwdInput"
+                               class="login-input has-eye"
+                               placeholder="Nhập mật khẩu"
+                               type="password"
+                               autocomplete="current-password" />
+                        <button type="button" class="btn-eye" onclick="togglePassword()" title="Hiện/ẩn mật khẩu">
+                            <i id="eyeIcon" class="fas fa-eye"></i>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Remember me -->
+                <div class="remember-row">
+                    <input asp-for="Input.RememberMe" id="rememberMe" type="checkbox" />
+                    <label asp-for="Input.RememberMe" for="rememberMe">Ghi nhớ đăng nhập</label>
+                </div>
+
+                <!-- Submit -->
+                <button type="submit" class="btn-login">
+                    <i class="fas fa-right-to-bracket"></i> ĐĂNG NHẬP
+                </button>
+
+            </form>
+
+            <!-- Demo credentials -->
+            <div class="demo-box">
+                <i class="fas fa-circle-info"></i>
+                <span>Demo: <strong>admin</strong> / <strong>admin123</strong></span>
+            </div>
+
+        </div><!-- /.form-panel -->
+
+    </div><!-- /.login-shell -->
+
+    <script src="~/lib/jquery/jquery.min.js"></script>
+    <script src="~/lib/bootstrap/js/bootstrap.bundle.min.js"></script>
+    <script src="~/lib/jquery-validation/jquery.validate.min.js"></script>
+    <script src="~/lib/jquery-validation-unobtrusive/jquery.validate.unobtrusive.min.js"></script>
+
+    <script>
+        function togglePassword() {
+            var input = document.getElementById('pwdInput');
+            var icon  = document.getElementById('eyeIcon');
+            if (input.type === 'password') {
+                input.type = 'text';
+                icon.classList.replace('fa-eye', 'fa-eye-slash');
+            } else {
+                input.type = 'password';
+                icon.classList.replace('fa-eye-slash', 'fa-eye');
+            }
+        }
+    </script>
+</body>
+</html>
