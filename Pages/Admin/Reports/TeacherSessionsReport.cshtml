@@ -1,0 +1,461 @@
+@page
+@model TutoringCenterManagement.Pages.Admin.TeacherSessionsReportModel
+@{
+    ViewData["Title"] = "BC Ca Dạy Giáo Viên";
+
+    var exportUrl = $"?DateFrom={Model.DateFrom:yyyy-MM-dd}&DateTo={Model.DateTo:yyyy-MM-dd}&Export=true";
+
+    int totalAll = Model.TotalCompleted + Model.TotalCancelled + Model.TotalScheduled + Model.TotalOngoing;
+    double cancelRate = totalAll > 0
+        ? Math.Round((double)Model.TotalCancelled / totalAll * 100, 1) : 0;
+}
+
+@section Styles {
+<style>
+/* ═══════════════════════════════════════════
+   TEACHER SESSIONS REPORT
+═══════════════════════════════════════════ */
+.rpt-bar {
+    background: var(--bg-card); border-radius: var(--r-lg);
+    border: 1px solid var(--border); box-shadow: var(--sh-sm);
+    padding: 14px 18px; margin-bottom: 20px;
+}
+.rpt-filter-grid {
+    display: grid; grid-template-columns: 1fr 1fr auto;
+    gap: 10px; align-items: flex-end;
+}
+.rpt-filter-grid > div { min-width: 0; }
+.rpt-filter-lbl {
+    font-size: .72rem; font-weight: 700; color: var(--text-2);
+    text-transform: uppercase; letter-spacing: .5px;
+    display: block; margin-bottom: 5px;
+}
+.rpt-filter-actions { display: flex; gap: 7px; align-items: center; }
+.rpt-bar-icon {
+    width: 32px; height: 32px; border-radius: 8px; flex-shrink: 0;
+    background: rgba(59,130,246,.1); color: #3b82f6;
+    display: flex; align-items: center; justify-content: center; font-size: 13px;
+}
+.rpt-bar-title { font-size: .83rem; font-weight: 800; color: var(--text-1); }
+.rpt-bar-sub   { font-size: .7rem;  color: var(--text-3); margin-top: 1px; }
+.rpt-sep { width:1px; height:28px; background:var(--border); margin:0 4px; flex-shrink:0; }
+
+.rpt-date-input {
+    width: 100%; height: 36px; padding: 0 10px;
+    border: 1.5px solid var(--border); border-radius: var(--r-sm);
+    background: #f8f9fc; color: var(--text-1);
+    font-size: .82rem; font-family: inherit; font-weight: 600;
+    outline: none; cursor: pointer; transition: border-color .15s;
+    box-sizing: border-box;
+}
+.rpt-date-input:focus { border-color: #3b82f6; background: #fff; }
+
+.period-pill {
+    display: inline-flex; align-items: center; gap: 6px;
+    padding: 5px 12px; border-radius: 50px;
+    background: rgba(59,130,246,.08); border: 1px solid rgba(59,130,246,.2);
+    font-size: .76rem; font-weight: 700; color: #2563eb; white-space: nowrap;
+}
+
+.export-btn {
+    display: inline-flex; align-items: center; gap: 7px;
+    padding: 8px 15px; border-radius: var(--r-sm);
+    background: linear-gradient(135deg,#059669,#10b981);
+    color: #fff; font-size: .79rem; font-weight: 700;
+    text-decoration: none; cursor: pointer; transition: opacity .15s;
+    box-shadow: 0 2px 8px rgba(16,185,129,.3);
+}
+.export-btn:hover { opacity: .88; }
+
+/* ── KPI strip ─────────────────────────── */
+.kpi-strip { display:grid; grid-template-columns:repeat(4,1fr); gap:12px; margin-bottom:18px; }
+.kpi-card  {
+    background:var(--bg-card); border-radius:var(--r-lg);
+    border:1px solid var(--border); box-shadow:var(--sh-xs);
+    padding:14px 16px 12px; position:relative; overflow:hidden;
+    transition:box-shadow .2s,transform .2s;
+}
+.kpi-card:hover { box-shadow:var(--sh-md); transform:translateY(-2px); }
+.kpi-card::after { content:''; position:absolute; top:0;left:0;right:0;height:3px; }
+.kc-blue::after   { background:linear-gradient(90deg,#3b82f6,#60a5fa); }
+.kc-green::after  { background:linear-gradient(90deg,#10b981,#34d399); }
+.kc-red::after    { background:linear-gradient(90deg,#f43f5e,#fb7185); }
+.kc-amber::after  { background:linear-gradient(90deg,#f59f00,#fbbf24); }
+.kpi-row  { display:flex; align-items:flex-start; justify-content:space-between; gap:8px; }
+.kpi-icon { width:36px; height:36px; border-radius:9px; flex-shrink:0; display:flex; align-items:center; justify-content:center; font-size:14px; }
+.kc-blue  .kpi-icon { background:rgba(59,130,246,.1); color:#3b82f6; }
+.kc-green .kpi-icon { background:rgba(16,185,129,.1); color:#10b981; }
+.kc-red   .kpi-icon { background:rgba(244,63,94,.1);  color:#f43f5e; }
+.kc-amber .kpi-icon { background:rgba(245,159,0,.1);  color:#f59f00; }
+.kpi-val { font-size:1.8rem; font-weight:800; color:var(--text-1); line-height:1; letter-spacing:-.5px; margin-top:9px; }
+.kpi-lbl { font-size:.68rem; font-weight:700; color:var(--text-3); text-transform:uppercase; letter-spacing:.5px; }
+.kpi-foot { font-size:.7rem; color:var(--text-3); margin-top:5px; }
+
+/* ── Table card ─────────────────────────── */
+.cc { background:var(--bg-card); border-radius:var(--r-lg); border:1px solid var(--border); box-shadow:var(--sh-sm); overflow:hidden; }
+.cc-hd {
+    display:flex; align-items:center; justify-content:space-between;
+    padding:12px 18px; border-bottom:1px solid var(--border);
+    background:linear-gradient(to right,#fafbff,#fff); gap:10px; flex-wrap:wrap;
+}
+.cc-hd-l { display:flex; align-items:center; gap:9px; }
+.cc-ico  { width:28px; height:28px; border-radius:7px; flex-shrink:0; background:rgba(59,130,246,.1); color:#3b82f6; display:flex; align-items:center; justify-content:center; font-size:12px; }
+.cc-title    { font-size:.87rem; font-weight:700; color:var(--text-1); }
+.cc-subtitle { font-size:.69rem; color:var(--text-3); margin-top:1px; }
+
+/* ── Teacher table ─────────────────────── */
+.t-table { width:100%; border-collapse:collapse; font-size:.82rem; }
+.t-table thead th {
+    padding:9px 14px; text-align:left;
+    font-size:.67rem; font-weight:700; color:var(--text-3);
+    text-transform:uppercase; letter-spacing:.5px;
+    background:#f8f9fc; border-bottom:1px solid var(--border);
+    white-space:nowrap;
+}
+.t-table thead th.num { text-align:right; }
+.t-table tbody tr { border-bottom:1px solid var(--border); transition:background .12s; }
+.t-table tbody tr:last-child { border-bottom:none; }
+.t-table tbody tr:hover { background:#fafbff; }
+.t-table tbody tr.zero-row { opacity:.4; }
+.t-table td { padding:10px 14px; vertical-align:middle; }
+.t-table td.num { text-align:right; }
+
+.t-av {
+    width:32px; height:32px; border-radius:50%; flex-shrink:0;
+    background:linear-gradient(135deg,#3b82f6,#60a5fa);
+    color:#fff; font-size:.72rem; font-weight:700;
+    display:inline-flex; align-items:center; justify-content:center;
+}
+.t-name-cell { display:flex; align-items:center; gap:9px; }
+.t-name      { font-weight:600; color:var(--text-1); }
+
+/* Status badges */
+.sb {
+    display:inline-flex; align-items:center; justify-content:center;
+    min-width:32px; padding:2px 8px; border-radius:5px;
+    font-size:.75rem; font-weight:700;
+}
+.sb-done  { background:rgba(16,185,129,.1);  color:#059669; }
+.sb-canc  { background:rgba(244,63,94,.1);   color:#e11d48; }
+.sb-schd  { background:rgba(59,130,246,.1);  color:#2563eb; }
+.sb-live  { background:rgba(245,159,0,.1);   color:#d97706; }
+
+.zero-label { font-size:.72rem; color:#94a3b8; font-style:italic; }
+
+@@media print {
+    .rpt-bar form, .export-btn { display:none !important; }
+    body { background:#fff !important; }
+}
+
+        /* ══ Flatpickr — date picker đồng bộ design system ══ */
+        .flatpickr-calendar {
+            font-family: 'Plus Jakarta Sans', system-ui, sans-serif !important;
+            font-size: .82rem !important;
+            border: 1.5px solid var(--border) !important;
+            border-radius: var(--r-md) !important;
+            box-shadow: 0 8px 24px rgba(0,0,0,.12) !important;
+        }
+
+        .flatpickr-day.selected,
+        .flatpickr-day.selected:hover {
+            background: var(--c-primary) !important;
+            border-color: var(--c-primary) !important;
+        }
+
+        .flatpickr-day:hover {
+            background: rgba(232,89,12,.10) !important;
+        }
+
+        .flatpickr-day.today {
+            border-color: var(--c-primary) !important;
+            color: var(--c-primary) !important;
+            font-weight: 700 !important;
+        }
+
+        .flatpickr-day.today.selected {
+            color: #fff !important;
+        }
+
+        .flatpickr-months .flatpickr-month {
+            background: #f4f6fc !important;
+            height: 44px !important;
+        }
+
+        .flatpickr-weekdays {
+            background: #f4f6fc !important;
+        }
+
+        /* ── Month dropdown select ── */
+        .flatpickr-current-month .flatpickr-monthDropdown-months {
+            appearance: none !important;
+            -webkit-appearance: none !important;
+            background: #fff url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='9' height='9' viewBox='0 0 24 24' fill='none' stroke='%239aa0b4' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E") no-repeat right 5px center !important;
+            border: 1.5px solid var(--border) !important;
+            border-radius: 6px !important;
+            padding: 3px 20px 3px 7px !important;
+            font-family: 'Plus Jakarta Sans', system-ui, sans-serif !important;
+            font-weight: 700 !important;
+            font-size: .78rem !important;
+            color: var(--text-1) !important;
+            cursor: pointer !important;
+            outline: none !important;
+            margin: 0 2px 0 0 !important;
+            transition: border-color .15s !important;
+            height: 28px !important;
+        }
+
+        .flatpickr-current-month .flatpickr-monthDropdown-months:hover,
+        .flatpickr-current-month .flatpickr-monthDropdown-months:focus {
+            border-color: var(--c-primary) !important;
+        }
+
+        /* ── Year input ── */
+        .flatpickr-current-month .numInputWrapper {
+            width: 62px !important;
+        }
+
+        .flatpickr-current-month input.cur-year {
+            background: #fff !important;
+            border: 1.5px solid var(--border) !important;
+            border-radius: 6px !important;
+            padding: 3px 6px !important;
+            font-family: 'Plus Jakarta Sans', system-ui, sans-serif !important;
+            font-weight: 700 !important;
+            font-size: .78rem !important;
+            color: var(--text-1) !important;
+            outline: none !important;
+            width: 100% !important;
+            height: 28px !important;
+            transition: border-color .15s !important;
+        }
+
+        .flatpickr-current-month input.cur-year:focus {
+            border-color: var(--c-primary) !important;
+        }
+
+        /* Ẩn mũi tên up/down của numInput cho gọn */
+        .flatpickr-current-month .numInputWrapper span {
+            display: none !important;
+        }
+
+        /* ── Navigation arrows ── */
+        .flatpickr-months .flatpickr-prev-month,
+        .flatpickr-months .flatpickr-next-month {
+            padding: 6px 9px !important;
+            border-radius: 6px !important;
+            top: 7px !important;
+            transition: background .15s !important;
+        }
+
+        .flatpickr-months .flatpickr-prev-month:hover,
+        .flatpickr-months .flatpickr-next-month:hover {
+            background: rgba(232,89,12,.08) !important;
+        }
+
+        .flatpickr-months .flatpickr-prev-month:hover svg,
+        .flatpickr-months .flatpickr-next-month:hover svg {
+            fill: var(--c-primary) !important;
+        }
+
+        span.flatpickr-weekday {
+            font-weight: 700 !important;
+            color: var(--text-2) !important;
+            font-size: .72rem !important;
+        }
+</style>
+}
+
+<!-- ════════ BACK BUTTON ════════ -->
+<div style="margin-bottom:14px">
+    <a href="/Admin/Reports"
+       style="display:inline-flex;align-items:center;gap:7px;
+              padding:7px 14px;border-radius:var(--r-sm);
+              background:var(--bg-card);border:1.5px solid var(--border);
+              color:var(--text-2);font-size:.8rem;font-weight:700;text-decoration:none;
+              box-shadow:var(--sh-xs);transition:all .15s"
+       onmouseover="this.style.borderColor='#3b82f6';this.style.color='#2563eb'"
+       onmouseout="this.style.borderColor='var(--border)';this.style.color='var(--text-2)'">
+        <i class="fas fa-arrow-left" style="font-size:11px"></i> Quay lại Báo cáo
+    </a>
+</div>
+
+<!-- ════════ FILTER BAR ════════ -->
+<form method="get" id="filterForm" class="rpt-bar">
+    <div class="rpt-filter-grid">
+        <div>
+            <label class="rpt-filter-lbl">Từ ngày</label>
+            <input type="text" name="DateFrom" id="DateFrom" value="@(Model.DateFrom.ToString("yyyy-MM-dd"))" class="rpt-date-input" autocomplete="off" data-rpt-date />
+        </div>
+        <div>
+            <label class="rpt-filter-lbl">Đến ngày</label>
+            <input type="text" name="DateTo" id="DateTo" value="@(Model.DateTo.ToString("yyyy-MM-dd"))" class="rpt-date-input" autocomplete="off" data-rpt-date />
+        </div>
+        <div class="rpt-filter-actions">
+            <div class="period-pill">
+                <i class="fas fa-calendar-range" style="font-size:10px"></i>
+                @Model.PeriodLabel
+            </div>
+            <a href="javascript:window.print()"
+               style="display:inline-flex;align-items:center;gap:6px;padding:7px 12px;border-radius:var(--r-sm);background:rgba(59,130,246,.1);border:1px solid rgba(59,130,246,.3);color:#2563eb;font-size:.77rem;font-weight:700;text-decoration:none">
+                <i class="fas fa-print"></i> In
+            </a>
+            <a href="@exportUrl" class="export-btn">
+                <i class="fas fa-file-excel"></i> Xuất Excel
+            </a>
+        </div>
+    </div>
+</form>
+
+<!-- ════════ KPI STRIP ════════ -->
+<div class="kpi-strip">
+    <div class="kpi-card kc-blue">
+        <div class="kpi-row">
+            <div><div class="kpi-lbl">Giáo viên có ca dạy</div><div class="kpi-val">@Model.TotalTeachers</div></div>
+            <div class="kpi-icon"><i class="fas fa-chalkboard-user"></i></div>
+        </div>
+        <div class="kpi-foot">Trên tổng @Model.Rows.Count giáo viên</div>
+    </div>
+    <div class="kpi-card kc-green">
+        <div class="kpi-row">
+            <div><div class="kpi-lbl">Tổng buổi hoàn thành</div><div class="kpi-val">@Model.TotalCompleted</div></div>
+            <div class="kpi-icon"><i class="fas fa-circle-check"></i></div>
+        </div>
+        <div class="kpi-foot">@Model.PeriodLabel</div>
+    </div>
+    <div class="kpi-card kc-red">
+        <div class="kpi-row">
+            <div><div class="kpi-lbl">Tổng buổi đã hủy</div><div class="kpi-val">@Model.TotalCancelled</div></div>
+            <div class="kpi-icon"><i class="fas fa-calendar-xmark"></i></div>
+        </div>
+        <div class="kpi-foot"><span style="@(cancelRate>10?"color:#f43f5e;font-weight:700":"")">@cancelRate% trên tổng ca</span></div>
+    </div>
+    <div class="kpi-card kc-amber">
+        <div class="kpi-row">
+            <div><div class="kpi-lbl">Lịch dạy còn lại</div><div class="kpi-val">@Model.TotalScheduled</div></div>
+            <div class="kpi-icon"><i class="fas fa-calendar-plus"></i></div>
+        </div>
+        <div class="kpi-foot">Ca chưa diễn ra trong kỳ</div>
+    </div>
+</div>
+
+<!-- ════════ TABLE ════════ -->
+<div class="cc">
+    <div class="cc-hd">
+        <div class="cc-hd-l">
+            <div class="cc-ico"><i class="fas fa-table-list"></i></div>
+            <div>
+                <div class="cc-title">Chi tiết ca dạy từng giáo viên</div>
+                <div class="cc-subtitle">@Model.PeriodLabel — Sắp xếp: có ca dạy lên trước · nhiều buổi hoàn thành nhất lên đầu</div>
+            </div>
+        </div>
+    </div>
+
+    @if (Model.Rows.Any())
+    {
+        <table class="t-table">
+            <thead>
+                <tr>
+                    <th style="width:40px">#</th>
+                    <th>Giáo viên</th>
+                    <th class="num">Hoàn thành</th>
+                    <th class="num">Đang dạy</th>
+                    <th class="num">Lịch dạy</th>
+                    <th class="num">Đã hủy</th>
+                    <th class="num">Số lớp</th>
+                    <th class="num">Tổng ca</th>
+                </tr>
+            </thead>
+            <tbody>
+                @{ int rank = 0; }
+                @foreach (var r in Model.Rows)
+                {
+                    bool isZero = r.TotalSessions == 0;
+                    if (!isZero) rank++;
+                    string rankLabel = isZero ? "—"
+                        : rank == 1 ? "🥇" : rank == 2 ? "🥈" : rank == 3 ? "🥉"
+                        : rank.ToString();
+
+                    <tr class="@(isZero ? "zero-row" : "")">
+                        <td><span style="font-size:.8rem;font-weight:700">@rankLabel</span></td>
+                        <td>
+                            <div class="t-name-cell">
+                                <div class="t-av">@r.Initials</div>
+                                <span class="t-name">@r.TeacherName</span>
+                            </div>
+                        </td>
+                        <td class="num">
+                            @if (r.Completed > 0) { <span class="sb sb-done">@r.Completed</span> }
+                            else { <span class="zero-label">0</span> }
+                        </td>
+                        <td class="num">
+                            @if (r.Ongoing > 0) { <span class="sb sb-live">@r.Ongoing</span> }
+                            else { <span class="zero-label">0</span> }
+                        </td>
+                        <td class="num">
+                            @if (r.Scheduled > 0) { <span class="sb sb-schd">@r.Scheduled</span> }
+                            else { <span class="zero-label">0</span> }
+                        </td>
+                        <td class="num">
+                            @if (r.Cancelled > 0) { <span class="sb sb-canc">@r.Cancelled</span> }
+                            else { <span class="zero-label">0</span> }
+                        </td>
+                        <td class="num" style="font-weight:600;color:var(--text-2)">
+                            @if (isZero) { <span class="zero-label">—</span> }
+                            else { @r.ClassCount }
+                        </td>
+                        <td class="num" style="font-weight:800;color:var(--text-1)">
+                            @if (isZero) { <span class="zero-label">Không có</span> }
+                            else { @r.TotalSessions }
+                        </td>
+                    </tr>
+                }
+            </tbody>
+            <tfoot>
+                <tr style="background:#f8f9fc;border-top:2px solid var(--border)">
+                    <td colspan="2" style="padding:10px 14px;font-weight:800;font-size:.82rem;color:var(--text-1)">
+                        Tổng cộng
+                    </td>
+                    <td class="num" style="padding:10px 14px;font-weight:800">@Model.TotalCompleted</td>
+                    <td class="num" style="padding:10px 14px;font-weight:800">@Model.TotalOngoing</td>
+                    <td class="num" style="padding:10px 14px;font-weight:800">@Model.TotalScheduled</td>
+                    <td class="num" style="padding:10px 14px;font-weight:800">@Model.TotalCancelled</td>
+                    <td class="num" style="padding:10px 14px;font-weight:800">@Model.Rows.Sum(r => r.ClassCount)</td>
+                    <td class="num" style="padding:10px 14px;font-weight:800">@(Model.TotalCompleted + Model.TotalCancelled + Model.TotalScheduled + Model.TotalOngoing)</td>
+                </tr>
+            </tfoot>
+        </table>
+    }
+    else
+    {
+        <div style="text-align:center;padding:60px 20px;color:var(--text-3);font-size:.85rem">
+            <i class="fas fa-chalkboard-user" style="font-size:36px;opacity:.2;display:block;margin-bottom:12px"></i>
+            Không có dữ liệu ca dạy trong <strong>@Model.PeriodLabel</strong>
+        </div>
+    }
+</div>
+
+@section Scripts {
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css" />
+<script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+<script src="https://cdn.jsdelivr.net/npm/flatpickr/dist/l10n/vn.js"></script>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    if (typeof flatpickr !== 'undefined') {
+        var inputs = document.querySelectorAll('[data-rpt-date]');
+        inputs.forEach(function(el) {
+            flatpickr(el, {
+                dateFormat: 'Y-m-d',
+                altInput: true,
+                altFormat: 'd/m/Y',
+                locale: 'vn',
+                allowInput: true,
+                disableMobile: true,
+                onChange: function(selectedDates, dateStr, instance) {
+                    if (instance.input.form) instance.input.form.submit();
+                }
+            });
+        });
+    }
+});
+</script>
+}

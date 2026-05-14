@@ -986,8 +986,8 @@
                     {
                         <div style="padding:24px 0; text-align:center">
                             <div style="width:48px;height:48px;border-radius:50%;background:var(--bg-page);
-                                        display:flex;align-items:center;justify-content:center;
-                                        margin:0 auto 12px;font-size:20px;color:var(--text-3)">
+                                display:flex;align-items:center;justify-content:center;
+                                margin:0 auto 12px;font-size:20px;color:var(--text-3)">
                                 <i class="fas fa-user-check"></i>
                             </div>
                             <div style="font-size:.83rem;font-weight:700;color:var(--text-1);margin-bottom:4px">
@@ -1055,16 +1055,17 @@
 
                 <!-- Data source cho JS: danh sách học sinh có thể thêm -->
                 <script id="availableStudentsData" type="application/json">
-                    @Html.Raw(System.Text.Json.JsonSerializer.Serialize(
-                        Model.AvailableStudents.Select(s => new {
-                            id = s.StudentId,
-                            name = s.Fullname,
-                            phone = s.Phone,
-                            initial = s.Fullname.Trim().Length > 0
-                                ? s.Fullname.Trim().Split(' ').Last().Substring(0,1).ToUpper()
-                                : "?"
-                        })
-                    ))
+                                    @Html.Raw(System.Text.Json.JsonSerializer.Serialize(
+                                            Model.AvailableStudents.Select(s => new
+                                            {
+                                                    id = s.StudentId,
+                                                    name = s.Fullname,
+                                                    phone = s.Phone,
+                                                    initial = s.Fullname.Trim().Length > 0
+                                                            ? s.Fullname.Trim().Split(' ').Last().Substring(0, 1).ToUpper()
+                                                            : "?"
+                                            })
+                                    ))
                 </script>
             </div>
         </div>
@@ -1180,8 +1181,8 @@
                     <strong id="d_StudentName"></strong> khỏi lớp?
                 </p>
                 <div style="display:flex; align-items:flex-start; gap:8px;
-                            background:#fff9f0; border:1px solid rgba(232,89,12,.2);
-                            border-radius:var(--r-sm); padding:10px 12px">
+                    background:#fff9f0; border:1px solid rgba(232,89,12,.2);
+                    border-radius:var(--r-sm); padding:10px 12px">
                     <i class="fas fa-circle-info" style="color:var(--c-primary); margin-top:2px; flex-shrink:0"></i>
                     <span style="font-size:.78rem; color:var(--text-2); line-height:1.5">
                         Không thể xóa nếu học sinh đã có dữ liệu điểm danh.
@@ -1197,7 +1198,7 @@
                 </button>
                 <button type="submit" class="btn-brand"
                         style="background:linear-gradient(135deg,#f43f5e,#e03131);
-                               box-shadow:0 3px 10px rgba(244,63,94,.3)">
+                    box-shadow:0 3px 10px rgba(244,63,94,.3)">
                     <i class="fas fa-trash-can"></i> Xóa khỏi lớp
                 </button>
             </div>
@@ -1226,11 +1227,11 @@
 
             @if (TempData["SuccessMessage"] != null)
             {
-                        <text>showToast('@Html.Raw(TempData["SuccessMessage"].ToString().Replace("'", "\\'"))', 'success');</text>
+                            <text>showToast('@Html.Raw(TempData["SuccessMessage"].ToString().Replace("'", "\\'"))', 'success');</text>
             }
             @if (TempData["ErrorMessage"] != null)
             {
-                        <text>showToast('@Html.Raw(TempData["ErrorMessage"].ToString().Replace("'", "\\'"))', 'error');</text>
+                            <text>showToast('@Html.Raw(TempData["ErrorMessage"].ToString().Replace("'", "\\'"))', 'error');</text>
             }
 
             /* ══ Filter tabs ══ */

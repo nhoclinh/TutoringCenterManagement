@@ -31,8 +31,8 @@
 @section Styles {
     <style>
         /* ════════════════════════════════════
-                                       CLASSES PAGE — đồng bộ design system
-                                    ════════════════════════════════════ */
+                                               CLASSES PAGE — đồng bộ design system
+                                            ════════════════════════════════════ */
 
         /* ── Summary chips ── */
         .summary-bar {
@@ -124,6 +124,11 @@
                 min-width: 0;
             }
 
+            .filter-group.fixed {
+                width: 145px;
+                flex-shrink: 0;
+            }
+
         .filter-label {
             font-size: .68rem;
             font-weight: 700;
@@ -174,6 +179,7 @@
 
         .search-wrap {
             position: relative;
+            width: 100%;
         }
 
             .search-wrap .s-icon {
@@ -405,13 +411,13 @@
                 background: #f8faff;
             }
 
-            /* Column widths */
+            /* Column widths — tinh chỉnh nhẹ để cột mô tả có thêm không gian trên màn hình nhỏ */
             .class-table .col-class {
-                width: 160px;
+                width: 150px;
             }
 
             .class-table .col-subject {
-                width: 140px;
+                width: 128px;
             }
 
             .class-table .col-desc {
@@ -419,15 +425,15 @@
             }
 
             .class-table .col-students {
-                width: 150px;
+                width: 132px;
             }
 
             .class-table .col-status {
-                width: 115px;
+                width: 105px;
             }
 
             .class-table .col-actions {
-                width: 145px;
+                width: 132px;
             }
 
         /* ── Class cell (icon + code + id) ── */
@@ -482,12 +488,22 @@
 
         /* ── Description ── */
         .desc-text {
+            display: -webkit-box;
+            -webkit-box-orient: vertical;
+            -webkit-line-clamp: 2;
             font-size: .8rem;
+            line-height: 1.42;
             color: var(--text-2);
+            white-space: normal;
             overflow: hidden;
             text-overflow: ellipsis;
-            white-space: nowrap;
-            max-width: 220px;
+            overflow-wrap: anywhere;
+            word-break: break-word;
+            max-width: 100%;
+        }
+
+        .class-table td.col-desc {
+            min-width: 0;
         }
 
         .desc-empty {
@@ -498,12 +514,12 @@
 
         /* ── Grade column ── */
         .col-grade {
-            width: 80px;
+            width: 74px;
             text-align: center;
         }
 
         .col-classname {
-            width: 90px;
+            width: 84px;
         }
 
         .grade-badge {
@@ -933,6 +949,29 @@
             background: #f9fafd;
         }
 
+        @@media (max-width: 1100px) {
+            .class-table .col-class {
+                width: 142px;
+            }
+
+            .class-table .col-subject {
+                width: 120px;
+            }
+
+            .class-table .col-students {
+                width: 124px;
+            }
+
+            .class-table .col-actions {
+                width: 124px;
+            }
+
+            .desc-text {
+                -webkit-line-clamp: 1;
+            }
+        }
+
+
         /* ── Responsive ── */
         @@media (max-width: 900px) {
             .class-table .col-desc {
@@ -1008,9 +1047,9 @@
     <form method="get" id="filterForm">
         <div class="filter-row">
 
-            <div class="filter-group">
+            <div class="filter-group fixed">
                 <span class="filter-label">Khối</span>
-                <select name="gradeFilter" class="filter-select" onchange="document.getElementById('filterForm').submit()">
+                <select name="gradeFilter" id="classesGradeFilter" class="filter-select">
                     <option value="">Tất cả khối</option>
                     @for (int g = 1; g <= 12; g++)
                     {
@@ -1019,9 +1058,9 @@
                 </select>
             </div>
 
-            <div class="filter-group">
+            <div class="filter-group fixed">
                 <span class="filter-label">Môn học</span>
-                <select name="subjectFilter" class="filter-select" onchange="document.getElementById('filterForm').submit()">
+                <select name="subjectFilter" id="classesSubjectFilter" class="filter-select">
                     <option value="">Tất cả môn học</option>
                     @for (int i = 0; i <= 8; i++)
                     {
@@ -1031,9 +1070,9 @@
                 </select>
             </div>
 
-            <div class="filter-group">
+            <div class="filter-group fixed">
                 <span class="filter-label">Trạng thái</span>
-                <select name="statusFilter" class="filter-select" onchange="document.getElementById('filterForm').submit()">
+                <select name="statusFilter" id="classesStatusFilter" class="filter-select">
                     <option value="">Tất cả</option>
                     <option value="Active" selected="@(Model.StatusFilter == "Active" ? "selected" : null)">Đang hoạt động</option>
                     <option value="Inactive" selected="@(Model.StatusFilter == "Inactive" ? "selected" : null)">Ngừng hoạt động</option>
@@ -1072,9 +1111,9 @@
     <div class="pagesize-wrap">
         <span>Hiển thị</span>
         <select class="pagesize-select" id="pagesizeSelect">
-            <option value="20">20</option>
+            <option value="20" selected>20</option>
             <option value="50">50</option>
-            <option value="100" selected>100</option>
+            <option value="100">100</option>
             <option value="0">Tất cả</option>
         </select>
         <span>bản ghi</span>
@@ -1264,15 +1303,7 @@
             <span class="foot-info" id="footInfo">
                 Hiển thị <strong>@totalClasses</strong> lớp học
             </span>
-            <div class="pager">
-                <button class="pg-btn" disabled>
-                    <i class="fas fa-chevron-left" style="font-size:10px"></i>
-                </button>
-                <button class="pg-btn active">1</button>
-                <button class="pg-btn" disabled>
-                    <i class="fas fa-chevron-right" style="font-size:10px"></i>
-                </button>
-            </div>
+            <div class="pager" id="pager"></div>
         </div>
     }
 
@@ -1314,6 +1345,173 @@
 </div>
 
 @section Scripts {
+    @* Tom Select — searchable dropdown *@
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/tom-select@2.3.1/dist/css/tom-select.min.css" />
+    <script src="https://cdn.jsdelivr.net/npm/tom-select@2.3.1/dist/js/tom-select.complete.min.js"></script>
+    <style>
+        /* ══ Tom Select — reset hoàn toàn, build lại theo design system ══ */
+
+        /* Wrapper: không có border/bg riêng, chỉ là container */
+        .ts-wrapper {
+            width: 100% !important;
+            padding: 0 !important;
+            border: none !important;
+            background: none !important;
+            height: auto !important;
+            box-sizing: border-box !important;
+        }
+
+        /* Control: đây là ô hiển thị chính */
+        .ts-wrapper .ts-control {
+            width: 100% !important;
+            min-height: 36px !important;
+            height: 36px !important;
+            padding: 0 32px 0 10px !important;
+            border: 1.5px solid var(--border) !important;
+            border-radius: var(--r-sm) !important;
+            background: #f8f9fc !important;
+            color: var(--text-1) !important;
+            font-size: .83rem !important;
+            font-family: 'Plus Jakarta Sans', system-ui, sans-serif !important;
+            box-shadow: none !important;
+            cursor: pointer !important;
+            display: flex !important;
+            align-items: center !important;
+            flex-wrap: nowrap !important;
+            overflow: hidden !important;
+            box-sizing: border-box !important;
+            transition: border-color .15s, box-shadow .15s !important;
+        }
+
+        /* Item hiển thị: fill hết chiều ngang, clip text nếu dài */
+        .ts-wrapper .ts-control > .item {
+            flex: 1 !important;
+            min-width: 0 !important;
+            overflow: hidden !important;
+            text-overflow: ellipsis !important;
+            white-space: nowrap !important;
+        }
+
+        .ts-wrapper.focus .ts-control,
+        .ts-wrapper .ts-control:focus-within {
+            border-color: var(--c-primary) !important;
+            background: #fff !important;
+            box-shadow: inset 0 0 0 2px rgba(232,89,12,.12) !important;
+        }
+
+        /* Search input bên trong control: không chiếm chỗ khi chưa gõ */
+        .ts-wrapper .ts-control input {
+            font-size: .83rem !important;
+            font-family: 'Plus Jakarta Sans', system-ui, sans-serif !important;
+            color: var(--text-1) !important;
+            margin: 0 !important;
+            padding: 0 !important;
+            line-height: 36px !important;
+            width: 0 !important;
+            min-width: 0 !important;
+            flex-shrink: 0 !important;
+        }
+
+        /* Khi người dùng đang gõ: ẩn item, mở rộng input */
+        .ts-wrapper.ts-searching .ts-control > .item {
+            display: none !important;
+        }
+
+        .ts-wrapper.ts-searching .ts-control input {
+            width: auto !important;
+            min-width: 100% !important;
+            flex-shrink: 1 !important;
+        }
+
+        /* Arrow dropdown */
+        .ts-wrapper.single .ts-control::after {
+            content: '' !important;
+            display: block !important;
+            width: 10px !important;
+            height: 10px !important;
+            position: absolute !important;
+            right: 10px !important;
+            top: 50% !important;
+            transform: translateY(-50%) !important;
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='10' viewBox='0 0 24 24' fill='none' stroke='%239aa0b4' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E") !important;
+            background-repeat: no-repeat !important;
+            background-position: center !important;
+            border: none !important;
+        }
+
+        /* Dropdown list */
+        .ts-dropdown {
+            border: 1.5px solid var(--border) !important;
+            border-radius: var(--r-sm) !important;
+            box-shadow: 0 8px 24px rgba(0,0,0,.10) !important;
+            font-size: .83rem !important;
+            font-family: 'Plus Jakarta Sans', system-ui, sans-serif !important;
+            margin-top: 3px !important;
+            z-index: 9999 !important;
+        }
+
+        .ts-dropdown .ts-dropdown-content {
+            max-height: 220px !important;
+        }
+
+        .ts-dropdown .option {
+            padding: 8px 12px !important;
+            color: var(--text-1) !important;
+            font-size: .83rem !important;
+            cursor: pointer !important;
+        }
+
+        .ts-dropdown .option:hover {
+            background: rgba(232,89,12,.07) !important;
+            color: var(--c-primary) !important;
+        }
+
+        .ts-dropdown .option.active {
+            background: rgba(232,89,12,.07) !important;
+            color: var(--c-primary) !important;
+        }
+
+        .ts-dropdown .option.selected,
+        .ts-dropdown .option.selected.active {
+            background: rgba(232,89,12,.12) !important;
+            color: var(--c-primary) !important;
+            font-weight: 700 !important;
+        }
+
+        /* Input tìm kiếm trong dropdown */
+        .ts-dropdown .ts-dropdown-header-search input,
+        .ts-wrapper .ts-control input[type="text"] {
+            outline: none !important;
+            border: none !important;
+            background: transparent !important;
+        }
+    </style>
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            if (typeof TomSelect !== 'undefined') {
+                function fixTomSelectSearchDisplay(ts) {
+                    function syncSearchState() { var val = ts.control_input ? ts.control_input.value.trim() : ''; ts.wrapper.classList.toggle('ts-searching', val.length > 0); }
+                    ts.on('type', syncSearchState); ts.on('focus', syncSearchState);
+                    ts.on('blur', function() { ts.wrapper.classList.remove('ts-searching'); });
+                    ts.on('dropdown_close', function() { ts.wrapper.classList.remove('ts-searching'); });
+                    if (ts.control_input) { ts.control_input.addEventListener('input', syncSearchState); ts.control_input.addEventListener('keydown', function() { setTimeout(syncSearchState, 0); }); }
+                    var origOpen = ts.open; ts.open = function() { origOpen.call(this); var self = this; setTimeout(function() { if (self.control_input) self.control_input.value = ''; self.lastValue = ''; self.wrapper.classList.remove('ts-searching'); self.refreshOptions(false); }, 0); };
+                }
+                if (document.getElementById('classesGradeFilter')) {
+                    var tsGrade = new TomSelect('#classesGradeFilter', { allowEmptyOption: true, searchField: ['text'], create: false, onChange: function() { document.getElementById('filterForm').submit(); } });
+                    fixTomSelectSearchDisplay(tsGrade);
+                }
+                if (document.getElementById('classesSubjectFilter')) {
+                    var tsSubject = new TomSelect('#classesSubjectFilter', { allowEmptyOption: true, searchField: ['text'], create: false, onChange: function() { document.getElementById('filterForm').submit(); } });
+                    fixTomSelectSearchDisplay(tsSubject);
+                }
+                if (document.getElementById('classesStatusFilter')) {
+                    var tsStatus = new TomSelect('#classesStatusFilter', { allowEmptyOption: true, searchField: ['text'], create: false, onChange: function() { document.getElementById('filterForm').submit(); } });
+                    fixTomSelectSearchDisplay(tsStatus);
+                }
+            }
+        });
+    </script>
     <script>
         (function () {
 
@@ -1334,27 +1532,27 @@
 
             @if (TempData["SuccessMessage"] != null)
             {
-                                <text>
-                                    document.addEventListener('DOMContentLoaded', function () {
-                                        showToast('@Html.Raw(TempData["SuccessMessage"].ToString().Replace("'", "\\'"))', 'success');
-                                    });
-                                </text>
+                                    <text>
+                                            document.addEventListener('DOMContentLoaded', function () {
+                                                showToast('@Html.Raw(TempData["SuccessMessage"].ToString().Replace("'", "\\'"))', 'success');
+                                            });
+                                    </text>
             }
             @if (TempData["ErrorMessage"] != null)
             {
-                                <text>
-                                    document.addEventListener('DOMContentLoaded', function () {
-                                        showToast('@Html.Raw(TempData["ErrorMessage"].ToString().Replace("'", "\\'"))', 'error');
-                                    });
-                                </text>
+                                    <text>
+                                            document.addEventListener('DOMContentLoaded', function () {
+                                                showToast('@Html.Raw(TempData["ErrorMessage"].ToString().Replace("'", "\\'"))', 'error');
+                                            });
+                                    </text>
             }
             @if (TempData["WarningMessage"] != null)
             {
-                                <text>
-                                    document.addEventListener('DOMContentLoaded', function () {
-                                        showToast('@Html.Raw(TempData["WarningMessage"].ToString().Replace("'", "\\'"))', 'error');
-                                    });
-                                </text>
+                                    <text>
+                                            document.addEventListener('DOMContentLoaded', function () {
+                                                showToast('@Html.Raw(TempData["WarningMessage"].ToString().Replace("'", "\\'"))', 'error');
+                                            });
+                                    </text>
             }
 
             /* ══════════════════════════════════════
@@ -1407,35 +1605,111 @@
             ══════════════════════════════════════ */
             var pagesizeSelect = document.getElementById('pagesizeSelect');
             var showingLabel   = document.getElementById('showingLabel');
-            var tbody = document.querySelector('.class-table tbody');
-            var allRows = tbody ? Array.from(tbody.querySelectorAll('tr:not(.empty-row)')).slice() : [];
+            var tbody          = document.querySelector('.class-table tbody');
+            var allRows        = tbody ? Array.from(tbody.querySelectorAll('tr:not(.empty-row)')) : [];
+            var totalRows      = allRows.length;
+            var currentPage    = 1;
 
-            var pageSize = 100; // default
-            var totalRows = allRows.length;
+            function getLimit() {
+                return pagesizeSelect ? parseInt(pagesizeSelect.value) : 100;
+            }
 
-            function updateDisplay() {
-                var size = parseInt(pageSize);
-                var toShow = (size === 0) ? totalRows : Math.min(size, totalRows);
+            function getTotalPages() {
+                var limit = getLimit();
+                if (limit === 0) return 1;
+                return Math.max(1, Math.ceil(totalRows / limit));
+            }
+
+            function renderPage() {
+                var limit = getLimit();
+                var start = limit === 0 ? 0 : (currentPage - 1) * limit;
+                var end   = limit === 0 ? totalRows : start + limit;
+                var shown = 0;
 
                 allRows.forEach(function (row, idx) {
-                    row.style.display = (idx < toShow) ? '' : 'none';
+                    if (idx >= start && idx < end) {
+                        row.style.display = '';
+                        shown++;
+                    } else {
+                        row.style.display = 'none';
+                    }
                 });
 
-                if (showingLabel) {
-                    showingLabel.textContent = toShow + ' / ' + totalRows + ' bản ghi';
+                var footInfo = document.getElementById('footInfo');
+                if (footInfo)
+                    footInfo.innerHTML = 'Hiển thị <strong>' + shown + '</strong> / <strong>' + totalRows + '</strong> lớp học';
+
+                if (showingLabel && totalRows > 0)
+                    showingLabel.textContent = shown + ' / ' + totalRows + ' bản ghi';
+
+                renderPager();
+            }
+
+            function renderPager() {
+                var pager      = document.getElementById('pager');
+                if (!pager) return;
+                var totalPages = getTotalPages();
+                pager.innerHTML = '';
+
+                /* Prev */
+                var prev = document.createElement('button');
+                prev.className = 'pg-btn';
+                prev.innerHTML = '<i class="fas fa-chevron-left" style="font-size:10px"></i>';
+                prev.disabled  = (currentPage <= 1);
+                prev.addEventListener('click', function () {
+                    if (currentPage > 1) { currentPage--; renderPage(); }
+                });
+                pager.appendChild(prev);
+
+                /* Page number buttons (max 5 visible) */
+                var maxBtns   = 5;
+                var startPage = Math.max(1, currentPage - Math.floor(maxBtns / 2));
+                var endPage   = Math.min(totalPages, startPage + maxBtns - 1);
+                if (endPage - startPage < maxBtns - 1)
+                    startPage = Math.max(1, endPage - maxBtns + 1);
+
+                function addDots() {
+                    var d = document.createElement('span');
+                    d.textContent = '…';
+                    d.style.cssText = 'padding:0 4px;color:var(--text-3);font-size:.78rem;line-height:30px';
+                    pager.appendChild(d);
                 }
+
+                function addPageBtn(p) {
+                    var btn = document.createElement('button');
+                    btn.className = 'pg-btn' + (p === currentPage ? ' active' : '');
+                    btn.textContent = p;
+                    btn.addEventListener('click', (function (page) {
+                        return function () { currentPage = page; renderPage(); };
+                    })(p));
+                    pager.appendChild(btn);
+                }
+
+                if (startPage > 1) { addPageBtn(1); if (startPage > 2) addDots(); }
+                for (var p = startPage; p <= endPage; p++) addPageBtn(p);
+                if (endPage < totalPages) { if (endPage < totalPages - 1) addDots(); addPageBtn(totalPages); }
+
+                /* Next */
+                var next = document.createElement('button');
+                next.className = 'pg-btn';
+                next.innerHTML = '<i class="fas fa-chevron-right" style="font-size:10px"></i>';
+                next.disabled  = (currentPage >= totalPages);
+                next.addEventListener('click', function () {
+                    if (currentPage < getTotalPages()) { currentPage++; renderPage(); }
+                });
+                pager.appendChild(next);
             }
 
             if (pagesizeSelect) {
                 pagesizeSelect.addEventListener('change', function () {
-                    pageSize = this.value;
-                    updateDisplay();
+                    currentPage = 1;
+                    renderPage();
                 });
             }
 
             /* Init */
             if (allRows.length > 0) {
-                updateDisplay();
+                renderPage();
             }
 
         })();

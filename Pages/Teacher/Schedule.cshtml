@@ -745,7 +745,7 @@
             }
 
             .fc .fc-day-today {
-                background: rgba(232,89,12,.04) !important;
+                background: rgba(232,89,12,.10) !important;
             }
 
                 .fc .fc-day-today .fc-daygrid-day-number {
@@ -771,21 +771,55 @@
                 cursor: pointer !important;
             }
 
-        .fc-event-scheduled {
-            background: linear-gradient(90deg,#3b82f6,#60a5fa) !important;
-        }
+        /* ── FullCalendar event colors
+           CSS vars → lịch chính và popover dùng cùng nguồn màu */
+        .fc-event-scheduled { --sess-bg: #38bdf8; --sess-bg-2: #bae6fd; --sess-text: #0f172a; }
+        .fc-event-ongoing   { --sess-bg: #10b981; --sess-bg-2: #34d399; --sess-text: #ffffff; }
+        .fc-event-completed { --sess-bg: #d97706; --sess-bg-2: #fbbf24; --sess-text: #ffffff; }
+        .fc-event-cancelled { --sess-bg: #64748b; --sess-bg-2: #94a3b8; --sess-text: #ffffff; }
 
-        .fc-event-ongoing {
-            background: linear-gradient(90deg,#10b981,#34d399) !important;
-        }
+        .fc .fc-daygrid-block-event.fc-event-scheduled,
+        .fc .fc-timegrid-event.fc-event-scheduled { background: linear-gradient(90deg,#38bdf8,#bae6fd) !important; color: #0f172a !important; }
+        .fc .fc-daygrid-block-event.fc-event-ongoing,
+        .fc .fc-timegrid-event.fc-event-ongoing   { background: linear-gradient(90deg,#10b981,#34d399) !important; color: #ffffff !important; }
+        .fc .fc-daygrid-block-event.fc-event-completed,
+        .fc .fc-timegrid-event.fc-event-completed { background: linear-gradient(90deg,#d97706,#fbbf24) !important; color: #ffffff !important; }
+        .fc .fc-daygrid-block-event.fc-event-cancelled,
+        .fc .fc-timegrid-event.fc-event-cancelled { background: linear-gradient(90deg,#64748b,#94a3b8) !important; color: #ffffff !important; }
 
-        .fc-event-completed {
-            background: linear-gradient(90deg,#6d28d9,#8b5cf6) !important;
-        }
+        .fc .fc-event .fc-event-main,
+        .fc .fc-event .fc-event-title,
+        .fc .fc-event .fc-event-time { color: inherit !important; }
+        .fc-daygrid-block-event .fc-daygrid-event-dot { display: none !important; }
 
-        .fc-event-cancelled {
-            background: linear-gradient(90deg,#9ca3af,#d1d5db) !important;
+        /* ── Calendar legend ── */
+        .cal-legend { display: flex; align-items: center; gap: 16px; flex-wrap: wrap; margin-bottom: 14px; }
+        .cal-legend-item { display: flex; align-items: center; gap: 6px; font-size: .75rem; font-weight: 600; color: var(--text-2); }
+        .cal-legend-dot { width: 10px; height: 10px; border-radius: 3px; flex-shrink: 0; }
+
+        /* ── Popover "+more" ── */
+        .fc-popover { border-radius: var(--r-md) !important; border: 1px solid var(--border) !important; box-shadow: 0 8px 24px rgba(0,0,0,.12) !important; overflow: hidden !important; z-index: 9992 !important; }
+        .fc-popover .fc-popover-header { background: #f4f6fc !important; font-size: .75rem !important; font-weight: 700 !important; padding: 8px 12px !important; border-bottom: 1px solid var(--border) !important; }
+        .fc-popover .fc-popover-body { padding: 6px 8px !important; display: flex !important; flex-direction: column !important; gap: 4px !important; background: #fff !important; }
+        .fc-popover .fc-event,
+        .fc-popover .fc-daygrid-event,
+        .fc-popover .fc-daygrid-dot-event,
+        .fc-popover .fc-daygrid-block-event {
+            display: flex !important; align-items: center !important; width: 100% !important;
+            min-height: 22px !important; margin: 0 !important; padding: 3px 7px !important;
+            border: none !important; border-radius: 6px !important; box-shadow: none !important;
+            background: var(--sess-bg, var(--fc-event-bg-color, #e2e8f0)) !important;
+            color: var(--sess-text, var(--fc-event-text-color, #1e293b)) !important;
+            font-size: .72rem !important; font-weight: 700 !important; text-decoration: none !important;
         }
+        .fc-popover .fc-event:hover, .fc-popover .fc-daygrid-event:hover, .fc-popover .fc-daygrid-dot-event:hover { filter: brightness(.96); }
+        .fc-popover .fc-event-scheduled { --sess-bg: #38bdf8; --sess-text: #0f172a; }
+        .fc-popover .fc-event-ongoing   { --sess-bg: #10b981; --sess-text: #ffffff; }
+        .fc-popover .fc-event-completed { --sess-bg: #d97706; --sess-text: #ffffff; }
+        .fc-popover .fc-event-cancelled { --sess-bg: #64748b; --sess-text: #ffffff; }
+        .fc-popover .fc-event-main, .fc-popover .fc-event-title,
+        .fc-popover .fc-event-time { color: inherit !important; }
+        .fc-popover .fc-daygrid-event-dot { display: none !important; }
 
         /* ── Detail modal ── */
         .cm-backdrop {
@@ -1015,7 +1049,7 @@
         <div class="filter-grid">
             <div>
                 <label>Lớp học</label>
-                <select name="ClassFilter" class="filter-select">
+                <select name="ClassFilter" id="schedClassFilter" class="filter-select">
                     <option value="">Tất cả lớp của tôi</option>
                     @foreach (var c in Model.MyClasses)
                     {
@@ -1026,7 +1060,7 @@
             </div>
             <div>
                 <label>Trạng thái</label>
-                <select name="StatusFilter" class="filter-select">
+                <select name="StatusFilter" id="schedStatusFilter" class="filter-select">
                     <option value="">Tất cả</option>
                     <option value="0" selected="@(Model.StatusFilter == "0")">Đã lên lịch</option>
                     <option value="1" selected="@(Model.StatusFilter == "1")">Đang diễn ra</option>
@@ -1036,11 +1070,19 @@
             </div>
             <div>
                 <label>Từ ngày</label>
-                <input type="date" name="FromDate" class="filter-date" value="@Model.FromDate" />
+                <div class="filter-date-wrap @(!string.IsNullOrEmpty(Model.FromDate) ? "has-value" : "")">
+                    <i class="fas fa-calendar-alt date-icon"></i>
+                    <input type="text" name="FromDate" id="schedFromDate" class="filter-date" value="@Model.FromDate" placeholder="Từ ngày" autocomplete="off" />
+                    <button type="button" class="clear-date" onclick="clearDate('schedFromDate',this)"><i class="fas fa-times"></i></button>
+                </div>
             </div>
             <div>
                 <label>Đến ngày</label>
-                <input type="date" name="ToDate" class="filter-date" value="@Model.ToDate" />
+                <div class="filter-date-wrap @(!string.IsNullOrEmpty(Model.ToDate) ? "has-value" : "")">
+                    <i class="fas fa-calendar-alt date-icon"></i>
+                    <input type="text" name="ToDate" id="schedToDate" class="filter-date" value="@Model.ToDate" placeholder="Đến ngày" autocomplete="off" />
+                    <button type="button" class="clear-date" onclick="clearDate('schedToDate',this)"><i class="fas fa-times"></i></button>
+                </div>
             </div>
             <div class="filter-btn-group">
                 <button type="submit" class="btn-brand" style="height:36px;padding:0 16px;font-size:.82rem;white-space:nowrap">
@@ -1060,9 +1102,9 @@
         <div class="pagesize-wrap" id="pagesizeWrap">
             <span>Hiển thị</span>
             <select class="pagesize-select" id="pagesizeSelect">
-                <option value="20">20</option>
+                <option value="20" selected>20</option>
                 <option value="50">50</option>
-                <option value="100" selected>100</option>
+                <option value="100">100</option>
                 <option value="0">Tất cả</option>
             </select>
             <span>bản ghi</span>
@@ -1229,6 +1271,12 @@
 @* ── CALENDAR VIEW ── *@
 <div id="calendarView">
     <div class="calendar-card">
+        <div class="cal-legend">
+            <span class="cal-legend-item"><span class="cal-legend-dot" style="background:linear-gradient(90deg,#38bdf8,#bae6fd)"></span>Đã lên lịch</span>
+            <span class="cal-legend-item"><span class="cal-legend-dot" style="background:linear-gradient(90deg,#10b981,#34d399)"></span>Đang diễn ra</span>
+            <span class="cal-legend-item"><span class="cal-legend-dot" style="background:linear-gradient(90deg,#d97706,#fbbf24)"></span>Hoàn thành</span>
+            <span class="cal-legend-item"><span class="cal-legend-dot" style="background:linear-gradient(90deg,#64748b,#94a3b8)"></span>Đã hủy</span>
+        </div>
         <div id="scheduleCalendar"></div>
     </div>
 </div>
@@ -1310,6 +1358,92 @@
 @section Scripts {
     <link href="~/lib/fullcalendar/index.global.min.css" rel="stylesheet" />
     <script src="~/lib/fullcalendar/index.global.min.js"></script>
+
+    @* Tom Select — searchable dropdown *@
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/tom-select@2.3.1/dist/css/tom-select.min.css" />
+    <script src="https://cdn.jsdelivr.net/npm/tom-select@2.3.1/dist/js/tom-select.complete.min.js"></script>
+
+    @* Flatpickr — date picker *@
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css" />
+    <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+    <script src="https://cdn.jsdelivr.net/npm/flatpickr/dist/l10n/vn.js"></script>
+
+    <style>
+        /* ══ Tom Select — reset hoàn toàn, build lại theo design system ══ */
+        .ts-wrapper { width: 100% !important; padding: 0 !important; border: none !important; background: none !important; height: auto !important; box-sizing: border-box !important; }
+        .ts-wrapper .ts-control { width: 100% !important; min-height: 36px !important; height: 36px !important; padding: 0 32px 0 10px !important; border: 1.5px solid var(--border) !important; border-radius: var(--r-sm) !important; background: #f8f9fc !important; color: var(--text-1) !important; font-size: .83rem !important; font-family: 'Plus Jakarta Sans', system-ui, sans-serif !important; box-shadow: none !important; cursor: pointer !important; display: flex !important; align-items: center !important; flex-wrap: nowrap !important; transition: border-color .15s, box-shadow .15s !important; }
+        .ts-wrapper.focus .ts-control, .ts-wrapper .ts-control:focus-within { border-color: var(--c-primary) !important; background: #fff !important; box-shadow: inset 0 0 0 2px rgba(232,89,12,.12) !important; }
+        .ts-wrapper .ts-control input { font-size: .83rem !important; font-family: 'Plus Jakarta Sans', system-ui, sans-serif !important; color: var(--text-1) !important; margin: 0 !important; padding: 0 !important; line-height: 36px !important; }
+        .ts-wrapper.ts-searching .ts-control > .item { display: none !important; }
+        .ts-wrapper.ts-searching .ts-control input { min-width: 100% !important; }
+        .ts-wrapper.single .ts-control::after { content: '' !important; display: block !important; width: 10px !important; height: 10px !important; position: absolute !important; right: 10px !important; top: 50% !important; transform: translateY(-50%) !important; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='10' viewBox='0 0 24 24' fill='none' stroke='%239aa0b4' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E") !important; background-repeat: no-repeat !important; background-position: center !important; border: none !important; }
+        .ts-dropdown { border: 1.5px solid var(--border) !important; border-radius: var(--r-sm) !important; box-shadow: 0 8px 24px rgba(0,0,0,.10) !important; font-size: .83rem !important; font-family: 'Plus Jakarta Sans', system-ui, sans-serif !important; margin-top: 3px !important; z-index: 9999 !important; }
+        .ts-dropdown .ts-dropdown-content { max-height: 220px !important; }
+        .ts-dropdown .option { padding: 8px 12px !important; color: var(--text-1) !important; font-size: .83rem !important; cursor: pointer !important; }
+        .ts-dropdown .option:hover { background: rgba(232,89,12,.07) !important; color: var(--c-primary) !important; }
+        .ts-dropdown .option.active { background: rgba(232,89,12,.07) !important; color: var(--c-primary) !important; }
+        .ts-dropdown .option.selected, .ts-dropdown .option.selected.active { background: rgba(232,89,12,.12) !important; color: var(--c-primary) !important; font-weight: 700 !important; }
+        .ts-dropdown .ts-dropdown-header-search input, .ts-wrapper .ts-control input[type="text"] { outline: none !important; border: none !important; background: transparent !important; }
+        /* ══ Flatpickr ══ */
+        .flatpickr-calendar { font-family: 'Plus Jakarta Sans', system-ui, sans-serif !important; font-size: .82rem !important; border: 1.5px solid var(--border) !important; border-radius: var(--r-md) !important; box-shadow: 0 8px 24px rgba(0,0,0,.12) !important; }
+        .flatpickr-day.selected, .flatpickr-day.selected:hover { background: var(--c-primary) !important; border-color: var(--c-primary) !important; }
+        .flatpickr-day:hover { background: rgba(232,89,12,.10) !important; }
+        .flatpickr-day.today { border-color: var(--c-primary) !important; color: var(--c-primary) !important; font-weight: 700 !important; }
+        .flatpickr-day.today.selected { color: #fff !important; }
+        .flatpickr-months .flatpickr-month { background: #f4f6fc !important; height: 44px !important; }
+        .flatpickr-weekdays { background: #f4f6fc !important; }
+        .flatpickr-current-month .flatpickr-monthDropdown-months { appearance: none !important; -webkit-appearance: none !important; background: #fff url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='9' height='9' viewBox='0 0 24 24' fill='none' stroke='%239aa0b4' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E") no-repeat right 5px center !important; border: 1.5px solid var(--border) !important; border-radius: 6px !important; padding: 3px 20px 3px 7px !important; font-family: 'Plus Jakarta Sans', system-ui, sans-serif !important; font-weight: 700 !important; font-size: .78rem !important; color: var(--text-1) !important; cursor: pointer !important; outline: none !important; margin: 0 2px 0 0 !important; transition: border-color .15s !important; height: 28px !important; }
+        .flatpickr-current-month .flatpickr-monthDropdown-months:hover, .flatpickr-current-month .flatpickr-monthDropdown-months:focus { border-color: var(--c-primary) !important; }
+        .flatpickr-current-month .numInputWrapper { width: 62px !important; }
+        .flatpickr-current-month input.cur-year { background: #fff !important; border: 1.5px solid var(--border) !important; border-radius: 6px !important; padding: 3px 6px !important; font-family: 'Plus Jakarta Sans', system-ui, sans-serif !important; font-weight: 700 !important; font-size: .78rem !important; color: var(--text-1) !important; outline: none !important; width: 100% !important; height: 28px !important; transition: border-color .15s !important; }
+        .flatpickr-current-month input.cur-year:focus { border-color: var(--c-primary) !important; }
+        .flatpickr-current-month .numInputWrapper span { display: none !important; }
+        .flatpickr-months .flatpickr-prev-month, .flatpickr-months .flatpickr-next-month { padding: 6px 9px !important; border-radius: 6px !important; top: 7px !important; transition: background .15s !important; }
+        .flatpickr-months .flatpickr-prev-month:hover, .flatpickr-months .flatpickr-next-month:hover { background: rgba(232,89,12,.08) !important; }
+        .flatpickr-months .flatpickr-prev-month:hover svg, .flatpickr-months .flatpickr-next-month:hover svg { fill: var(--c-primary) !important; }
+        span.flatpickr-weekday { font-weight: 700 !important; color: var(--text-2) !important; font-size: .72rem !important; }
+        /* filter-date-wrap */
+        .filter-date-wrap { position: relative; width: 100%; }
+        .filter-date-wrap .filter-date { padding-left: 28px !important; padding-right: 22px !important; }
+        .filter-date-wrap .date-icon { position: absolute; left: 9px; top: 50%; transform: translateY(-50%); color: #9aa0b4; font-size: 11px; pointer-events: none; }
+        .filter-date-wrap .clear-date { position: absolute; right: 6px; top: 50%; transform: translateY(-50%); color: #9aa0b4; font-size: 10px; background: none; border: none; cursor: pointer; padding: 2px; display: none; line-height: 1; }
+        .filter-date-wrap .clear-date:hover { color: var(--text-1); }
+        .filter-date-wrap.has-value .clear-date { display: block; }
+    </style>
+
+    <script>
+    document.addEventListener('DOMContentLoaded', function() {
+        if (typeof TomSelect !== 'undefined') {
+            function fixTomSelectSearchDisplay(ts) {
+                function syncSearchState() { var val = ts.control_input ? ts.control_input.value.trim() : ''; ts.wrapper.classList.toggle('ts-searching', val.length > 0); }
+                ts.on('type', syncSearchState); ts.on('focus', syncSearchState);
+                ts.on('blur', function() { ts.wrapper.classList.remove('ts-searching'); });
+                ts.on('dropdown_close', function() { ts.wrapper.classList.remove('ts-searching'); });
+                if (ts.control_input) { ts.control_input.addEventListener('input', syncSearchState); ts.control_input.addEventListener('keydown', function() { setTimeout(syncSearchState, 0); }); }
+                var origOpen = ts.open; ts.open = function() { origOpen.call(this); var self = this; setTimeout(function() { if (self.control_input) self.control_input.value = ''; self.lastValue = ''; self.wrapper.classList.remove('ts-searching'); self.refreshOptions(false); }, 0); };
+            }
+            if (document.getElementById('schedClassFilter')) {
+                var tsClass = new TomSelect('#schedClassFilter', { allowEmptyOption: true, searchField: ['text'], create: false, onChange: function() { document.getElementById('filterForm').submit(); } });
+                fixTomSelectSearchDisplay(tsClass);
+            }
+            if (document.getElementById('schedStatusFilter')) {
+                var tsStatus = new TomSelect('#schedStatusFilter', { allowEmptyOption: true, searchField: ['text'], create: false, onChange: function() { document.getElementById('filterForm').submit(); } });
+                fixTomSelectSearchDisplay(tsStatus);
+            }
+        }
+        if (typeof flatpickr !== 'undefined') {
+            var fpBase = { dateFormat: 'Y-m-d', altInput: true, altFormat: 'd/m/Y', altInputClass: 'filter-date', locale: 'vn', allowInput: true, disableMobile: true };
+            function fpChange(d,s,i){var w=i.input.closest('.filter-date-wrap');if(w)w.classList.toggle('has-value',!!s);}
+            if (document.getElementById('schedFromDate')) flatpickr('#schedFromDate', Object.assign({}, fpBase, {onChange: fpChange}));
+            if (document.getElementById('schedToDate'))   flatpickr('#schedToDate',   Object.assign({}, fpBase, {onChange: fpChange}));
+        }
+        window.clearDate = function(inputId, btn) {
+            var input = document.getElementById(inputId); if (input && input._flatpickr) input._flatpickr.clear(); else if (input) input.value = '';
+            var wrap = btn.closest('.filter-date-wrap'); if (wrap) wrap.classList.remove('has-value');
+        };
+    });
+    </script>
+
     <script>
         (function () {
             var calInit = false;
@@ -1431,6 +1565,7 @@
                 fcCal = new FullCalendar.Calendar(document.getElementById('scheduleCalendar'), {
                     initialView: 'dayGridMonth',
                     locale: 'vi',
+                    eventTimeFormat: { hour: '2-digit', minute: '2-digit', hour12: false },
                     headerToolbar: {
                         left:   'prev,next today',
                         center: 'title',
@@ -1455,10 +1590,60 @@
                     eventClassNames: function (arg) {
                         return ['fc-event-' + arg.event.extendedProps.statusCls];
                     },
+                    eventDidMount: function (info) {
+                        var gradients = {
+                            'scheduled': 'linear-gradient(90deg,#38bdf8,#bae6fd)',
+                            'ongoing':   'linear-gradient(90deg,#10b981,#34d399)',
+                            'completed': 'linear-gradient(90deg,#d97706,#fbbf24)',
+                            'cancelled': 'linear-gradient(90deg,#64748b,#94a3b8)'
+                        };
+                        var cls = info.event.extendedProps.statusCls;
+                        if (gradients[cls]) {
+                            info.el.style.background = gradients[cls];
+                            info.el.style.color      = cls === 'scheduled' ? '#0f172a' : '#ffffff';
+                            info.el.style.border     = 'none';
+                        }
+                    },
                     dayMaxEvents: 4,
                     height: 'auto'
                 });
                 fcCal.render();
+
+                /* ── MutationObserver: colorize popover "+more" events */
+                var popoverColors = {
+                    'fc-event-scheduled': { bg: 'linear-gradient(90deg,#38bdf8,#bae6fd)', text: '#0f172a' },
+                    'fc-event-ongoing':   { bg: 'linear-gradient(90deg,#10b981,#34d399)', text: '#fff' },
+                    'fc-event-completed': { bg: 'linear-gradient(90deg,#d97706,#fbbf24)', text: '#fff' },
+                    'fc-event-cancelled': { bg: 'linear-gradient(90deg,#64748b,#94a3b8)', text: '#fff' }
+                };
+                function colorizePopover(popoverEl) {
+                    popoverEl.querySelectorAll('.fc-event').forEach(function (el) {
+                        for (var cls in popoverColors) {
+                            if (el.classList.contains(cls)) {
+                                var c = popoverColors[cls];
+                                el.style.setProperty('background', c.bg, 'important');
+                                el.style.setProperty('color', c.text, 'important');
+                                el.style.setProperty('border', 'none', 'important');
+                                el.style.setProperty('border-radius', '5px', 'important');
+                                var dot = el.querySelector('.fc-daygrid-event-dot');
+                                if (dot) dot.style.display = 'none';
+                                break;
+                            }
+                        }
+                    });
+                }
+                new MutationObserver(function (mutations) {
+                    mutations.forEach(function (m) {
+                        m.addedNodes.forEach(function (node) {
+                            if (node.nodeType !== 1) return;
+                            if (node.classList.contains('fc-popover')) {
+                                colorizePopover(node);
+                            } else {
+                                node.querySelectorAll('.fc-popover').forEach(colorizePopover);
+                            }
+                        });
+                    });
+                }).observe(document.getElementById('scheduleCalendar'), { childList: true, subtree: true });
             }
         })();
     </script>

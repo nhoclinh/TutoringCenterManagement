@@ -1,4 +1,23 @@
-﻿using Microsoft.AspNetCore.Mvc;
+﻿// ============================================================
+// FILE GỐC : Pages/Admin/Schedules/Create.cshtml.cs
+// FILE SỬA : Pages/Admin/Schedules/Create_Fixed.cshtml.cs
+//
+// THAY ĐỔI SO VỚI BẢN GỐC:
+//   Thêm 2 property mới để truyền lỗi server xuống view:
+//     - ServerError  : lỗi từ service (conflict phòng, GV, Inactive, exception)
+//     - EndDateError : lỗi ngày kết thúc < ngày bắt đầu
+//
+//   Lý do KHÔNG dùng ModelState.AddModelError nữa:
+//     - Div asp-validation-summary="ModelOnly" có style="display:none"
+//       và JS chỉ show khi querySelector('ul li') tìm thấy, NHƯNG
+//       jquery.validate.unobtrusive (load qua _ValidationScriptsPartial)
+//       chạy trên DOMContentLoaded và CLEAR toàn bộ validation summary,
+//       xóa mất lỗi server trước khi người dùng kịp đọc.
+//     - Cách fix đúng: render lỗi bằng @if block thuần Razor (như WarningMessage),
+//       hoàn toàn bypass jquery.validate.unobtrusive.
+// ============================================================
+
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using Microsoft.EntityFrameworkCore;
 using System.ComponentModel.DataAnnotations;
@@ -27,7 +46,15 @@ namespace TutoringCenterManagement.Pages.Admin.Schedules
         [BindProperty]
         public InputModel Input { get; set; } = new();
 
+        // Cảnh báo (không chặn tạo) — giữ nguyên từ bản gốc
         public string? WarningMessage { get; set; }
+
+        // [FIX] Lỗi server chặn tạo template — render bằng @if block trong cshtml
+        // thay vì ModelState.AddModelError("") để tránh bị jquery.validate.unobtrusive clear
+        public string? ServerError { get; set; }
+
+        // [FIX] Lỗi EndDate < StartDate — render riêng cạnh field EndDate
+        public string? EndDateError { get; set; }
 
         public List<ClassInfo> Classes { get; set; } = new();
         public List<TeacherInfo> Teachers { get; set; } = new();
@@ -67,15 +94,15 @@ namespace TutoringCenterManagement.Pages.Admin.Schedules
                 return Page();
             }
 
-            // Validate ngày
+            // [FIX] Validate ngày — dùng EndDateError thay vì ModelState.AddModelError("Input.EndDate")
             if (Input.EndDate < Input.StartDate)
             {
-                ModelState.AddModelError("Input.EndDate", "Ngày kết thúc phải sau ngày bắt đầu!");
+                EndDateError = "Ngày kết thúc phải sau ngày bắt đầu!";
                 await LoadData();
                 return Page();
             }
 
-            // Validate giáo viên không trùng nhau
+            // Validate giáo viên không trùng nhau — giữ nguyên (field-level, span hiển thị tốt)
             if (Input.AssistantTeacherId.HasValue
                 && Input.AssistantTeacherId.Value == Input.PrimaryTeacherId)
             {
@@ -87,9 +114,7 @@ namespace TutoringCenterManagement.Pages.Admin.Schedules
 
             try
             {
-                // ── Validate conflict phòng + ca + thứ + giáo viên ──────────
-                // Truyền thêm primaryTeacherId và assistantTeacherId để service
-                // kiểm tra luôn trùng lịch giáo viên.
+                // Validate conflict phòng + ca + thứ + giáo viên qua service
                 var (isValid, errorMessage) = await _scheduleService.ValidateScheduleTemplate(
                     Input.ClassId,
                     Input.RoomId,
@@ -98,12 +123,13 @@ namespace TutoringCenterManagement.Pages.Admin.Schedules
                     Input.StartDate,
                     Input.EndDate,
                     excludeTemplateId: null,
-                    primaryTeacherId: Input.PrimaryTeacherId,        // <-- thêm
-                    assistantTeacherId: Input.AssistantTeacherId);     // <-- thêm
+                    primaryTeacherId: Input.PrimaryTeacherId,
+                    assistantTeacherId: Input.AssistantTeacherId);
 
                 if (!isValid)
                 {
-                    ModelState.AddModelError("", errorMessage);
+                    // [FIX] Dùng ServerError thay vì ModelState.AddModelError("")
+                    ServerError = errorMessage;
                     await LoadData();
                     return Page();
                 }
@@ -145,7 +171,8 @@ namespace TutoringCenterManagement.Pages.Admin.Schedules
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error creating schedule template");
-                ModelState.AddModelError("", "Có lỗi xảy ra khi tạo lịch học!");
+                // [FIX] Dùng ServerError thay vì ModelState.AddModelError("")
+                ServerError = "Có lỗi xảy ra khi tạo lịch học! Vui lòng thử lại.";
                 await LoadData();
                 return Page();
             }

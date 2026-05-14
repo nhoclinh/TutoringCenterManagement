@@ -35,7 +35,6 @@ namespace TutoringCenterManagement.Pages.Account
 
         public IActionResult OnGet()
         {
-            // Nếu đã login thì redirect
             if (!string.IsNullOrEmpty(HttpContext.Session.GetString("Username")))
                 return RedirectToHome();
 
@@ -57,13 +56,14 @@ namespace TutoringCenterManagement.Pages.Account
 
                 if (account == null || !BCrypt.Net.BCrypt.Verify(Input.Password, account.Password))
                 {
-                    TempData["ErrorMessage"] = "Tên đăng nhập hoặc mật khẩu không đúng!";
+                    // ✅ Dùng ViewData thay TempData — tồn tại trong cùng request (return Page())
+                    ViewData["LoginError"] = "Tên đăng nhập hoặc mật khẩu không đúng!";
                     return Page();
                 }
 
                 if (account.IsActive != IsActive.Active)
                 {
-                    TempData["ErrorMessage"] = "Tài khoản đã bị vô hiệu hóa!";
+                    ViewData["LoginError"] = "Tài khoản đã bị vô hiệu hóa!";
                     return Page();
                 }
 
@@ -76,7 +76,6 @@ namespace TutoringCenterManagement.Pages.Account
                     _ => "User"
                 };
 
-                // Lưu Session
                 HttpContext.Session.SetInt32("AccountId", account.AccountId);
                 HttpContext.Session.SetString("Username", account.Username);
                 HttpContext.Session.SetString("Role", account.Role.ToString());
@@ -89,7 +88,7 @@ namespace TutoringCenterManagement.Pages.Account
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Login error");
-                TempData["ErrorMessage"] = "Có lỗi xảy ra!";
+                ViewData["LoginError"] = "Có lỗi xảy ra, vui lòng thử lại!";
                 return Page();
             }
         }

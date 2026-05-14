@@ -1,0 +1,670 @@
+@page
+@model TutoringCenterManagement.Pages.Admin.TeacherDetailReportModel
+@{
+    ViewData["Title"] = "BC Chi Tiết Ca Dạy Giáo Viên";
+    bool hasTeacher = Model.TeacherId > 0;
+    var exportUrl   = $"?TeacherId={Model.TeacherId}&DateFrom={Model.DateFrom:yyyy-MM-dd}&DateTo={Model.DateTo:yyyy-MM-dd}&Export=true";
+}
+
+@section Styles {
+<style>
+/* ═══════════════════════════════════════════
+   TEACHER DETAIL REPORT
+═══════════════════════════════════════════ */
+.rpt-bar {
+    background:var(--bg-card); border-radius:var(--r-lg);
+    border:1px solid var(--border); box-shadow:var(--sh-sm);
+    padding:14px 18px; margin-bottom:20px;
+}
+.rpt-filter-grid {
+    display:grid; grid-template-columns:2fr 1fr 1fr auto;
+    gap:10px; align-items:flex-end;
+}
+.rpt-filter-grid > div { min-width:0; }
+.rpt-filter-lbl {
+    font-size:.72rem; font-weight:700; color:var(--text-2);
+    text-transform:uppercase; letter-spacing:.5px;
+    display:block; margin-bottom:5px;
+}
+.rpt-filter-actions { display:flex; gap:7px; align-items:center; }
+.rpt-filter-grid .ts-wrapper { width:100%; }
+.rpt-bar-icon { width:32px; height:32px; border-radius:8px; flex-shrink:0; background:rgba(139,92,246,.1); color:#8b5cf6; display:flex; align-items:center; justify-content:center; font-size:13px; }
+.rpt-bar-title { font-size:.83rem; font-weight:800; color:var(--text-1); }
+.rpt-bar-sub   { font-size:.7rem; color:var(--text-3); margin-top:1px; }
+.rpt-sep { width:1px; height:28px; background:var(--border); margin:0 4px; flex-shrink:0; }
+
+.rpt-sel {
+    width:100%; height:36px; padding:0 30px 0 11px;
+    border:1.5px solid var(--border); border-radius:var(--r-sm);
+    background:#f8f9fc; color:var(--text-1);
+    font-size:.82rem; font-family:inherit; font-weight:600;
+    outline:none; cursor:pointer; -webkit-appearance:none; appearance:none;
+    background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='10' viewBox='0 0 24 24' fill='none' stroke='%239aa0b4' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E");
+    background-repeat:no-repeat; background-position:right 9px center;
+    transition:border-color .15s; box-sizing:border-box;
+}
+.rpt-sel:focus { border-color:#8b5cf6; background:#fff; }
+.rpt-date-input {
+    width:100%; height:36px; padding:0 10px;
+    border:1.5px solid var(--border); border-radius:var(--r-sm);
+    background:#f8f9fc; color:var(--text-1);
+    font-size:.82rem; font-family:inherit; font-weight:600;
+    outline:none; cursor:pointer; transition:border-color .15s;
+    box-sizing:border-box;
+}
+.rpt-date-input:focus { border-color:#8b5cf6; background:#fff; }
+
+.period-pill {
+    display:inline-flex; align-items:center; gap:6px;
+    padding:5px 12px; border-radius:50px;
+    background:rgba(139,92,246,.08); border:1px solid rgba(139,92,246,.2);
+    font-size:.76rem; font-weight:700; color:#7c3aed; white-space:nowrap;
+}
+
+.export-btn {
+    display:inline-flex; align-items:center; gap:7px;
+    padding:8px 15px; border-radius:var(--r-sm);
+    background:linear-gradient(135deg,#059669,#10b981);
+    color:#fff; font-size:.79rem; font-weight:700;
+    text-decoration:none; transition:opacity .15s;
+    box-shadow:0 2px 8px rgba(16,185,129,.3);
+}
+.export-btn:hover { opacity:.88; }
+.export-btn.disabled { opacity:.4; pointer-events:none; }
+
+/* ── KPI strip ─────────────────────────── */
+.kpi-strip { display:grid; grid-template-columns:repeat(4,1fr); gap:12px; margin-bottom:18px; }
+.kpi-card  { background:var(--bg-card); border-radius:var(--r-lg); border:1px solid var(--border); box-shadow:var(--sh-xs); padding:14px 16px 12px; position:relative; overflow:hidden; transition:box-shadow .2s,transform .2s; }
+.kpi-card:hover { box-shadow:var(--sh-md); transform:translateY(-2px); }
+.kpi-card::after { content:''; position:absolute; top:0;left:0;right:0;height:3px; }
+.kc-purple::after { background:linear-gradient(90deg,#8b5cf6,#a78bfa); }
+.kc-green::after  { background:linear-gradient(90deg,#10b981,#34d399); }
+.kc-red::after    { background:linear-gradient(90deg,#f43f5e,#fb7185); }
+.kc-blue::after   { background:linear-gradient(90deg,#3b82f6,#60a5fa); }
+.kpi-row  { display:flex; align-items:flex-start; justify-content:space-between; gap:8px; }
+.kpi-icon { width:36px; height:36px; border-radius:9px; flex-shrink:0; display:flex; align-items:center; justify-content:center; font-size:14px; }
+.kc-purple .kpi-icon { background:rgba(139,92,246,.1); color:#8b5cf6; }
+.kc-green  .kpi-icon { background:rgba(16,185,129,.1); color:#10b981; }
+.kc-red    .kpi-icon { background:rgba(244,63,94,.1);  color:#f43f5e; }
+.kc-blue   .kpi-icon { background:rgba(59,130,246,.1); color:#3b82f6; }
+.kpi-val { font-size:1.8rem; font-weight:800; color:var(--text-1); line-height:1; letter-spacing:-.5px; margin-top:9px; }
+.kpi-lbl { font-size:.68rem; font-weight:700; color:var(--text-3); text-transform:uppercase; letter-spacing:.5px; }
+.kpi-foot { font-size:.7rem; color:var(--text-3); margin-top:5px; }
+
+/* ── Prompt card ─────────────────────────── */
+.prompt-card {
+    display:flex; flex-direction:column; align-items:center; justify-content:center;
+    padding:60px 20px; text-align:center;
+    background:var(--bg-card); border-radius:var(--r-lg);
+    border:2px dashed var(--border); color:var(--text-3);
+}
+.prompt-card i { font-size:42px; opacity:.2; margin-bottom:14px; display:block; }
+.prompt-card strong { color:var(--text-1); }
+
+/* ── Table card ─────────────────────────── */
+.cc { background:var(--bg-card); border-radius:var(--r-lg); border:1px solid var(--border); box-shadow:var(--sh-sm); overflow:hidden; }
+.cc-hd { display:flex; align-items:center; justify-content:space-between; padding:12px 18px; border-bottom:1px solid var(--border); background:linear-gradient(to right,#fafbff,#fff); gap:10px; flex-wrap:wrap; }
+.cc-hd-l { display:flex; align-items:center; gap:9px; }
+.cc-ico  { width:28px; height:28px; border-radius:7px; flex-shrink:0; background:rgba(139,92,246,.1); color:#8b5cf6; display:flex; align-items:center; justify-content:center; font-size:12px; }
+.cc-title    { font-size:.87rem; font-weight:700; color:var(--text-1); }
+.cc-subtitle { font-size:.69rem; color:var(--text-3); margin-top:1px; }
+
+/* ── Detail table ─────────────────────────── */
+.d-table { width:100%; border-collapse:collapse; font-size:.81rem; }
+.d-table thead th {
+    padding:9px 12px; text-align:left;
+    font-size:.67rem; font-weight:700; color:var(--text-3);
+    text-transform:uppercase; letter-spacing:.5px;
+    background:#f8f9fc; border-bottom:1px solid var(--border); white-space:nowrap;
+}
+.d-table thead th.ctr { text-align:center; }
+.d-table tbody tr { border-bottom:1px solid var(--border); transition:background .12s; }
+.d-table tbody tr:last-child { border-bottom:none; }
+.d-table tbody tr:hover { background:#fafbff; }
+.d-table td { padding:9px 12px; vertical-align:middle; }
+.d-table td.ctr { text-align:center; }
+
+.day-badge {
+    display:inline-flex; align-items:center; justify-content:center;
+    width:28px; height:28px; border-radius:6px;
+    font-size:.72rem; font-weight:800;
+    background:#eef1f8; color:var(--text-2);
+}
+
+.shift-pill {
+    display:inline-flex; align-items:center; gap:4px;
+    padding:2px 8px; border-radius:4px;
+    font-size:.72rem; font-weight:700;
+    background:rgba(139,92,246,.08); color:#7c3aed;
+    border:1px solid rgba(139,92,246,.15);
+}
+
+.room-tag {
+    display:inline-flex; padding:2px 8px; border-radius:4px;
+    font-size:.72rem; font-weight:700;
+    background:rgba(6,182,212,.08); color:#0891b2;
+    border:1px solid rgba(6,182,212,.15);
+}
+
+.subj-tag {
+    display:inline-flex; padding:2px 8px; border-radius:4px;
+    font-size:.68rem; font-weight:700;
+    background:rgba(232,89,12,.07); color:var(--c-primary);
+    border:1px solid rgba(232,89,12,.15);
+}
+
+.status-badge {
+    display:inline-flex; align-items:center; gap:5px;
+    padding:3px 10px; border-radius:50px;
+    font-size:.72rem; font-weight:700; white-space:nowrap;
+}
+.st-done  { background:rgba(16,185,129,.1);  color:#059669; border:1px solid rgba(16,185,129,.2); }
+.st-canc  { background:rgba(244,63,94,.1);   color:#e11d48; border:1px solid rgba(244,63,94,.2); }
+.st-schd  { background:rgba(59,130,246,.1);  color:#2563eb; border:1px solid rgba(59,130,246,.2); }
+.st-live  { background:rgba(245,159,0,.1);   color:#d97706; border:1px solid rgba(245,159,0,.2); }
+
+@@media print {
+    .rpt-bar form, .export-btn { display:none !important; }
+    body { background:#fff !important; }
+}
+
+        /* ══ Tom Select — reset hoàn toàn, build lại theo design system ══ */
+
+        /* Wrapper: không có border/bg riêng, chỉ là container */
+        .ts-wrapper {
+            width: 100% !important;
+            padding: 0 !important;
+            border: none !important;
+            background: none !important;
+            height: auto !important;
+            box-sizing: border-box !important;
+        }
+
+        /* Control: đây là ô hiển thị chính */
+        .ts-wrapper .ts-control {
+            width: 100% !important;
+            min-height: 36px !important;
+            height: 36px !important;
+            padding: 0 32px 0 10px !important;
+            border: 1.5px solid var(--border) !important;
+            border-radius: var(--r-sm) !important;
+            background: #f8f9fc !important;
+            color: var(--text-1) !important;
+            font-size: .83rem !important;
+            font-family: 'Plus Jakarta Sans', system-ui, sans-serif !important;
+            box-shadow: none !important;
+            cursor: pointer !important;
+            display: flex !important;
+            align-items: center !important;
+            flex-wrap: nowrap !important;
+            transition: border-color .15s, box-shadow .15s !important;
+        }
+
+        .ts-wrapper.focus .ts-control,
+        .ts-wrapper .ts-control:focus-within {
+            border-color: var(--c-primary) !important;
+            background: #fff !important;
+            box-shadow: inset 0 0 0 2px rgba(232,89,12,.12) !important;
+        }
+
+        /* Search input bên trong control */
+        .ts-wrapper .ts-control input {
+            font-size: .83rem !important;
+            font-family: 'Plus Jakarta Sans', system-ui, sans-serif !important;
+            color: var(--text-1) !important;
+            margin: 0 !important;
+            padding: 0 !important;
+            line-height: 36px !important;
+        }
+
+        /* Khi người dùng đang gõ tìm kiếm, ẩn item đang chọn để tránh lỗi:
+           "Tất cả lớp" + input người dùng => "Tất cả lớpa" */
+        .ts-wrapper.ts-searching .ts-control > .item {
+            display: none !important;
+        }
+
+        .ts-wrapper.ts-searching .ts-control input {
+            min-width: 100% !important;
+        }
+
+        /* Arrow dropdown */
+        .ts-wrapper.single .ts-control::after {
+            content: '' !important;
+            display: block !important;
+            width: 10px !important;
+            height: 10px !important;
+            position: absolute !important;
+            right: 10px !important;
+            top: 50% !important;
+            transform: translateY(-50%) !important;
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='10' viewBox='0 0 24 24' fill='none' stroke='%239aa0b4' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E") !important;
+            background-repeat: no-repeat !important;
+            background-position: center !important;
+            border: none !important;
+        }
+
+        /* Dropdown list */
+        .ts-dropdown {
+            border: 1.5px solid var(--border) !important;
+            border-radius: var(--r-sm) !important;
+            box-shadow: 0 8px 24px rgba(0,0,0,.10) !important;
+            font-size: .83rem !important;
+            font-family: 'Plus Jakarta Sans', system-ui, sans-serif !important;
+            margin-top: 3px !important;
+            z-index: 9999 !important;
+        }
+
+        .ts-dropdown .ts-dropdown-content {
+            max-height: 220px !important;
+        }
+
+        .ts-dropdown .option {
+            padding: 8px 12px !important;
+            color: var(--text-1) !important;
+            font-size: .83rem !important;
+            cursor: pointer !important;
+        }
+
+        .ts-dropdown .option:hover {
+            background: rgba(232,89,12,.07) !important;
+            color: var(--c-primary) !important;
+        }
+
+        .ts-dropdown .option.active {
+            background: rgba(232,89,12,.07) !important;
+            color: var(--c-primary) !important;
+        }
+
+        .ts-dropdown .option.selected,
+        .ts-dropdown .option.selected.active {
+            background: rgba(232,89,12,.12) !important;
+            color: var(--c-primary) !important;
+            font-weight: 700 !important;
+        }
+
+        /* Input tìm kiếm trong dropdown */
+        .ts-dropdown .ts-dropdown-header-search input,
+        .ts-wrapper .ts-control input[type="text"] {
+            outline: none !important;
+            border: none !important;
+            background: transparent !important;
+        }
+
+        /* ══ Flatpickr — date picker đồng bộ design system ══ */
+        .flatpickr-calendar {
+            font-family: 'Plus Jakarta Sans', system-ui, sans-serif !important;
+            font-size: .82rem !important;
+            border: 1.5px solid var(--border) !important;
+            border-radius: var(--r-md) !important;
+            box-shadow: 0 8px 24px rgba(0,0,0,.12) !important;
+        }
+
+        .flatpickr-day.selected,
+        .flatpickr-day.selected:hover {
+            background: var(--c-primary) !important;
+            border-color: var(--c-primary) !important;
+        }
+
+        .flatpickr-day:hover {
+            background: rgba(232,89,12,.10) !important;
+        }
+
+        .flatpickr-day.today {
+            border-color: var(--c-primary) !important;
+            color: var(--c-primary) !important;
+            font-weight: 700 !important;
+        }
+
+        .flatpickr-day.today.selected {
+            color: #fff !important;
+        }
+
+        .flatpickr-months .flatpickr-month {
+            background: #f4f6fc !important;
+            height: 44px !important;
+        }
+
+        .flatpickr-weekdays {
+            background: #f4f6fc !important;
+        }
+
+        /* ── Month dropdown select ── */
+        .flatpickr-current-month .flatpickr-monthDropdown-months {
+            appearance: none !important;
+            -webkit-appearance: none !important;
+            background: #fff url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='9' height='9' viewBox='0 0 24 24' fill='none' stroke='%239aa0b4' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E") no-repeat right 5px center !important;
+            border: 1.5px solid var(--border) !important;
+            border-radius: 6px !important;
+            padding: 3px 20px 3px 7px !important;
+            font-family: 'Plus Jakarta Sans', system-ui, sans-serif !important;
+            font-weight: 700 !important;
+            font-size: .78rem !important;
+            color: var(--text-1) !important;
+            cursor: pointer !important;
+            outline: none !important;
+            margin: 0 2px 0 0 !important;
+            transition: border-color .15s !important;
+            height: 28px !important;
+        }
+
+        .flatpickr-current-month .flatpickr-monthDropdown-months:hover,
+        .flatpickr-current-month .flatpickr-monthDropdown-months:focus {
+            border-color: var(--c-primary) !important;
+        }
+
+        /* ── Year input ── */
+        .flatpickr-current-month .numInputWrapper {
+            width: 62px !important;
+        }
+
+        .flatpickr-current-month input.cur-year {
+            background: #fff !important;
+            border: 1.5px solid var(--border) !important;
+            border-radius: 6px !important;
+            padding: 3px 6px !important;
+            font-family: 'Plus Jakarta Sans', system-ui, sans-serif !important;
+            font-weight: 700 !important;
+            font-size: .78rem !important;
+            color: var(--text-1) !important;
+            outline: none !important;
+            width: 100% !important;
+            height: 28px !important;
+            transition: border-color .15s !important;
+        }
+
+        .flatpickr-current-month input.cur-year:focus {
+            border-color: var(--c-primary) !important;
+        }
+
+        /* Ẩn mũi tên up/down của numInput cho gọn */
+        .flatpickr-current-month .numInputWrapper span {
+            display: none !important;
+        }
+
+        /* ── Navigation arrows ── */
+        .flatpickr-months .flatpickr-prev-month,
+        .flatpickr-months .flatpickr-next-month {
+            padding: 6px 9px !important;
+            border-radius: 6px !important;
+            top: 7px !important;
+            transition: background .15s !important;
+        }
+
+        .flatpickr-months .flatpickr-prev-month:hover,
+        .flatpickr-months .flatpickr-next-month:hover {
+            background: rgba(232,89,12,.08) !important;
+        }
+
+        .flatpickr-months .flatpickr-prev-month:hover svg,
+        .flatpickr-months .flatpickr-next-month:hover svg {
+            fill: var(--c-primary) !important;
+        }
+
+        span.flatpickr-weekday {
+            font-weight: 700 !important;
+            color: var(--text-2) !important;
+            font-size: .72rem !important;
+        }
+</style>
+}
+
+<!-- ════════ BACK BUTTON ════════ -->
+<div style="margin-bottom:14px">
+    <a href="/Admin/Reports"
+       style="display:inline-flex;align-items:center;gap:7px;padding:7px 14px;border-radius:var(--r-sm);background:var(--bg-card);border:1.5px solid var(--border);color:var(--text-2);font-size:.8rem;font-weight:700;text-decoration:none;box-shadow:var(--sh-xs);transition:all .15s"
+       onmouseover="this.style.borderColor='#8b5cf6';this.style.color='#7c3aed'"
+       onmouseout="this.style.borderColor='var(--border)';this.style.color='var(--text-2)'">
+        <i class="fas fa-arrow-left" style="font-size:11px"></i> Quay lại Báo cáo
+    </a>
+</div>
+
+<!-- ════════ FILTER BAR ════════ -->
+<form method="get" id="filterForm" class="rpt-bar">
+    <div class="rpt-filter-grid">
+        <div>
+            <label class="rpt-filter-lbl">Giáo viên</label>
+            <select name="TeacherId" id="TeacherId" class="rpt-sel">
+                <option value="0" selected="@(Model.TeacherId == 0 ? "selected" : null)">— Chọn giáo viên —</option>
+                @foreach (var t in Model.Teachers)
+                {
+                    <option value="@t.Id" selected="@(Model.TeacherId == t.Id ? "selected" : null)">@t.Name</option>
+                }
+            </select>
+        </div>
+        <div>
+            <label class="rpt-filter-lbl">Từ ngày</label>
+            <input type="text" name="DateFrom" id="DateFrom" value="@(Model.DateFrom.ToString("yyyy-MM-dd"))" class="rpt-date-input" autocomplete="off" data-rpt-date />
+        </div>
+        <div>
+            <label class="rpt-filter-lbl">Đến ngày</label>
+            <input type="text" name="DateTo" id="DateTo" value="@(Model.DateTo.ToString("yyyy-MM-dd"))" class="rpt-date-input" autocomplete="off" data-rpt-date />
+        </div>
+        <div class="rpt-filter-actions">
+            @if (hasTeacher)
+            {
+                <div class="period-pill"><i class="fas fa-calendar-range" style="font-size:10px"></i> @Model.PeriodLabel</div>
+                <a href="javascript:window.print()"
+                   style="display:inline-flex;align-items:center;gap:6px;padding:7px 12px;border-radius:var(--r-sm);background:rgba(139,92,246,.1);border:1px solid rgba(139,92,246,.3);color:#7c3aed;font-size:.77rem;font-weight:700;text-decoration:none">
+                    <i class="fas fa-print"></i> In
+                </a>
+                <a href="@exportUrl" class="export-btn">
+                    <i class="fas fa-file-excel"></i> Xuất Excel
+                </a>
+            }
+            else
+            {
+                <span class="export-btn disabled">
+                    <i class="fas fa-file-excel"></i> Chọn giáo viên trước
+                </span>
+            }
+        </div>
+    </div>
+</form>
+
+@if (!hasTeacher)
+{
+    <!-- Prompt -->
+    <div class="prompt-card">
+        <i class="fas fa-chalkboard-user"></i>
+        <div style="font-size:.9rem;margin-bottom:6px"><strong>Chưa chọn giáo viên</strong></div>
+        <div style="font-size:.78rem">Vui lòng chọn giáo viên ở bộ lọc phía trên để xem và xuất báo cáo.</div>
+    </div>
+}
+else
+{
+    <!-- ════════ KPI STRIP ════════ -->
+    <div class="kpi-strip">
+        <div class="kpi-card kc-purple">
+            <div class="kpi-row">
+                <div><div class="kpi-lbl">Tổng ca dạy</div><div class="kpi-val">@Model.Rows.Count</div></div>
+                <div class="kpi-icon"><i class="fas fa-list-check"></i></div>
+            </div>
+            <div class="kpi-foot">@Model.PeriodLabel</div>
+        </div>
+        <div class="kpi-card kc-green">
+            <div class="kpi-row">
+                <div><div class="kpi-lbl">Hoàn thành</div><div class="kpi-val">@Model.CountCompleted</div></div>
+                <div class="kpi-icon"><i class="fas fa-circle-check"></i></div>
+            </div>
+            <div class="kpi-foot">Ca đã dạy xong</div>
+        </div>
+        <div class="kpi-card kc-red">
+            <div class="kpi-row">
+                <div><div class="kpi-lbl">Đã hủy</div><div class="kpi-val">@Model.CountCancelled</div></div>
+                <div class="kpi-icon"><i class="fas fa-calendar-xmark"></i></div>
+            </div>
+            <div class="kpi-foot">Ca bị hủy trong kỳ</div>
+        </div>
+        <div class="kpi-card kc-blue">
+            <div class="kpi-row">
+                <div><div class="kpi-lbl">Lịch dạy còn lại</div><div class="kpi-val">@Model.CountScheduled</div></div>
+                <div class="kpi-icon"><i class="fas fa-calendar-plus"></i></div>
+            </div>
+            <div class="kpi-foot">Ca chưa diễn ra</div>
+        </div>
+    </div>
+
+    <!-- ════════ TABLE ════════ -->
+    <div class="cc">
+        <div class="cc-hd">
+            <div class="cc-hd-l">
+                <div class="cc-ico"><i class="fas fa-list"></i></div>
+                <div>
+                    <div class="cc-title">Danh sách ca dạy — @Model.SelectedTeacherName</div>
+                    <div class="cc-subtitle">@Model.PeriodLabel · Sắp xếp: ngày tăng dần, ca sớm lên trước</div>
+                </div>
+            </div>
+        </div>
+
+        @if (Model.Rows.Any())
+        {
+            <table class="d-table">
+                <thead>
+                    <tr>
+                        <th style="width:36px">#</th>
+                        <th>Ngày dạy</th>
+                        <th class="ctr">Thứ</th>
+                        <th>Ca học</th>
+                        <th>Phòng</th>
+                        <th>Lớp</th>
+                        <th>Môn học</th>
+                        <th>Trợ giảng</th>
+                        <th class="ctr">Trạng thái</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @{ int stt = 1; }
+                    @foreach (var r in Model.Rows)
+                    {
+                        string stClass = r.Status switch
+                        {
+                            SessionStatus.Completed => "st-done",
+                            SessionStatus.Cancelled => "st-canc",
+                            SessionStatus.Ongoing   => "st-live",
+                            _                       => "st-schd"
+                        };
+                        string stIcon = r.Status switch
+                        {
+                            SessionStatus.Completed => "fa-circle-check",
+                            SessionStatus.Cancelled => "fa-circle-xmark",
+                            SessionStatus.Ongoing   => "fa-circle-play",
+                            _                       => "fa-calendar"
+                        };
+
+                        <tr>
+                            <td style="font-size:.78rem;font-weight:700;color:var(--text-3)">@stt</td>
+                            <td style="font-weight:700;color:var(--text-1)">
+                                @r.SessionDate.ToString("dd/MM/yyyy")
+                            </td>
+                            <td class="ctr"><span class="day-badge">@r.DayLabel</span></td>
+                            <td>
+                                <span class="shift-pill">
+                                    <i class="fas fa-clock" style="font-size:9px"></i>
+                                    @r.ShiftName
+                                </span>
+                                <div style="font-size:.68rem;color:var(--text-3);margin-top:2px">@r.ShiftTime</div>
+                            </td>
+                            <td><span class="room-tag">@r.RoomCode</span></td>
+                            <td>
+                                <div style="font-weight:700;font-size:.8rem;color:var(--text-1)">@r.ClassCode</div>
+                                @if (!string.IsNullOrEmpty(r.ClassName))
+                                { <div style="font-size:.68rem;color:var(--text-3)">@r.ClassName</div> }
+                            </td>
+                            <td><span class="subj-tag">@r.SubjectLabel</span></td>
+                            <td style="font-size:.78rem;color:var(--text-2)">
+                                @if (!string.IsNullOrEmpty(r.AssistantName))
+                                {
+                                    <i class="fas fa-user-tie" style="font-size:10px;color:#8b5cf6;margin-right:4px"></i>@r.AssistantName
+                                }
+                                else { <span style="color:var(--text-3);font-style:italic;font-size:.71rem">—</span> }
+                            </td>
+                            <td class="ctr">
+                                <span class="status-badge @stClass">
+                                    <i class="fas @stIcon" style="font-size:9px"></i>
+                                    @r.StatusLabel
+                                </span>
+                            </td>
+                        </tr>
+                        stt++;
+                    }
+                </tbody>
+            </table>
+        }
+        else
+        {
+            <div style="text-align:center;padding:60px 20px;color:var(--text-3);font-size:.85rem">
+                <i class="fas fa-list-check" style="font-size:36px;opacity:.2;display:block;margin-bottom:12px"></i>
+                <strong>@Model.SelectedTeacherName</strong> không có ca dạy trong <strong>@Model.PeriodLabel</strong>
+            </div>
+        }
+    </div>
+}
+
+@section Scripts {
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/tom-select@2.3.1/dist/css/tom-select.min.css" />
+<script src="https://cdn.jsdelivr.net/npm/tom-select@2.3.1/dist/js/tom-select.complete.min.js"></script>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css" />
+<script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+<script src="https://cdn.jsdelivr.net/npm/flatpickr/dist/l10n/vn.js"></script>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Flatpickr for date inputs
+    if (typeof flatpickr !== 'undefined') {
+        var inputs = document.querySelectorAll('[data-rpt-date]');
+        inputs.forEach(function(el) {
+            flatpickr(el, {
+                dateFormat: 'Y-m-d',
+                altInput: true,
+                altFormat: 'd/m/Y',
+                locale: 'vn',
+                allowInput: true,
+                disableMobile: true,
+                onChange: function(selectedDates, dateStr, instance) {
+                    if (instance.input.form) instance.input.form.submit();
+                }
+            });
+        });
+    }
+
+    // TomSelect for teacher select
+    if (typeof TomSelect !== 'undefined' && document.getElementById('TeacherId')) {
+        function fixTomSelectSearchDisplay(ts) {
+            function syncSearchState() {
+                var val = ts.control_input ? ts.control_input.value.trim() : '';
+                ts.wrapper.classList.toggle('ts-searching', val.length > 0);
+            }
+            ts.on('type', syncSearchState);
+            ts.on('focus', syncSearchState);
+            ts.on('blur', function () { ts.wrapper.classList.remove('ts-searching'); });
+            ts.on('dropdown_close', function () { ts.wrapper.classList.remove('ts-searching'); });
+            if (ts.control_input) {
+                ts.control_input.addEventListener('input', syncSearchState);
+                ts.control_input.addEventListener('keydown', function() { setTimeout(syncSearchState, 0); });
+            }
+            var origOpen = ts.open;
+            ts.open = function() {
+                origOpen.call(this);
+                var self = this;
+                setTimeout(function() {
+                    if (self.control_input) self.control_input.value = '';
+                    self.lastValue = '';
+                    self.wrapper.classList.remove('ts-searching');
+                    self.refreshOptions(false);
+                }, 0);
+            };
+        }
+        var ts = new TomSelect('#TeacherId', {
+            allowEmptyOption: true,
+            create: false,
+            searchField: ['text'],
+            maxOptions: 500,
+            onChange: function() {
+                var form = document.getElementById('TeacherId').form || document.querySelector('form');
+                if (form) form.submit();
+            }
+        });
+        fixTomSelectSearchDisplay(ts);
+    }
+});
+</script>
+}

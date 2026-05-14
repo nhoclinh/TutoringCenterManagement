@@ -47,16 +47,26 @@ namespace TutoringCenterManagement.Services.Background
             var today = DateOnly.FromDateTime(DateTime.Now);
             var currentTime = TimeOnly.FromDateTime(DateTime.Now);
 
-            // Lấy tất cả session hôm nay chưa bị Cancelled
+            int updatedCount = 0;
+
+            // Cập nhật các session quá khứ bị kẹt ở Scheduled hoặc Ongoing
+            var pastSessions = await context.Sessions
+                .Where(s => s.SessionDate < today
+                         && (s.Status == SessionStatus.Scheduled || s.Status == SessionStatus.Ongoing))
+                .ToListAsync();
+
+            foreach (var session in pastSessions)
+            {
+                session.Status = SessionStatus.Completed;
+                updatedCount++;
+            }
+
+            // Cập nhật các session hôm nay chưa bị Cancelled
             var todaySessions = await context.Sessions
                 .Include(s => s.Shift)
                 .Where(s => s.SessionDate == today
                          && s.Status != SessionStatus.Cancelled)
                 .ToListAsync();
-
-            if (!todaySessions.Any()) return;
-
-            int updatedCount = 0;
 
             foreach (var session in todaySessions)
             {

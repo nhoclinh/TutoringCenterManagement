@@ -71,7 +71,7 @@ namespace TutoringCenterManagement.Pages.Admin.Sessions
                 .Select(a => a.SessionId)
                 .Distinct()
                 .ToListAsync(); // Lấy dữ liệu về client
-                                    // Chuyển sang HashSet ở bộ nhớ
+                                // Chuyển sang HashSet ở bộ nhớ
 
             Sessions = sessions.Select(s => new SessionViewModel
             {

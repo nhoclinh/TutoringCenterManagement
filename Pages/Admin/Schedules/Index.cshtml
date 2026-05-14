@@ -38,8 +38,8 @@
 @section Styles {
     <style>
         /* ══════════════════════════════════════════════════════
-           SCHEDULES v2 — Grid + Weekly View
-        ══════════════════════════════════════════════════════ */
+                           SCHEDULES v2 — Grid + Weekly View
+                        ══════════════════════════════════════════════════════ */
 
         /* ── Summary chips ── */
         .summary-bar {
@@ -107,19 +107,49 @@
             color: #6b7280;
         }
 
-        /* ── Toolbar ── */
-        .sched-toolbar {
+        /* ── Filter card ── */
+        .filter-card {
+            background: #fff;
+            border-radius: var(--r-lg);
+            border: 1px solid var(--border);
+            box-shadow: var(--sh-sm);
+            padding: 16px 20px;
+            margin-bottom: 16px;
+        }
+
+        .sched-filter-grid {
+            display: grid;
+            grid-template-columns: 2fr 1.5fr 1.5fr;
+            gap: 12px;
+            align-items: flex-end;
+        }
+
+        .filter-label {
+            font-size: .72rem;
+            font-weight: 700;
+            color: var(--text-2);
+            text-transform: uppercase;
+            letter-spacing: .5px;
+            display: block;
+            margin-bottom: 5px;
+        }
+
+        /* ── Content topbar ── */
+        .sched-topbar {
             display: flex;
             align-items: center;
-            gap: 10px;
             flex-wrap: wrap;
-            margin-bottom: 16px;
+            gap: 10px;
+            margin-bottom: 14px;
+        }
+
+        .sched-topbar .view-toggle {
+            margin-left: auto;
         }
 
         .search-wrap {
             position: relative;
-            flex: 1;
-            min-width: 200px;
+            width: 100%;
         }
 
             .search-wrap i {
@@ -139,11 +169,12 @@
 
         .search-input {
             width: 100%;
-            padding: 8px 12px 8px 34px;
+            height: 36px;
+            padding: 0 12px 0 34px;
             box-sizing: border-box;
             border: 1.5px solid var(--border);
             border-radius: var(--r-sm);
-            background: var(--bg-card);
+            background: #f8f9fc;
             color: var(--text-1);
             font-size: .83rem;
             font-family: 'Plus Jakarta Sans',system-ui,sans-serif;
@@ -153,7 +184,8 @@
 
             .search-input:focus {
                 border-color: var(--c-primary);
-                box-shadow: 0 0 0 3px var(--c-glow);
+                background: #fff;
+                box-shadow: inset 0 0 0 2px rgba(232,89,12,.12);
             }
 
             .search-input::placeholder {
@@ -161,15 +193,23 @@
             }
 
         .filter-sel {
-            padding: 8px 12px;
+            width: 100%;
+            height: 36px;
+            padding: 0 28px 0 10px;
             border: 1.5px solid var(--border);
             border-radius: var(--r-sm);
-            background: var(--bg-card);
+            background: #f8f9fc;
             color: var(--text-1);
             font-size: .83rem;
             font-family: 'Plus Jakarta Sans',system-ui,sans-serif;
             outline: none;
             cursor: pointer;
+            box-sizing: border-box;
+            -webkit-appearance: none;
+            appearance: none;
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='10' viewBox='0 0 24 24' fill='none' stroke='%239aa0b4' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E");
+            background-repeat: no-repeat;
+            background-position: right 9px center;
             transition: border-color .15s;
         }
 
@@ -214,9 +254,62 @@
                 background: #fff9f5;
             }
 
+        /* ── Grid footer / pagination ── */
+        .grid-foot {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 12px 0 4px;
+            flex-wrap: wrap;
+            gap: 8px;
+        }
+
+        .foot-info {
+            font-size: .78rem;
+            color: var(--text-2);
+            font-weight: 500;
+        }
+
+        .pg-btn {
+            min-width: 30px;
+            height: 30px;
+            padding: 0 7px;
+            border-radius: var(--r-sm);
+            border: 1.5px solid var(--border);
+            background: #fff;
+            color: var(--text-2);
+            font-size: .78rem;
+            font-weight: 600;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all .15s;
+        }
+
+            .pg-btn:hover {
+                border-color: var(--c-primary);
+                color: var(--c-primary);
+            }
+
+            .pg-btn.active {
+                background: var(--c-primary);
+                border-color: var(--c-primary);
+                color: #fff !important;
+            }
+
+            .pg-btn:disabled {
+                opacity: .4;
+                cursor: not-allowed;
+            }
+
+        .sched-card.page-hidden {
+            display: none;
+        }
+
         /* ══════════════════════════════════════════════
-           GRID VIEW
-        ══════════════════════════════════════════════ */
+                           GRID VIEW
+                        ══════════════════════════════════════════════ */
         #gridView {
             display: grid;
             grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
@@ -453,8 +546,8 @@
             }
 
         /* ══════════════════════════════════════════════
-           WEEKLY GRID VIEW
-        ══════════════════════════════════════════════ */
+                           WEEKLY GRID VIEW
+                        ══════════════════════════════════════════════ */
         #weeklyView {
         }
         /* display controlled by JS inline style */
@@ -574,6 +667,7 @@
             position: relative;
             padding: 4px;
             box-sizing: border-box;
+            overflow: hidden;
         }
 
             .wg-cell:last-child {
@@ -582,6 +676,59 @@
 
             .wg-cell.weekend-bg {
                 background: rgba(248,113,113,.025);
+            }
+
+        .wg-stack {
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+            min-height: 0;
+        }
+
+            .wg-stack .wg-event {
+                height: auto;
+                flex: 1 1 0;
+                min-height: 0;
+            }
+
+            .wg-stack.is-multi .wg-event {
+                padding: 4px 6px;
+                border-left-width: 2px;
+                border-radius: 5px;
+            }
+
+                .wg-stack.is-multi .wg-event .ev-shift {
+                    display: none;
+                }
+
+            .wg-stack.count-2 .wg-event .ev-class {
+                font-size: .72rem;
+            }
+
+            .wg-stack.count-2 .wg-event .ev-room {
+                font-size: .62rem;
+            }
+
+            .wg-stack.count-3 .wg-event,
+            .wg-stack.count-4 .wg-event {
+                padding: 3px 5px;
+                gap: 1px;
+            }
+
+                .wg-stack.count-3 .wg-event .ev-class,
+                .wg-stack.count-4 .wg-event .ev-class {
+                    font-size: .67rem;
+                    line-height: 1.15;
+                }
+
+                .wg-stack.count-3 .wg-event .ev-room,
+                .wg-stack.count-4 .wg-event .ev-room {
+                    display: none;
+                }
+
+            .wg-stack.count-4 .wg-event {
+                padding: 2px 4px;
             }
 
         /* ── Event card inside weekly grid ── */
@@ -598,6 +745,7 @@
             cursor: pointer;
             transition: filter .12s,transform .12s;
             overflow: hidden;
+            min-width: 0;
         }
 
             .wg-event:hover {
@@ -611,6 +759,7 @@
                 white-space: nowrap;
                 overflow: hidden;
                 text-overflow: ellipsis;
+                min-width: 0;
             }
 
             .wg-event .ev-shift {
@@ -623,6 +772,10 @@
                 font-weight: 600;
                 opacity: .65;
                 font-size: .65rem;
+                white-space: nowrap;
+                overflow: hidden;
+                text-overflow: ellipsis;
+                min-width: 0;
             }
 
             /* status colors */
@@ -1022,6 +1175,14 @@
                 grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
             }
 
+            .sched-filter-grid {
+                grid-template-columns: 1fr 1fr;
+            }
+
+                .sched-filter-grid > div:first-child {
+                    grid-column: span 2;
+                }
+
             .weekly-grid {
                 grid-template-columns: 50px repeat(7, 1fr);
             }
@@ -1036,14 +1197,13 @@
                 grid-template-columns: 1fr;
             }
 
-            .sched-toolbar {
-                flex-direction: column;
-                align-items: stretch;
+            .sched-filter-grid {
+                grid-template-columns: 1fr;
             }
 
-            .view-toggle {
-                align-self: flex-end;
-            }
+                .sched-filter-grid > div:first-child {
+                    grid-column: span 1;
+                }
         }
     </style>
 }
@@ -1091,35 +1251,46 @@
     </div>
 </div>
 
-<!-- TOOLBAR -->
-<div class="sched-toolbar">
-    <div class="search-wrap">
-        <i class="fas fa-search"></i>
-        <input type="text" class="search-input" id="searchInput"
-               placeholder="Tìm lớp học, ca học, phòng..." autocomplete="off" />
+<!-- FILTER CARD -->
+<div class="filter-card">
+    <div class="sched-filter-grid">
+        <div>
+            <label class="filter-label">Tìm kiếm</label>
+            <div class="search-wrap">
+                <i class="fas fa-search"></i>
+                <input type="text" class="search-input" id="searchInput"
+                       placeholder="Tìm lớp học, ca học, phòng..." autocomplete="off" />
+            </div>
+        </div>
+        <div>
+            <label class="filter-label">Lớp học</label>
+            <select class="filter-sel" id="filterClass">
+                <option value="">Tất cả lớp</option>
+                @foreach (var c in Model.Classes)
+                {
+                    <option value="@c.ClassId">@c.ClassCode</option>
+                }
+            </select>
+        </div>
+        <div>
+            <label class="filter-label">Trạng thái</label>
+            <select class="filter-sel" id="filterStatus">
+                <option value="">Tất cả trạng thái</option>
+                <option value="active">Đang hoạt động</option>
+                <option value="upcoming">Sắp diễn ra</option>
+                <option value="finished">Đã kết thúc</option>
+                <option value="early">Kết thúc sớm</option>
+            </select>
+        </div>
     </div>
+</div>
 
-    <select class="filter-sel" id="filterClass">
-        <option value="">Tất cả lớp</option>
-        @foreach (var c in Model.Classes)
-        {
-            <option value="@c.ClassId">@c.ClassCode</option>
-        }
-    </select>
-
-    <select class="filter-sel" id="filterStatus">
-        <option value="">Tất cả trạng thái</option>
-        <option value="active">Đang hoạt động</option>
-        <option value="upcoming">Sắp diễn ra</option>
-        <option value="finished">Đã kết thúc</option>
-        <option value="early">Kết thúc sớm</option>
-    </select>
-
+<!-- CONTENT TOPBAR -->
+<div class="sched-topbar">
     <span class="result-badge" id="resultBadge">
         <i class="fas fa-layer-group" style="font-size:10px"></i>
         Hiển thị <strong id="resultCount">@totalTpl</strong> / @totalTpl lịch
     </span>
-
     <div class="view-toggle">
         <button class="vt-btn active" id="btnGrid" onclick="switchView('grid')">
             <i class="fas fa-grip"></i> Thẻ
@@ -1245,6 +1416,12 @@
     }
 </div>
 
+<!-- GRID FOOTER -->
+<div class="grid-foot" id="gridFoot">
+    <span class="foot-info" id="gridFootInfo">Hiển thị <strong>@Math.Min(20, totalTpl)</strong> / <strong>@totalTpl</strong> lịch học</span>
+    <div style="display:flex;align-items:center;gap:4px" id="gridPager"></div>
+</div>
+
 <!-- ═══════════════════════════════════════════
      WEEKLY VIEW
 ═══════════════════════════════════════════ -->
@@ -1302,22 +1479,30 @@
                             <div class="wg-cell @(isWeekend ? "weekend-bg" : "")">
                                 @if (eventsHere.Any())
                                 {
-                                    @foreach (var ev in eventsHere)
-                                    {
-                                        var evCls = ev.Status switch
+                                    var stackedCountClass = eventsHere.Count > 1
+                                        ? $"is-multi count-{Math.Min(eventsHere.Count, 4)}"
+                                        : "count-1";
+                                    <div class="wg-stack @stackedCountClass">
+                                        @foreach (var ev in eventsHere.OrderBy(e => e.ClassName))
                                         {
-                                            ScheduleTemplateStatus.Active => "active",
-                                            ScheduleTemplateStatus.Upcoming => "upcoming",
-                                            ScheduleTemplateStatus.FinishedEarly => "early",
-                                            _ => "finished"
-                                        };
-                                        <div class="wg-event @evCls" onclick="openDetail(@ev.TemplateId)"
-                                             title="@ev.ClassName — @ev.ShiftName (@ev.ShiftTime) — @ev.RoomCode">
-                                            <div class="ev-class">@ev.ClassName</div>
-                                            <div class="ev-shift">@ev.ShiftTime</div>
-                                            <div class="ev-room"><i class="fas fa-door-open" style="font-size:8px"></i> @ev.RoomCode</div>
-                                        </div>
-                                    }
+                                            var evCls = ev.Status switch
+                                            {
+                                                ScheduleTemplateStatus.Active => "active",
+                                                ScheduleTemplateStatus.Upcoming => "upcoming",
+                                                ScheduleTemplateStatus.FinishedEarly => "early",
+                                                _ => "finished"
+                                            };
+                                            <div class="wg-event @evCls" onclick="openDetail(@ev.TemplateId)"
+                                                 data-class-id="@ev.ClassId"
+                                                 data-status="@evCls"
+                                                 data-search="@ev.ClassName.ToLower() @ev.SubjectName.ToLower() @ev.ShiftName.ToLower() @ev.RoomCode.ToLower()"
+                                                 title="@ev.ClassName — @ev.ShiftName (@ev.ShiftTime) — @ev.RoomCode">
+                                                <div class="ev-class">@ev.ClassName</div>
+                                                <div class="ev-shift">@ev.ShiftTime</div>
+                                                <div class="ev-room"><i class="fas fa-door-open" style="font-size:8px"></i> @ev.RoomCode</div>
+                                            </div>
+                                        }
+                                    </div>
                                 }
                             </div>
                         </div>
@@ -1476,6 +1661,122 @@
 </form>
 
 @section Scripts {
+    @* Tom Select — searchable dropdown *@
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/tom-select@2.3.1/dist/css/tom-select.min.css" />
+    <script src="https://cdn.jsdelivr.net/npm/tom-select@2.3.1/dist/js/tom-select.complete.min.js"></script>
+
+    <style>
+        /* ══ Tom Select — searchable dropdown, đồng bộ filter card ══ */
+        .filter-card .ts-wrapper {
+            width: 100% !important;
+            padding: 0 !important;
+            border: none !important;
+            background: none !important;
+            height: auto !important;
+            box-sizing: border-box !important;
+        }
+
+        .filter-card .ts-wrapper .ts-control {
+            width: 100% !important;
+            min-height: 36px !important;
+            height: 36px !important;
+            padding: 0 32px 0 10px !important;
+            border: 1.5px solid var(--border) !important;
+            border-radius: var(--r-sm) !important;
+            background: #f8f9fc !important;
+            color: var(--text-1) !important;
+            font-size: .83rem !important;
+            font-family: 'Plus Jakarta Sans', system-ui, sans-serif !important;
+            box-shadow: none !important;
+            cursor: pointer !important;
+            display: flex !important;
+            align-items: center !important;
+            flex-wrap: nowrap !important;
+            transition: border-color .15s, box-shadow .15s !important;
+        }
+
+        .filter-card .ts-wrapper.focus .ts-control,
+        .filter-card .ts-wrapper .ts-control:focus-within {
+            border-color: var(--c-primary) !important;
+            background: #fff !important;
+            box-shadow: inset 0 0 0 2px rgba(232,89,12,.12) !important;
+        }
+
+        .filter-card .ts-wrapper .ts-control input {
+            font-size: .83rem !important;
+            font-family: 'Plus Jakarta Sans', system-ui, sans-serif !important;
+            color: var(--text-1) !important;
+            margin: 0 !important;
+            padding: 0 !important;
+            line-height: 36px !important;
+            outline: none !important;
+            border: none !important;
+            background: transparent !important;
+        }
+
+        .filter-card .ts-wrapper.ts-searching .ts-control > .item {
+            display: none !important;
+        }
+
+        .filter-card .ts-wrapper.ts-searching .ts-control input {
+            min-width: 100% !important;
+        }
+
+        .filter-card .ts-wrapper.single .ts-control::after {
+            content: '' !important;
+            display: block !important;
+            width: 10px !important;
+            height: 10px !important;
+            position: absolute !important;
+            right: 10px !important;
+            top: 50% !important;
+            transform: translateY(-50%) !important;
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='10' viewBox='0 0 24 24' fill='none' stroke='%239aa0b4' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E") !important;
+            background-repeat: no-repeat !important;
+            background-position: center !important;
+            border: none !important;
+        }
+
+        .ts-dropdown {
+            border: 1.5px solid var(--border) !important;
+            border-radius: var(--r-sm) !important;
+            box-shadow: 0 8px 24px rgba(0,0,0,.10) !important;
+            font-size: .83rem !important;
+            font-family: 'Plus Jakarta Sans', system-ui, sans-serif !important;
+            margin-top: 3px !important;
+            z-index: 9999 !important;
+        }
+
+        .ts-dropdown .ts-dropdown-content {
+            max-height: 220px !important;
+        }
+
+        .ts-dropdown .option {
+            padding: 8px 12px !important;
+            color: var(--text-1) !important;
+            font-size: .83rem !important;
+            cursor: pointer !important;
+        }
+
+        .ts-dropdown .option:hover,
+        .ts-dropdown .option.active {
+            background: rgba(232,89,12,.07) !important;
+            color: var(--c-primary) !important;
+        }
+
+        .ts-dropdown .option.selected,
+        .ts-dropdown .option.selected.active {
+            background: rgba(232,89,12,.12) !important;
+            color: var(--c-primary) !important;
+            font-weight: 700 !important;
+        }
+
+        @@media (max-width:600px) {
+            .filter-card .ts-wrapper {
+                width: 100% !important;
+            }
+        }
+    </style>
     <script>
         (function () {
 
@@ -1483,47 +1784,52 @@
         var TEMPLATES = [
         @foreach (var t in allTemplates)
         {
-                var badgeCls = t.Status switch
-                {
-                        ScheduleTemplateStatus.Active => "active",
-                        ScheduleTemplateStatus.Upcoming => "upcoming",
-                        ScheduleTemplateStatus.FinishedEarly => "early",
-                        _ => "finished"
-                };
-                var badgeLabel = t.Status switch
-                {
-                        ScheduleTemplateStatus.Active => "Đang hoạt động",
-                        ScheduleTemplateStatus.Upcoming => "Sắp diễn ra",
-                        ScheduleTemplateStatus.FinishedEarly => "Kết thúc sớm",
-                        _ => "Đã kết thúc"
-                };
-                var dayLabelFull = DayLabelFull(t.DayOfWeek);
-                var canFinish = t.Status == ScheduleTemplateStatus.Active || t.Status == ScheduleTemplateStatus.Upcoming;
-                var classNameJs = t.ClassName.Replace("'", "\\'");
-                var subjJs = t.SubjectName.Replace("'", "\\'");
-                var shiftNameJs = t.ShiftName.Replace("'", "\\'");
-                var shiftTimeJs = t.ShiftTime.Replace("'", "\\'");
-                <text>
-                {
-                    id: @t.TemplateId,
-                    classId: @t.ClassId,
-                    className: '@classNameJs',
-                    subjectName: '@subjJs',
-                    dayLabel: '@dayLabelFull',
-                    shiftName: '@shiftNameJs',
-                    shiftTime: '@shiftTimeJs',
-                    roomCode: '@t.RoomCode',
-                    startDate: '@t.StartDate.ToString("dd/MM/yyyy")',
-                    endDate: '@t.EndDate.ToString("dd/MM/yyyy")',
-                    startDateJs: '@t.StartDate.ToString("yyyy-MM-dd")',
-                    endDateJs: '@t.EndDate.ToString("yyyy-MM-dd")',
-                    status: '@badgeCls',
-                    statusLabel: '@badgeLabel',
-                    canFinish: @(canFinish ? "true" : "false")
-                },
-                </text>
+                        var badgeCls = t.Status switch
+                        {
+                                        ScheduleTemplateStatus.Active => "active",
+                                        ScheduleTemplateStatus.Upcoming => "upcoming",
+                                        ScheduleTemplateStatus.FinishedEarly => "early",
+                                        _ => "finished"
+                        };
+                        var badgeLabel = t.Status switch
+                        {
+                                        ScheduleTemplateStatus.Active => "Đang hoạt động",
+                                        ScheduleTemplateStatus.Upcoming => "Sắp diễn ra",
+                                        ScheduleTemplateStatus.FinishedEarly => "Kết thúc sớm",
+                                        _ => "Đã kết thúc"
+                        };
+                        var dayLabelFull = DayLabelFull(t.DayOfWeek);
+                        var canFinish = t.Status == ScheduleTemplateStatus.Active || t.Status == ScheduleTemplateStatus.Upcoming;
+                        var classNameJs = t.ClassName.Replace("'", "\\'");
+                        var subjJs = t.SubjectName.Replace("'", "\\'");
+                        var shiftNameJs = t.ShiftName.Replace("'", "\\'");
+                        var shiftTimeJs = t.ShiftTime.Replace("'", "\\'");
+                        <text>
+                                {
+                                    id: @t.TemplateId,
+                                    classId: @t.ClassId,
+                                    className: @Html.Raw(System.Text.Json.JsonSerializer.Serialize(t.ClassName)),
+                                    subjectName: @Html.Raw(System.Text.Json.JsonSerializer.Serialize(t.SubjectName)),
+                                    dayLabel: @Html.Raw(System.Text.Json.JsonSerializer.Serialize(dayLabelFull)),
+                                    shiftName: @Html.Raw(System.Text.Json.JsonSerializer.Serialize(t.ShiftName)),
+                                    shiftTime: @Html.Raw(System.Text.Json.JsonSerializer.Serialize(t.ShiftTime)),
+                                    roomCode: @Html.Raw(System.Text.Json.JsonSerializer.Serialize(t.RoomCode)),
+                                    startDate: @Html.Raw(System.Text.Json.JsonSerializer.Serialize(t.StartDate.ToString("dd/MM/yyyy"))),
+                                    endDate: @Html.Raw(System.Text.Json.JsonSerializer.Serialize(t.EndDate.ToString("dd/MM/yyyy"))),
+                                    startDateJs: @Html.Raw(System.Text.Json.JsonSerializer.Serialize(t.StartDate.ToString("yyyy-MM-dd"))),
+                                    endDateJs: @Html.Raw(System.Text.Json.JsonSerializer.Serialize(t.EndDate.ToString("yyyy-MM-dd"))),
+                                    status: @Html.Raw(System.Text.Json.JsonSerializer.Serialize(badgeCls)),
+                                    statusLabel: @Html.Raw(System.Text.Json.JsonSerializer.Serialize(badgeLabel)),
+                                    canFinish: @(canFinish ? "true" : "false")
+                                },
+                        </text>
         }
         ];
+
+        // ── Pagination state ─────────────────────────────────────────
+        var PAGE_SIZE   = 20;
+        var currentPage = 1;
+        var allCards    = [];
 
         // ── View toggle — defined outside DOMContentLoaded so onclick attrs can call it ──
         window.switchView = function (v) {
@@ -1533,7 +1839,83 @@
             document.getElementById('btnWeekly').classList.toggle('active', v === 'weekly');
             var rb = document.getElementById('resultBadge');
             if (rb) rb.style.display = v === 'grid' ? '' : 'none';
+            var gf = document.getElementById('gridFoot');
+            if (gf) gf.style.display = v === 'grid' ? 'flex' : 'none';
         };
+
+        // ── Pagination functions ──────────────────────────────────────
+        function renderPage() {
+            var filtered   = allCards.filter(function (c) { return !c.classList.contains('filtered-out'); });
+            var total      = filtered.length;
+            var totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE));
+            if (currentPage > totalPages) currentPage = totalPages;
+            if (currentPage < 1)         currentPage = 1;
+
+            var start = (currentPage - 1) * PAGE_SIZE;
+            var end   = start + PAGE_SIZE;
+
+            allCards.forEach(function (card) {
+                if (!card.classList.contains('filtered-out')) {
+                    var idx = filtered.indexOf(card);
+                    card.classList.toggle('page-hidden', idx < start || idx >= end);
+                } else {
+                    card.classList.remove('page-hidden');
+                }
+            });
+
+            var shown = Math.max(0, Math.min(end, total) - start);
+
+            var rcEl = document.getElementById('resultCount');
+            if (rcEl) rcEl.textContent = total;
+
+            var fiEl = document.getElementById('gridFootInfo');
+            if (fiEl) fiEl.innerHTML = 'Hiển thị <strong>' + shown + '</strong> / <strong>' + total + '</strong> lịch học';
+
+            var ge = document.getElementById('gridEmpty');
+            if (ge) ge.style.display = (total === 0 && allCards.length > 0) ? 'flex' : 'none';
+
+            renderPager(totalPages);
+        }
+
+        function renderPager(totalPages) {
+            var pager = document.getElementById('gridPager');
+            if (!pager) return;
+            pager.innerHTML = '';
+            if (totalPages <= 1) return;
+
+            function makeBtn(labelHtml, isHtml, page, isCurrent, isDisabled) {
+                var btn = document.createElement('button');
+                btn.className = 'pg-btn' + (isCurrent ? ' active' : '');
+                if (isHtml) btn.innerHTML = labelHtml; else btn.textContent = labelHtml;
+                btn.disabled = isDisabled;
+                if (!isDisabled && page !== null) {
+                    btn.addEventListener('click', (function (p) {
+                        return function () { currentPage = p; renderPage(); };
+                    })(page));
+                }
+                return btn;
+            }
+
+            function dots() {
+                var d = document.createElement('span');
+                d.textContent = '…';
+                d.style.cssText = 'padding:0 4px;color:var(--text-3);font-size:.78rem;line-height:30px';
+                pager.appendChild(d);
+            }
+
+            pager.appendChild(makeBtn('<i class="fas fa-chevron-left" style="font-size:10px"></i>', true, currentPage - 1, false, currentPage <= 1));
+
+            var maxBtns = 5;
+            var startP  = Math.max(1, currentPage - Math.floor(maxBtns / 2));
+            var endP    = Math.min(totalPages, startP + maxBtns - 1);
+            if (endP - startP < maxBtns - 1) startP = Math.max(1, endP - maxBtns + 1);
+
+            if (startP > 1) { pager.appendChild(makeBtn('1', false, 1, false, false)); if (startP > 2) dots(); }
+            for (var p = startP; p <= endP; p++) pager.appendChild(makeBtn(String(p), false, p, p === currentPage, false));
+            if (endP < totalPages) { if (endP < totalPages - 1) dots(); pager.appendChild(makeBtn(String(totalPages), false, totalPages, false, false)); }
+
+            pager.appendChild(makeBtn('<i class="fas fa-chevron-right" style="font-size:10px"></i>', true, currentPage + 1, false, currentPage >= totalPages));
+        }
 
         // ── Toast ────────────────────────────────────────────────
         function showToast(msg, type) {
@@ -1558,43 +1940,73 @@
             // TempData toasts
             @if (TempData["SuccessMessage"] != null)
             {
-                    <text>showToast('@Html.Raw(TempData["SuccessMessage"].ToString().Replace("'", "\\'"))', 'success');</text>
+                            <text>showToast('@Html.Raw(TempData["SuccessMessage"].ToString().Replace("'", "\\'"))', 'success');</text>
             }
             @if (TempData["ErrorMessage"] != null)
             {
-                    <text>showToast('@Html.Raw(TempData["ErrorMessage"].ToString().Replace("'", "\\'"))', 'error');</text>
+                            <text>showToast('@Html.Raw(TempData["ErrorMessage"].ToString().Replace("'", "\\'"))', 'error');</text>
             }
 
             // ── Filter + Search ──────────────────────────────────
-            var cards = Array.from(document.querySelectorAll('.sched-card'));
+            var cards        = Array.from(document.querySelectorAll('.sched-card'));
+            allCards         = cards;
             var searchInput  = document.getElementById('searchInput');
             var filterClass  = document.getElementById('filterClass');
             var filterStatus = document.getElementById('filterStatus');
-            var resultCount  = document.getElementById('resultCount');
-            var gridEmpty    = document.getElementById('gridEmpty');
 
             function applyFilters() {
-                var q       = searchInput.value.toLowerCase().trim();
-                var cls     = filterClass.value;
-                var status  = filterStatus.value;
-                var visible = 0;
+                var q      = searchInput.value.toLowerCase().trim();
+                var cls    = filterClass.value;
+                var status = filterStatus.value;
 
+                // ── Grid view filter ──
                 cards.forEach(function (card) {
                     var matchQ      = !q      || card.getAttribute('data-search').includes(q);
                     var matchCls    = !cls    || card.getAttribute('data-class-id') === cls;
                     var matchStatus = !status || card.getAttribute('data-status') === status;
-                    var show = matchQ && matchCls && matchStatus;
-                    card.classList.toggle('filtered-out', !show);
-                    if (show) visible++;
+                    card.classList.toggle('filtered-out', !(matchQ && matchCls && matchStatus));
                 });
 
-                resultCount.textContent = visible;
-                if (gridEmpty) gridEmpty.style.display = visible === 0 && cards.length > 0 ? 'flex' : 'none';
+                // ── Weekly view filter ──
+                var wgEvents = Array.from(document.querySelectorAll('#weeklyView .wg-event'));
+                wgEvents.forEach(function (ev) {
+                    var matchQ      = !q      || (ev.getAttribute('data-search') || '').includes(q);
+                    var matchCls    = !cls    || ev.getAttribute('data-class-id') === cls;
+                    var matchStatus = !status || ev.getAttribute('data-status') === status;
+                    ev.style.display = (matchQ && matchCls && matchStatus) ? '' : 'none';
+                });
+
+                // Ẩn stack nếu không còn event nào hiển thị trong cell
+                var wgCells = Array.from(document.querySelectorAll('#weeklyView .wg-cell'));
+                wgCells.forEach(function (cell) {
+                    var stack = cell.querySelector('.wg-stack');
+                    if (!stack) return;
+                    var anyVisible = Array.from(stack.querySelectorAll('.wg-event')).some(function (e) {
+                        return e.style.display !== 'none';
+                    });
+                    stack.style.display = anyVisible ? '' : 'none';
+                });
+
+                // Ẩn cả hàng shift nếu không có event nào trong toàn bộ hàng đó
+                var shiftRows = Array.from(document.querySelectorAll('#weeklyView .weekly-grid:not(:first-child)'));
+                shiftRows.forEach(function (row) {
+                    var hasVisible = Array.from(row.querySelectorAll('.wg-stack')).some(function (s) {
+                        return s.style.display !== 'none';
+                    });
+                    row.style.display = hasVisible ? '' : 'none';
+                });
+
+                // Đặt lại trang 1 và render phân trang
+                currentPage = 1;
+                renderPage();
             }
 
             searchInput.addEventListener('input', applyFilters);
             filterClass.addEventListener('change', applyFilters);
             filterStatus.addEventListener('change', applyFilters);
+
+            // ── Khởi tạo phân trang lần đầu ──────────────────────
+            renderPage();
 
             // ── Detail modal ─────────────────────────────────────
             var detBackdrop = document.getElementById('detBackdrop');
@@ -1718,4 +2130,64 @@
 
         }());
     </script>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            if (typeof TomSelect === 'undefined') return;
+
+            function fixTomSelectSearchDisplay(ts) {
+                function syncSearchState() {
+                    var val = ts.control_input ? ts.control_input.value.trim() : '';
+                    ts.wrapper.classList.toggle('ts-searching', val.length > 0);
+                }
+
+                ts.on('type', syncSearchState);
+                ts.on('focus', syncSearchState);
+                ts.on('blur', function () { ts.wrapper.classList.remove('ts-searching'); });
+                ts.on('dropdown_close', function () { ts.wrapper.classList.remove('ts-searching'); });
+
+                if (ts.control_input) {
+                    ts.control_input.addEventListener('input', syncSearchState);
+                    ts.control_input.addEventListener('keydown', function () { setTimeout(syncSearchState, 0); });
+                }
+
+                var origOpen = ts.open;
+                ts.open = function () {
+                    origOpen.call(this);
+                    var self = this;
+                    setTimeout(function () {
+                        if (self.control_input) self.control_input.value = '';
+                        self.lastValue = '';
+                        self.wrapper.classList.remove('ts-searching');
+                        self.refreshOptions(false);
+                    }, 0);
+                };
+            }
+
+            if (document.getElementById('filterClass')) {
+                var tsClass = new TomSelect('#filterClass', {
+                    allowEmptyOption: true,
+                    searchField: ['text'],
+                    create: false,
+                    onChange: function () {
+                        document.getElementById('filterClass').dispatchEvent(new Event('change'));
+                    }
+                });
+                fixTomSelectSearchDisplay(tsClass);
+            }
+
+            if (document.getElementById('filterStatus')) {
+                var tsStatus = new TomSelect('#filterStatus', {
+                    allowEmptyOption: true,
+                    searchField: ['text'],
+                    create: false,
+                    onChange: function () {
+                        document.getElementById('filterStatus').dispatchEvent(new Event('change'));
+                    }
+                });
+                fixTomSelectSearchDisplay(tsStatus);
+            }
+        });
+    </script>
+
 }

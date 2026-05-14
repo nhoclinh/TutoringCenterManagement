@@ -1,0 +1,292 @@
+@page "/Admin/Reports"
+@model TutoringCenterManagement.Pages.Admin.ReportModel
+@{
+    ViewData["Title"] = "Xuất Báo Cáo Excel";
+}
+
+@section Styles {
+<style>
+/* ═══════════════════════════════════════════
+   REPORT HUB PAGE
+═══════════════════════════════════════════ */
+/* ── Section label ──────────────────────── */
+.rh-section-lbl {
+    font-size: .7rem; font-weight: 800; color: var(--text-3);
+    text-transform: uppercase; letter-spacing: .8px;
+    margin: 0 0 10px 2px; display: flex; align-items: center; gap: 7px;
+}
+.rh-section-lbl::after {
+    content: ''; flex: 1; height: 1px; background: var(--border);
+}
+
+/* ── Cards grid ─────────────────────────── */
+.rh-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 14px;
+    margin-bottom: 14px;
+}
+.rh-grid-2 {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 14px;
+    margin-bottom: 24px;
+}
+
+/* ── Report card ────────────────────────── */
+.rc {
+    background: var(--bg-card);
+    border-radius: var(--r-lg);
+    border: 1px solid var(--border);
+    box-shadow: var(--sh-xs);
+    overflow: hidden;
+    display: flex; flex-direction: column;
+    transition: box-shadow .2s, transform .2s;
+    position: relative;
+}
+.rc:hover { box-shadow: var(--sh-md); transform: translateY(-3px); }
+.rc::before {
+    content: ''; position: absolute; top: 0; left: 0; right: 0;
+    height: 4px;
+}
+.rc-blue::before   { background: linear-gradient(90deg,#3b82f6,#60a5fa); }
+.rc-green::before  { background: linear-gradient(90deg,#10b981,#34d399); }
+.rc-purple::before { background: linear-gradient(90deg,#8b5cf6,#a78bfa); }
+.rc-teal::before   { background: linear-gradient(90deg,#06b6d4,#22d3ee); }
+.rc-orange::before { background: linear-gradient(90deg,#e8590c,#f59f00); }
+
+.rc-body {
+    padding: 18px 20px 14px; flex: 1;
+}
+.rc-icon-row {
+    display: flex; align-items: flex-start; justify-content: space-between;
+    margin-bottom: 12px;
+}
+.rc-icon {
+    width: 42px; height: 42px; border-radius: 11px; flex-shrink: 0;
+    display: flex; align-items: center; justify-content: center; font-size: 17px;
+}
+.rc-blue   .rc-icon { background: rgba(59,130,246,.1);  color: #3b82f6; }
+.rc-green  .rc-icon { background: rgba(16,185,129,.1);  color: #10b981; }
+.rc-purple .rc-icon { background: rgba(139,92,246,.1);  color: #8b5cf6; }
+.rc-teal   .rc-icon { background: rgba(6,182,212,.1);   color: #06b6d4; }
+.rc-orange .rc-icon { background: rgba(232,89,12,.1);   color: #e8590c; }
+
+.rc-badge {
+    font-size: .62rem; font-weight: 800; padding: 3px 9px;
+    border-radius: 50px; text-transform: uppercase; letter-spacing: .4px;
+}
+.rc-blue   .rc-badge { background: rgba(59,130,246,.1); color: #2563eb; border: 1px solid rgba(59,130,246,.2); }
+.rc-green  .rc-badge { background: rgba(16,185,129,.1); color: #059669; border: 1px solid rgba(16,185,129,.2); }
+.rc-purple .rc-badge { background: rgba(139,92,246,.1); color: #7c3aed; border: 1px solid rgba(139,92,246,.2); }
+.rc-teal   .rc-badge { background: rgba(6,182,212,.1);  color: #0891b2; border: 1px solid rgba(6,182,212,.2); }
+.rc-orange .rc-badge { background: rgba(232,89,12,.1);  color: #c2410c; border: 1px solid rgba(232,89,12,.2); }
+
+.rc-title { font-size: .9rem; font-weight: 800; color: var(--text-1); margin-bottom: 5px; }
+.rc-desc  { font-size: .75rem; color: var(--text-2); line-height: 1.5; }
+
+.rc-tags  { display: flex; flex-wrap: wrap; gap: 5px; margin-top: 12px; }
+.rc-tag   {
+    font-size: .65rem; font-weight: 700; padding: 2px 8px;
+    border-radius: 4px; background: var(--bg-page); border: 1px solid var(--border);
+    color: var(--text-3);
+}
+
+.rc-footer {
+    padding: 12px 20px; border-top: 1px solid var(--border);
+    background: #fafbff;
+}
+.rc-btn {
+    display: flex; align-items: center; justify-content: space-between;
+    text-decoration: none; transition: all .15s;
+    font-size: .8rem; font-weight: 700;
+}
+.rc-blue   .rc-btn { color: #2563eb; }
+.rc-green  .rc-btn { color: #059669; }
+.rc-purple .rc-btn { color: #7c3aed; }
+.rc-teal   .rc-btn { color: #0891b2; }
+.rc-orange .rc-btn { color: #c2410c; }
+.rc-btn:hover { opacity: .75; }
+.rc-btn .arrow {
+    width: 26px; height: 26px; border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 11px; transition: transform .15s;
+}
+.rc-blue   .rc-btn .arrow { background: rgba(59,130,246,.1); color: #3b82f6; }
+.rc-green  .rc-btn .arrow { background: rgba(16,185,129,.1); color: #10b981; }
+.rc-purple .rc-btn .arrow { background: rgba(139,92,246,.1); color: #8b5cf6; }
+.rc-teal   .rc-btn .arrow { background: rgba(6,182,212,.1);  color: #06b6d4; }
+.rc-orange .rc-btn .arrow { background: rgba(232,89,12,.1);  color: #e8590c; }
+.rc:hover .rc-btn .arrow  { transform: translateX(4px); }
+
+/* Info note */
+.rh-note {
+    display: flex; align-items: center; gap: 10px;
+    padding: 11px 16px; border-radius: var(--r-md);
+    background: rgba(59,130,246,.04); border: 1px solid rgba(59,130,246,.15);
+    font-size: .76rem; color: var(--text-2); margin-bottom: 20px;
+}
+.rh-note i { color: #3b82f6; flex-shrink: 0; }
+
+@@media(max-width:1024px) {
+    .rh-grid   { grid-template-columns: repeat(2,1fr); }
+    .rh-grid-2 { grid-template-columns: 1fr; }
+}
+@@media(max-width:640px) {
+    .rh-grid, .rh-grid-2 { grid-template-columns: 1fr; }
+}
+</style>
+}
+
+<!-- ════════ PAGE HEADER ════════ -->
+<div class="page-header">
+    <div>
+        <h1 class="page-heading">Xuất <span>Báo Cáo</span></h1>
+        <p class="page-subheading">
+            <i class="fas fa-file-excel" style="color:var(--c-primary)"></i>
+            Tạo và tải xuống các báo cáo Excel chuyên nghiệp
+        </p>
+    </div>
+</div>
+
+<!-- ════════ SUMMARY REPORTS (báo cáo tổng hợp) ════════ -->
+<div class="rh-section-lbl"><i class="fas fa-layer-group"></i> Báo cáo tổng hợp</div>
+<div class="rh-grid">
+
+    <!-- 1 - Ca dạy giáo viên tổng hợp -->
+    <div class="rc rc-blue">
+        <div class="rc-body">
+            <div class="rc-icon-row">
+                <div class="rc-icon"><i class="fas fa-chalkboard-user"></i></div>
+                <span class="rc-badge">Tổng hợp</span>
+            </div>
+            <div class="rc-title">Ca Dạy Giáo Viên</div>
+            <div class="rc-desc">
+                Thống kê số ca dạy theo từng giáo viên: hoàn thành, lịch dạy, đã hủy,
+                số lớp phụ trách — trong khoảng thời gian lọc được.
+            </div>
+            <div class="rc-tags">
+                <span class="rc-tag"><i class="fas fa-calendar-range"></i> Khoảng thời gian</span>
+                <span class="rc-tag"><i class="fas fa-users"></i> Tất cả giáo viên</span>
+                <span class="rc-tag"><i class="fas fa-table"></i> 1 trang</span>
+            </div>
+        </div>
+        <div class="rc-footer">
+            <a href="/Admin/Reports/TeacherSessionsReport?DateFrom=@Model.DefaultDateFrom&DateTo=@Model.DefaultDateTo" class="rc-btn">
+                <span><i class="fas fa-eye" style="font-size:11px;margin-right:5px"></i>Xem & Xuất báo cáo</span>
+                <span class="arrow"><i class="fas fa-arrow-right"></i></span>
+            </a>
+        </div>
+    </div>
+
+    <!-- 2 - Điểm danh học sinh tổng hợp -->
+    <div class="rc rc-green">
+        <div class="rc-body">
+            <div class="rc-icon-row">
+                <div class="rc-icon"><i class="fas fa-user-graduate"></i></div>
+                <span class="rc-badge">Tổng hợp</span>
+            </div>
+            <div class="rc-title">Điểm Danh Học Sinh</div>
+            <div class="rc-desc">
+                Số buổi có mặt, số buổi vắng và tỉ lệ chuyên cần của từng học sinh
+                trong khoảng thời gian được lọc.
+            </div>
+            <div class="rc-tags">
+                <span class="rc-tag"><i class="fas fa-calendar-range"></i> Khoảng thời gian</span>
+                <span class="rc-tag"><i class="fas fa-users"></i> Tất cả học sinh</span>
+                <span class="rc-tag"><i class="fas fa-percent"></i> Tỉ lệ chuyên cần</span>
+            </div>
+        </div>
+        <div class="rc-footer">
+            <a href="/Admin/Reports/StudentAttendanceSummaryReport?DateFrom=@Model.DefaultDateFrom&DateTo=@Model.DefaultDateTo" class="rc-btn">
+                <span><i class="fas fa-eye" style="font-size:11px;margin-right:5px"></i>Xem & Xuất báo cáo</span>
+                <span class="arrow"><i class="fas fa-arrow-right"></i></span>
+            </a>
+        </div>
+    </div>
+
+    <!-- 5 - Báo cáo vận hành tuần -->
+    <div class="rc rc-orange">
+        <div class="rc-body">
+            <div class="rc-icon-row">
+                <div class="rc-icon"><i class="fas fa-chart-line"></i></div>
+                <span class="rc-badge">Quản trị</span>
+            </div>
+            <div class="rc-title">Vận Hành Tuần / Tháng</div>
+            <div class="rc-desc">
+                Tổng quan hoạt động trung tâm: buổi học hoàn thành/hủy, biến động học sinh
+                &amp; giáo viên, tỉ lệ chuyên cần, phòng học — phục vụ họp tuần.
+            </div>
+            <div class="rc-tags">
+                <span class="rc-tag"><i class="fas fa-calendar-week"></i> Theo tuần / tháng</span>
+                <span class="rc-tag"><i class="fas fa-chart-mixed"></i> Đa chỉ số</span>
+                <span class="rc-tag"><i class="fas fa-file-excel"></i> Nhiều sheet</span>
+            </div>
+        </div>
+        <div class="rc-footer">
+            <a href="/Admin/Reports/WeeklyOperationReport?DateFrom=@Model.DefaultWeekFrom&DateTo=@Model.DefaultWeekTo" class="rc-btn">
+                <span><i class="fas fa-eye" style="font-size:11px;margin-right:5px"></i>Xem & Xuất báo cáo</span>
+                <span class="arrow"><i class="fas fa-arrow-right"></i></span>
+            </a>
+        </div>
+    </div>
+
+</div>
+
+<!-- ════════ DETAIL REPORTS (báo cáo chi tiết) ════════ -->
+<div class="rh-section-lbl"><i class="fas fa-magnifying-glass"></i> Báo cáo chi tiết cá nhân</div>
+<div class="rh-grid-2">
+
+    <!-- 3 - Chi tiết ca dạy giáo viên -->
+    <div class="rc rc-purple">
+        <div class="rc-body">
+            <div class="rc-icon-row">
+                <div class="rc-icon"><i class="fas fa-list-check"></i></div>
+                <span class="rc-badge">Chi tiết</span>
+            </div>
+            <div class="rc-title">Chi Tiết Ca Dạy Giáo Viên</div>
+            <div class="rc-desc">
+                Danh sách toàn bộ ca dạy cụ thể của một giáo viên được chọn:
+                ngày dạy, ca, phòng, lớp, môn học, trợ giảng và trạng thái.
+            </div>
+            <div class="rc-tags">
+                <span class="rc-tag"><i class="fas fa-user-tie"></i> Chọn giáo viên</span>
+                <span class="rc-tag"><i class="fas fa-calendar-range"></i> Khoảng thời gian</span>
+                <span class="rc-tag"><i class="fas fa-list"></i> Chi tiết từng buổi</span>
+            </div>
+        </div>
+        <div class="rc-footer">
+            <a href="/Admin/Reports/TeacherDetailReport?DateFrom=@Model.DefaultDateFrom&DateTo=@Model.DefaultDateTo" class="rc-btn">
+                <span><i class="fas fa-eye" style="font-size:11px;margin-right:5px"></i>Xem & Xuất báo cáo</span>
+                <span class="arrow"><i class="fas fa-arrow-right"></i></span>
+            </a>
+        </div>
+    </div>
+
+    <!-- 4 - Chi tiết điểm danh học sinh -->
+    <div class="rc rc-teal">
+        <div class="rc-body">
+            <div class="rc-icon-row">
+                <div class="rc-icon"><i class="fas fa-clipboard-user"></i></div>
+                <span class="rc-badge">Chi tiết</span>
+            </div>
+            <div class="rc-title">Học Bạ Điểm Danh Học Sinh</div>
+            <div class="rc-desc">
+                Toàn bộ lịch sử điểm danh của một học sinh được chọn: ngày học,
+                ca học, lớp, môn, phòng và trạng thái có mặt / vắng.
+            </div>
+            <div class="rc-tags">
+                <span class="rc-tag"><i class="fas fa-user-graduate"></i> Chọn học sinh</span>
+                <span class="rc-tag"><i class="fas fa-calendar-range"></i> Khoảng thời gian</span>
+                <span class="rc-tag"><i class="fas fa-clipboard-check"></i> Trạng thái chuyên cần</span>
+            </div>
+        </div>
+        <div class="rc-footer">
+            <a href="/Admin/Reports/StudentDetailReport?DateFrom=@Model.DefaultDateFrom&DateTo=@Model.DefaultDateTo" class="rc-btn">
+                <span><i class="fas fa-eye" style="font-size:11px;margin-right:5px"></i>Xem & Xuất báo cáo</span>
+                <span class="arrow"><i class="fas fa-arrow-right"></i></span>
+            </a>
+        </div>
+    </div>
+
+</div>

@@ -1,4 +1,18 @@
-﻿@page
+﻿@* ============================================================
+   FILE GỐC : Pages/Admin/Schedules/Create.cshtml
+   FILE SỬA : Pages/Admin/Schedules/Create_Fixed.cshtml
+
+   THAY ĐỔI SO VỚI BẢN GỐC:
+   1. Xóa <div asp-validation-summary="ModelOnly"> — bị jquery.validate.unobtrusive
+      clear trên DOMContentLoaded, khiến lỗi server không hiển thị được.
+   2. Thêm @if block cho Model.ServerError — render lỗi chặn tạo template
+      (conflict phòng, GV, Inactive, exception) bằng Razor thuần, không bị clear.
+   3. Thêm @if block cho Model.EndDateError cạnh field EndDate — thay vì dùng
+      asp-validation-for span (cũng bị jquery.validate.unobtrusive can thiệp).
+   4. JS: xóa đoạn "Auto show validation summary" không còn cần thiết.
+============================================================ *@
+
+@page
 @model TutoringCenterManagement.Pages.Admin.Schedules.CreateModel
 @{
     ViewData["Title"] = "Tạo lịch học";
@@ -191,7 +205,7 @@
                     flex-shrink: 0;
                 }
 
-        /* ── Validation summary ── */
+        /* ── Validation / error banners ── */
         .val-summary {
             display: flex;
             align-items: flex-start;
@@ -208,6 +222,24 @@
             .val-summary i {
                 color: #f43f5e;
                 margin-top: 1px;
+                flex-shrink: 0;
+            }
+
+        /* ── Field-level error rendered by Razor (không dùng asp-validation-for) ── */
+        .field-error-razor {
+            font-size: .73rem;
+            color: #e03131;
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            margin-top: 2px;
+        }
+
+            .field-error-razor::before {
+                content: '\f06a';
+                font-family: 'Font Awesome 6 Free';
+                font-weight: 900;
+                font-size: 10px;
                 flex-shrink: 0;
             }
 
@@ -426,11 +458,18 @@
     </div>
 </div>
 
-<!-- Validation summary -->
-<div asp-validation-summary="ModelOnly" class="val-summary" style="display:none">
-    <i class="fas fa-circle-exclamation"></i><div></div>
-</div>
+@* [FIX] ServerError: lỗi chặn tạo từ service (conflict phòng/GV, Inactive, exception)
+   Render bằng @if block Razor thuần — KHÔNG dùng asp-validation-summary
+   vì jquery.validate.unobtrusive clear nó trên DOMContentLoaded *@
+@if (!string.IsNullOrEmpty(Model.ServerError))
+{
+    <div class="val-summary">
+        <i class="fas fa-circle-exclamation"></i>
+        <span>@Model.ServerError</span>
+    </div>
+}
 
+@* Warning (cảnh báo không chặn) — giữ nguyên từ bản gốc *@
 @if (!string.IsNullOrEmpty(Model.WarningMessage))
 {
     <div class="val-summary"
@@ -607,15 +646,24 @@
                             <label class="field-label" for="startDate">
                                 Từ ngày <span class="req">*</span>
                             </label>
-                            <input asp-for="Input.StartDate" type="date" id="startDate" class="field-input" required />
+                            <input asp-for="Input.StartDate" type="text" id="startDate" class="field-input" autocomplete="off" required />
                             <span asp-validation-for="Input.StartDate" class="field-error"></span>
                         </div>
                         <div class="field-group">
                             <label class="field-label" for="endDate">
                                 Đến ngày <span class="req">*</span>
                             </label>
-                            <input asp-for="Input.EndDate" type="date" id="endDate" class="field-input" required />
-                            <span asp-validation-for="Input.EndDate" class="field-error"></span>
+                            <input asp-for="Input.EndDate" type="text" id="endDate" class="field-input" autocomplete="off" required />
+                            @* [FIX] EndDateError: render bằng Razor thay vì asp-validation-for
+                               để tránh bị jquery.validate.unobtrusive clear *@
+                            @if (!string.IsNullOrEmpty(Model.EndDateError))
+                            {
+                                <span class="field-error-razor">@Model.EndDateError</span>
+                            }
+                            else
+                            {
+                                <span asp-validation-for="Input.EndDate" class="field-error"></span>
+                            }
                         </div>
                     </div>
 
@@ -724,6 +772,132 @@
 </form>
 
 @section Scripts {
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css" />
+    <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+    <script src="https://cdn.jsdelivr.net/npm/flatpickr/dist/l10n/vn.js"></script>
+    <style>
+        /* ══ Flatpickr — date picker đồng bộ design system ══ */
+        .flatpickr-calendar {
+            font-family: 'Plus Jakarta Sans', system-ui, sans-serif !important;
+            font-size: .82rem !important;
+            border: 1.5px solid var(--border) !important;
+            border-radius: var(--r-md) !important;
+            box-shadow: 0 8px 24px rgba(0,0,0,.12) !important;
+        }
+        .flatpickr-day.selected,
+        .flatpickr-day.selected:hover {
+            background: var(--c-primary) !important;
+            border-color: var(--c-primary) !important;
+        }
+        .flatpickr-day:hover {
+            background: rgba(232,89,12,.10) !important;
+        }
+        .flatpickr-day.today {
+            border-color: var(--c-primary) !important;
+            color: var(--c-primary) !important;
+            font-weight: 700 !important;
+        }
+        .flatpickr-day.today.selected {
+            color: #fff !important;
+        }
+        .flatpickr-months .flatpickr-month {
+            background: #f4f6fc !important;
+            height: 44px !important;
+        }
+        .flatpickr-weekdays {
+            background: #f4f6fc !important;
+        }
+        .flatpickr-current-month .flatpickr-monthDropdown-months {
+            appearance: none !important;
+            -webkit-appearance: none !important;
+            background: #fff url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='9' height='9' viewBox='0 0 24 24' fill='none' stroke='%239aa0b4' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E") no-repeat right 5px center !important;
+            border: 1.5px solid var(--border) !important;
+            border-radius: 6px !important;
+            padding: 3px 20px 3px 7px !important;
+            font-family: 'Plus Jakarta Sans', system-ui, sans-serif !important;
+            font-weight: 700 !important;
+            font-size: .78rem !important;
+            color: var(--text-1) !important;
+            cursor: pointer !important;
+            outline: none !important;
+            margin: 0 2px 0 0 !important;
+            transition: border-color .15s !important;
+            height: 28px !important;
+        }
+        .flatpickr-current-month .flatpickr-monthDropdown-months:hover,
+        .flatpickr-current-month .flatpickr-monthDropdown-months:focus {
+            border-color: var(--c-primary) !important;
+        }
+        .flatpickr-current-month .numInputWrapper {
+            width: 62px !important;
+        }
+        .flatpickr-current-month input.cur-year {
+            background: #fff !important;
+            border: 1.5px solid var(--border) !important;
+            border-radius: 6px !important;
+            padding: 3px 6px !important;
+            font-family: 'Plus Jakarta Sans', system-ui, sans-serif !important;
+            font-weight: 700 !important;
+            font-size: .78rem !important;
+            color: var(--text-1) !important;
+            outline: none !important;
+            width: 100% !important;
+            height: 28px !important;
+            transition: border-color .15s !important;
+        }
+        .flatpickr-current-month input.cur-year:focus {
+            border-color: var(--c-primary) !important;
+        }
+        .flatpickr-current-month .numInputWrapper span {
+            display: none !important;
+        }
+        .flatpickr-months .flatpickr-prev-month,
+        .flatpickr-months .flatpickr-next-month {
+            padding: 6px 9px !important;
+            border-radius: 6px !important;
+            top: 7px !important;
+            transition: background .15s !important;
+        }
+        .flatpickr-months .flatpickr-prev-month:hover,
+        .flatpickr-months .flatpickr-next-month:hover {
+            background: rgba(232,89,12,.08) !important;
+        }
+        .flatpickr-months .flatpickr-prev-month:hover svg,
+        .flatpickr-months .flatpickr-next-month:hover svg {
+            fill: var(--c-primary) !important;
+        }
+        span.flatpickr-weekday {
+            font-weight: 700 !important;
+            color: var(--text-2) !important;
+            font-size: .72rem !important;
+        }
+    </style>
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            if (typeof flatpickr !== 'undefined') {
+                if (document.getElementById('startDate')) {
+                    flatpickr('#startDate', {
+                        dateFormat: 'Y-m-d',
+                        altInput: true,
+                        altFormat: 'd/m/Y',
+                        locale: 'vn',
+                        allowInput: true,
+                        disableMobile: true
+                    });
+                }
+                if (document.getElementById('endDate')) {
+                    flatpickr('#endDate', {
+                        dateFormat: 'Y-m-d',
+                        altInput: true,
+                        altFormat: 'd/m/Y',
+                        locale: 'vn',
+                        allowInput: true,
+                        disableMobile: true
+                    });
+                }
+            }
+        });
+    </script>
     <partial name="_ValidationScriptsPartial" />
     <script>
         document.addEventListener('DOMContentLoaded', function () {
@@ -883,12 +1057,7 @@
                 }
             });
 
-            /* ── Auto show validation summary if it has content ── */
-            var vs = document.querySelector('[data-valmsg-summary]') || document.querySelector('.val-summary');
-            if (vs && vs.querySelector('ul li')) vs.style.display = 'flex';
-
-            /* ── Init ── */
-            updatePreview();
+           updatePreview();
             runAllChecks();
         });
     </script>

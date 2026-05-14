@@ -27,11 +27,26 @@ namespace TutoringCenterManagement.Pages.Admin.Attendance
         [BindProperty(SupportsGet = true)]
         public string? ToDate { get; set; }
 
+        /// <summary>
+        /// Khi = true: user chủ động xóa ngày để xem tất cả → không redirect.
+        /// Truyền qua URL: ?showAll=true
+        /// </summary>
+        [BindProperty(SupportsGet = true)]
+        public bool ShowAll { get; set; }
+
         public async Task<IActionResult> OnGetAsync()
         {
             var role = HttpContext.Session.GetString("Role");
             if (role != "Admin")
                 return RedirectToPage("/Account/Login");
+
+            // Lần đầu vào trang (không có tham số gì và không phải chủ động) → về hôm nay
+            if (!ShowAll && !ClassId.HasValue
+                && string.IsNullOrEmpty(FromDate) && string.IsNullOrEmpty(ToDate))
+            {
+                var today = DateTime.Today.ToString("yyyy-MM-dd");
+                return RedirectToPage(new { fromDate = today, toDate = today });
+            }
 
             // Luon load danh sach lop cho dropdown
             Classes = await _context.Classes
@@ -39,8 +54,9 @@ namespace TutoringCenterManagement.Pages.Admin.Attendance
                 .OrderBy(c => c.ClassCode)
                 .ToListAsync();
 
-            // Chi query khi co it nhat 1 bo loc (tranh load toan bo khi vao trang lan dau)
-            bool hasFilter = ClassId.HasValue
+            // Query khi có filter hoặc khi user chủ động chọn "Toàn TG"
+            bool hasFilter = ShowAll
+                || ClassId.HasValue
                 || !string.IsNullOrEmpty(FromDate)
                 || !string.IsNullOrEmpty(ToDate);
 

@@ -1,5 +1,6 @@
-﻿@page
+@page
 @model TutoringCenterManagement.Pages.Admin.DashboardModel
+@using TutoringCenterManagement.Data.Enums
 @{
     ViewData["Title"] = "Dashboard";
 }
@@ -82,21 +83,10 @@
                 border-radius: 0 0 var(--r-lg) var(--r-lg);
             }
 
-            .kpi-card.c-orange::after {
-                background: linear-gradient(90deg,#e8590c,#f59f00);
-            }
-
-            .kpi-card.c-green::after {
-                background: linear-gradient(90deg,#10b981,#34d399);
-            }
-
-            .kpi-card.c-blue::after {
-                background: linear-gradient(90deg,#3b82f6,#60a5fa);
-            }
-
-            .kpi-card.c-purple::after {
-                background: linear-gradient(90deg,#8b5cf6,#a78bfa);
-            }
+            .kpi-card.c-orange::after { background: linear-gradient(90deg,#e8590c,#f59f00); }
+            .kpi-card.c-green::after  { background: linear-gradient(90deg,#10b981,#34d399); }
+            .kpi-card.c-blue::after   { background: linear-gradient(90deg,#3b82f6,#60a5fa); }
+            .kpi-card.c-purple::after { background: linear-gradient(90deg,#8b5cf6,#a78bfa); }
 
         .kpi-top {
             display: flex;
@@ -124,25 +114,10 @@
             flex-shrink: 0;
         }
 
-            .kpi-icon.orange {
-                background: rgba(232,89,12,.1);
-                color: #e8590c;
-            }
-
-            .kpi-icon.green {
-                background: rgba(16,185,129,.1);
-                color: #10b981;
-            }
-
-            .kpi-icon.blue {
-                background: rgba(59,130,246,.1);
-                color: #3b82f6;
-            }
-
-            .kpi-icon.purple {
-                background: rgba(139,92,246,.1);
-                color: #8b5cf6;
-            }
+            .kpi-icon.orange { background: rgba(232,89,12,.1);  color: #e8590c; }
+            .kpi-icon.green  { background: rgba(16,185,129,.1); color: #10b981; }
+            .kpi-icon.blue   { background: rgba(59,130,246,.1); color: #3b82f6; }
+            .kpi-icon.purple { background: rgba(139,92,246,.1); color: #8b5cf6; }
 
         .kpi-value {
             font-size: 2rem;
@@ -326,8 +301,6 @@
                 font-size: .72rem !important;
                 font-weight: 600 !important;
                 padding: 1px 5px !important;
-                background: var(--c-gradient) !important;
-                box-shadow: 0 1px 4px var(--c-glow) !important;
                 cursor: pointer !important;
             }
 
@@ -339,22 +312,157 @@
                 margin-bottom: 16px !important;
             }
 
+        /* ── Calendar event colors — khớp với Sessions/Index ── */
+        .fc .fc-daygrid-block-event.fc-event-scheduled,
+        .fc .fc-timegrid-event.fc-event-scheduled {
+            background: linear-gradient(90deg,#38bdf8,#bae6fd) !important;
+            color: #0f172a !important;
+        }
+
+        .fc .fc-daygrid-block-event.fc-event-ongoing,
+        .fc .fc-timegrid-event.fc-event-ongoing {
+            background: linear-gradient(90deg,#10b981,#34d399) !important;
+            color: #fff !important;
+        }
+
+        .fc .fc-daygrid-block-event.fc-event-completed,
+        .fc .fc-timegrid-event.fc-event-completed {
+            background: linear-gradient(90deg,#d97706,#fbbf24) !important;
+            color: #fff !important;
+        }
+
+        .fc .fc-event .fc-event-main,
+        .fc .fc-event .fc-event-title,
+        .fc .fc-event .fc-event-time {
+            color: inherit !important;
+        }
+
+        .fc-daygrid-block-event .fc-daygrid-event-dot {
+            display: none !important;
+        }
+
+        /* Popover "+more" */
+        .fc-popover {
+            border-radius: var(--r-md) !important;
+            border: 1px solid var(--border) !important;
+            box-shadow: 0 8px 24px rgba(0,0,0,.12) !important;
+            overflow: hidden !important;
+            z-index: 9992 !important;
+        }
+
+        .fc-popover .fc-popover-header {
+            background: #f4f6fc !important;
+            font-size: .75rem !important;
+            font-weight: 700 !important;
+            padding: 8px 12px !important;
+            border-bottom: 1px solid var(--border) !important;
+        }
+
+        .fc-popover .fc-popover-body {
+            padding: 6px 8px !important;
+            display: flex !important;
+            flex-direction: column !important;
+            gap: 4px !important;
+            background: #fff !important;
+        }
+
+        .fc-popover .fc-event,
+        .fc-popover .fc-daygrid-event,
+        .fc-popover .fc-daygrid-dot-event,
+        .fc-popover .fc-daygrid-block-event {
+            display: flex !important;
+            align-items: center !important;
+            width: 100% !important;
+            min-height: 22px !important;
+            margin: 0 !important;
+            padding: 3px 7px !important;
+            border: none !important;
+            border-radius: 6px !important;
+            font-size: .72rem !important;
+            font-weight: 700 !important;
+        }
+
+        .fc-popover .fc-event-scheduled { background: linear-gradient(90deg,#38bdf8,#bae6fd) !important; color: #0f172a !important; }
+        .fc-popover .fc-event-ongoing   { background: linear-gradient(90deg,#10b981,#34d399) !important; color: #fff !important; }
+        .fc-popover .fc-event-completed { background: linear-gradient(90deg,#d97706,#fbbf24) !important; color: #fff !important; }
+
+        .fc-popover .fc-event-main,
+        .fc-popover .fc-event-title,
+        .fc-popover .fc-event-time {
+            color: inherit !important;
+        }
+
+        .fc-popover .fc-daygrid-event-dot { display: none !important; }
+
+        /* ── Calendar legend ── */
+        .cal-legend {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            flex-wrap: wrap;
+            margin-bottom: 14px;
+        }
+
+        .cal-legend-item {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            font-size: .75rem;
+            font-weight: 600;
+            color: var(--text-2);
+        }
+
+        .cal-legend-dot {
+            width: 10px;
+            height: 10px;
+            border-radius: 3px;
+            flex-shrink: 0;
+        }
+
         /* ── Today sessions ── */
         .session-list {
             list-style: none;
         }
 
+        .session-list-scroll {
+            max-height: 300px;
+            overflow-y: auto;
+            padding-right: 2px;
+            scrollbar-width: thin;
+            scrollbar-color: var(--border) transparent;
+        }
+
+            .session-list-scroll::-webkit-scrollbar {
+                width: 4px;
+            }
+
+            .session-list-scroll::-webkit-scrollbar-track {
+                background: transparent;
+            }
+
+            .session-list-scroll::-webkit-scrollbar-thumb {
+                background: var(--border);
+                border-radius: 2px;
+            }
+
         .session-item {
             display: flex;
             align-items: center;
             gap: 12px;
-            padding: 11px 0;
+            padding: 10px 0;
             border-bottom: 1px solid #f0f2f8;
+            cursor: pointer;
+            transition: background .12s;
+            border-radius: var(--r-sm);
         }
 
             .session-item:last-child {
                 border-bottom: none;
                 padding-bottom: 0;
+            }
+
+            .session-item:hover {
+                background: #f8faff;
             }
 
         .session-time {
@@ -363,11 +471,12 @@
             background: rgba(232,89,12,.07);
             border-radius: var(--r-sm);
             padding: 5px 6px;
+            flex-shrink: 0;
         }
 
         .session-time-val {
             display: block;
-            font-size: .72rem;
+            font-size: .75rem;
             font-weight: 800;
             color: var(--c-primary);
             line-height: 1.2;
@@ -399,34 +508,28 @@
         .session-meta {
             font-size: .72rem;
             color: var(--text-3);
-            margin-top: 1px;
+            margin-top: 2px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
         }
 
+        /* ── Session status badges — khớp với Sessions/Index ── */
         .session-badge {
             display: inline-flex;
             align-items: center;
             padding: 2px 8px;
             border-radius: 50px;
-            font-size: .68rem;
+            font-size: .67rem;
             font-weight: 700;
             white-space: nowrap;
             flex-shrink: 0;
         }
 
-            .session-badge.morning {
-                background: rgba(245,159,0,.12);
-                color: #b45309;
-            }
-
-            .session-badge.afternoon {
-                background: rgba(59,130,246,.12);
-                color: #1d4ed8;
-            }
-
-            .session-badge.evening {
-                background: rgba(139,92,246,.12);
-                color: #6d28d9;
-            }
+            .session-badge.scheduled { background: rgba(56,189,248,.15);   color: #0369a1; }
+            .session-badge.ongoing   { background: rgba(16,185,129,.15);   color: #059669; }
+            .session-badge.completed { background: rgba(217,119,6,.15);    color: #92400e; }
+            .session-badge.cancelled { background: rgba(100,116,139,.15);  color: #475569; }
 
         .no-session {
             display: flex;
@@ -463,17 +566,8 @@
             transition: width .6s var(--ease);
         }
 
-            .rate-fill.high {
-                background: linear-gradient(90deg,#10b981,#34d399);
-            }
-
-            .rate-fill.mid {
-                background: linear-gradient(90deg,#f59f00,#fbbf24);
-            }
-
-            .rate-fill.low {
-                background: linear-gradient(90deg,#f43f5e,#fb7185);
-            }
+            .rate-fill.high { background: linear-gradient(90deg,#10b981,#34d399); }
+            .rate-fill.low  { background: linear-gradient(90deg,#f43f5e,#fb7185); }
 
         /* ── Charts ── */
         .charts-row {
@@ -487,11 +581,7 @@
             height: 240px;
         }
 
-        /* ══════════════════════════════════════
-               CUSTOM MODAL — đảm bảo ẩn hoàn toàn
-            ══════════════════════════════════════ */
-
-        /* Backdrop — che nền */
+        /* ══ CUSTOM MODAL ══════════════════════════════════════════════════════ */
         .cm-backdrop {
             visibility: hidden;
             opacity: 0;
@@ -504,7 +594,6 @@
             transition: opacity .2s, visibility .2s;
         }
 
-        /* Modal wrapper — canh giữa màn hình */
         .cm-modal {
             visibility: hidden;
             opacity: 0;
@@ -519,7 +608,6 @@
             pointer-events: none;
         }
 
-            /* Trạng thái mở */
             .cm-backdrop.cm-open,
             .cm-modal.cm-open {
                 visibility: visible;
@@ -527,13 +615,12 @@
                 pointer-events: all;
             }
 
-        /* Hộp nội dung */
         .cm-box {
             background: #fff;
             border-radius: var(--r-xl);
             box-shadow: 0 24px 56px rgba(0,0,0,.18), 0 8px 20px rgba(0,0,0,.08);
             width: 100%;
-            max-width: 400px;
+            max-width: 420px;
             overflow: hidden;
             transform: scale(.94) translateY(10px);
             transition: transform .22s cubic-bezier(.34,1.4,.64,1);
@@ -543,29 +630,43 @@
             transform: scale(1) translateY(0);
         }
 
-        .cm-header {
+        .cm-head {
             display: flex;
             align-items: center;
-            justify-content: space-between;
+            gap: 12px;
             padding: 16px 20px;
             background: linear-gradient(to right,#f7f8fc,#fff);
             border-bottom: 1px solid var(--border);
         }
 
-        .cm-title {
+        .cm-icon-wrap {
+            width: 38px;
+            height: 38px;
+            border-radius: var(--r-md);
             display: flex;
             align-items: center;
-            gap: 8px;
-            font-size: .95rem;
-            font-weight: 700;
-            color: var(--text-1);
+            justify-content: center;
+            font-size: 16px;
+            flex-shrink: 0;
+            background: rgba(232,89,12,.1);
+            color: var(--c-primary);
         }
 
-            .cm-title i {
-                color: var(--c-primary);
-            }
+        .cm-head-text h6 {
+            font-size: .92rem;
+            font-weight: 800;
+            color: var(--text-1);
+            margin: 0 0 2px;
+        }
+
+        .cm-head-text p {
+            font-size: .78rem;
+            color: var(--text-2);
+            margin: 0;
+        }
 
         .cm-close {
+            margin-left: auto;
             width: 28px;
             height: 28px;
             border-radius: var(--r-sm);
@@ -593,27 +694,25 @@
             display: flex;
             gap: 12px;
             align-items: flex-start;
-            padding: 11px 0;
+            padding: 10px 0;
             border-bottom: 1px solid #f0f2f8;
         }
 
-            .cm-row:last-child {
-                border-bottom: none;
-            }
+            .cm-row:last-child { border-bottom: none; }
 
         .cm-row-icon {
-            width: 34px;
-            height: 34px;
+            width: 32px;
+            height: 32px;
             border-radius: var(--r-sm);
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 13px;
+            font-size: 12px;
             flex-shrink: 0;
         }
 
         .cm-row-label {
-            font-size: .68rem;
+            font-size: .67rem;
             font-weight: 700;
             color: var(--text-3);
             text-transform: uppercase;
@@ -622,7 +721,7 @@
         }
 
         .cm-row-val {
-            font-size: .9rem;
+            font-size: .88rem;
             font-weight: 700;
             color: var(--text-1);
         }
@@ -633,42 +732,41 @@
             gap: 8px;
             padding: 12px 20px 16px;
             border-top: 1px solid var(--border);
+            background: #f9fafd;
+            flex-wrap: wrap;
         }
+
+        /* status badges dùng trong modal */
+        .sess-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            padding: 3px 10px;
+            border-radius: 20px;
+            font-size: .72rem;
+            font-weight: 700;
+        }
+
+            .sess-badge.scheduled { background: rgba(56,189,248,.15);  color: #0369a1; }
+            .sess-badge.ongoing   { background: rgba(16,185,129,.15);  color: #059669; }
+            .sess-badge.completed { background: rgba(217,119,6,.15);   color: #92400e; }
+            .sess-badge.cancelled { background: rgba(100,116,139,.15); color: #475569; }
 
         /* ── Responsive ── */
         @@media (max-width:1100px) {
-            .kpi-grid {
-                grid-template-columns: repeat(2,1fr);
-            }
-
-            .dash-grid {
-                grid-template-columns: 1fr;
-            }
-
-            .right-col {
-                display: grid;
-                grid-template-columns: 1fr 1fr;
-            }
+            .kpi-grid  { grid-template-columns: repeat(2,1fr); }
+            .dash-grid { grid-template-columns: 1fr; }
+            .right-col { display: grid; grid-template-columns: 1fr 1fr; }
         }
 
         @@media (max-width:640px) {
-            .kpi-grid {
-                grid-template-columns: 1fr 1fr;
-            }
-
-            .charts-row {
-                grid-template-columns: 1fr;
-            }
-
-            .right-col {
-                grid-template-columns: 1fr;
-            }
+            .kpi-grid    { grid-template-columns: 1fr 1fr; }
+            .charts-row  { grid-template-columns: 1fr; }
+            .right-col   { grid-template-columns: 1fr; }
         }
 
         @@media (max-width:400px) {
-            .kpi-grid {
-                grid-template-columns: 1fr;
-            }
+            .kpi-grid { grid-template-columns: 1fr; }
         }
     </style>
 }
@@ -724,10 +822,10 @@
 <!-- ════════ QUICK ACTIONS ════════ -->
 <div class="quick-strip">
     <a href="/Admin/Attendance" class="quick-btn primary"><i class="fas fa-clipboard-check"></i> Điểm danh hôm nay</a>
-    <a href="/Admin/Sessions" class="quick-btn outline"><i class="fas fa-clock"></i> Buổi học</a>
-    <a href="/Admin/Classes" class="quick-btn outline"><i class="fas fa-chalkboard"></i> Lớp học</a>
-    <a href="/Admin/Users" class="quick-btn outline"><i class="fas fa-users"></i> Người dùng</a>
-    <a href="/Admin/Reports" class="quick-btn outline"><i class="fas fa-chart-bar"></i> Báo cáo</a>
+    <a href="/Admin/Sessions"   class="quick-btn outline"><i class="fas fa-clock"></i> Buổi học</a>
+    <a href="/Admin/Classes"    class="quick-btn outline"><i class="fas fa-chalkboard"></i> Lớp học</a>
+    <a href="/Admin/Users"      class="quick-btn outline"><i class="fas fa-users"></i> Người dùng</a>
+    <a href="/Admin/Reports"    class="quick-btn outline"><i class="fas fa-chart-bar"></i> Báo cáo</a>
 </div>
 
 <!-- ════════ MAIN GRID ════════ -->
@@ -740,8 +838,23 @@
                 <div class="ct-icon"><i class="fas fa-calendar-alt"></i></div>
                 Lịch học tổng quan
             </div>
+            <a href="/Admin/Sessions" style="font-size:.75rem;color:var(--c-primary);font-weight:600;text-decoration:none">
+                Xem chi tiết <i class="fas fa-arrow-right" style="font-size:10px"></i>
+            </a>
         </div>
         <div class="dash-card-bd">
+            <!-- Legend -->
+            <div class="cal-legend">
+                <span class="cal-legend-item">
+                    <span class="cal-legend-dot" style="background:linear-gradient(90deg,#38bdf8,#bae6fd)"></span>Đã lên lịch
+                </span>
+                <span class="cal-legend-item">
+                    <span class="cal-legend-dot" style="background:linear-gradient(90deg,#10b981,#34d399)"></span>Đang diễn ra
+                </span>
+                <span class="cal-legend-item">
+                    <span class="cal-legend-dot" style="background:linear-gradient(90deg,#d97706,#fbbf24)"></span>Hoàn thành
+                </span>
+            </div>
             <div id="calendar"></div>
         </div>
     </div>
@@ -760,8 +873,8 @@
                     <span class="dot"></span>@Model.TodaySessions buổi
                 </span>
             </div>
-            <div class="dash-card-bd" style="padding:16px 20px">
-                @if (Model.TodaySessions == 0)
+            <div class="dash-card-bd" style="padding:12px 16px">
+                @if (!Model.TodaySessionList.Any())
                 {
                     <div class="no-session">
                         <i class="fas fa-calendar-xmark"></i>
@@ -770,41 +883,35 @@
                 }
                 else
                 {
-                    <ul class="session-list">
-                        <li class="session-item">
-                            <div class="session-time">
-                                <span class="session-time-val">Sáng</span>
-                                <span class="session-time-label">7:30</span>
-                            </div>
-                            <div class="session-info">
-                                <div class="session-name">Lớp Toán 10A</div>
-                                <div class="session-meta"><i class="fas fa-door-open" style="font-size:10px"></i> Phòng 101</div>
-                            </div>
-                            <span class="session-badge morning">Sáng</span>
-                        </li>
-                        <li class="session-item">
-                            <div class="session-time">
-                                <span class="session-time-val">Chiều</span>
-                                <span class="session-time-label">13:30</span>
-                            </div>
-                            <div class="session-info">
-                                <div class="session-name">Lớp Văn 11B</div>
-                                <div class="session-meta"><i class="fas fa-door-open" style="font-size:10px"></i> Phòng 102</div>
-                            </div>
-                            <span class="session-badge afternoon">Chiều</span>
-                        </li>
-                        <li class="session-item">
-                            <div class="session-time">
-                                <span class="session-time-val">Tối</span>
-                                <span class="session-time-label">18:00</span>
-                            </div>
-                            <div class="session-info">
-                                <div class="session-name">Lớp Anh 12C</div>
-                                <div class="session-meta"><i class="fas fa-door-open" style="font-size:10px"></i> Phòng 201</div>
-                            </div>
-                            <span class="session-badge evening">Tối</span>
-                        </li>
-                    </ul>
+                    <div class="session-list-scroll">
+                        <ul class="session-list">
+                            @foreach (var s in Model.TodaySessionList)
+                            {
+                                var safeClass   = s.ClassName.Replace("'", "\\'");
+                                var safeShift   = s.ShiftName.Replace("'", "\\'");
+                                var safeTime    = $"{s.StartTime:HH\\:mm}-{s.EndTime:HH\\:mm}".Replace("'", "\\'");
+                                var safeRoom    = s.RoomCode.Replace("'", "\\'");
+                                var safeTeacher = s.TeacherName.Replace("'", "\\'");
+                                var period = s.StartTime.Hour < 12 ? "Sáng" : s.StartTime.Hour < 17 ? "Chiều" : "Tối";
+                                <li class="session-item"
+                                    onclick="openModal(@s.SessionId,'@safeClass','@safeShift','@safeTime','@safeRoom','@safeTeacher','@s.StatusCls','@s.StatusLabel',@(s.HasAttendance ? "true" : "false"))">
+                                    <div class="session-time">
+                                        <span class="session-time-val">@s.StartTime.ToString("HH:mm")</span>
+                                        <span class="session-time-label">@period</span>
+                                    </div>
+                                    <div class="session-info">
+                                        <div class="session-name">@s.ClassName</div>
+                                        <div class="session-meta">
+                                            <i class="fas fa-door-open" style="font-size:10px"></i> @s.RoomCode
+                                            &nbsp;·&nbsp;
+                                            <i class="fas fa-chalkboard-teacher" style="font-size:10px"></i> @s.TeacherName
+                                        </div>
+                                    </div>
+                                    <span class="session-badge @s.StatusCls">@s.StatusLabel</span>
+                                </li>
+                            }
+                        </ul>
+                    </div>
                 }
             </div>
         </div>
@@ -819,29 +926,40 @@
                 <span style="font-size:.72rem;color:var(--text-3);font-weight:600">7 ngày qua</span>
             </div>
             <div class="dash-card-bd" style="padding:16px 20px">
-                <div style="display:flex;flex-direction:column;gap:12px">
-                    <div>
-                        <div style="display:flex;justify-content:space-between;margin-bottom:5px">
-                            <span style="font-size:.78rem;font-weight:600;color:var(--text-1)">Có mặt</span>
-                            <span style="font-size:.78rem;font-weight:700;color:#10b981">87%</span>
-                        </div>
-                        <div class="rate-track"><div class="rate-fill high" style="width:87%"></div></div>
+                @if (Model.AttendanceRatePresent == 0 && Model.AttendanceRateAbsent == 0)
+                {
+                    <div style="text-align:center;padding:20px 0;color:var(--text-3);font-size:.8rem">
+                        <i class="fas fa-chart-pie" style="font-size:24px;margin-bottom:8px;display:block"></i>
+                        Chưa có dữ liệu điểm danh
                     </div>
-                    <div>
-                        <div style="display:flex;justify-content:space-between;margin-bottom:5px">
-                            <span style="font-size:.78rem;font-weight:600;color:var(--text-1)">Nghỉ có phép</span>
-                            <span style="font-size:.78rem;font-weight:700;color:#f59f00">8%</span>
+                }
+                else
+                {
+                    <div style="display:flex;flex-direction:column;gap:14px">
+                        <div>
+                            <div style="display:flex;justify-content:space-between;margin-bottom:6px">
+                                <span style="font-size:.78rem;font-weight:600;color:var(--text-1)">
+                                    <i class="fas fa-circle-check" style="color:#10b981;font-size:11px"></i> Có mặt
+                                </span>
+                                <span style="font-size:.78rem;font-weight:700;color:#10b981">@Model.AttendanceRatePresent%</span>
+                            </div>
+                            <div class="rate-track">
+                                <div class="rate-fill high" style="width:@Model.AttendanceRatePresent%"></div>
+                            </div>
                         </div>
-                        <div class="rate-track"><div class="rate-fill mid" style="width:8%"></div></div>
-                    </div>
-                    <div>
-                        <div style="display:flex;justify-content:space-between;margin-bottom:5px">
-                            <span style="font-size:.78rem;font-weight:600;color:var(--text-1)">Vắng không phép</span>
-                            <span style="font-size:.78rem;font-weight:700;color:#f43f5e">5%</span>
+                        <div>
+                            <div style="display:flex;justify-content:space-between;margin-bottom:6px">
+                                <span style="font-size:.78rem;font-weight:600;color:var(--text-1)">
+                                    <i class="fas fa-circle-xmark" style="color:#f43f5e;font-size:11px"></i> Vắng mặt
+                                </span>
+                                <span style="font-size:.78rem;font-weight:700;color:#f43f5e">@Model.AttendanceRateAbsent%</span>
+                            </div>
+                            <div class="rate-track">
+                                <div class="rate-fill low" style="width:@Model.AttendanceRateAbsent%"></div>
+                            </div>
                         </div>
-                        <div class="rate-track"><div class="rate-fill low" style="width:5%"></div></div>
                     </div>
-                </div>
+                }
             </div>
         </div>
 
@@ -874,21 +992,17 @@
     </div>
 </div>
 
-<!-- ════════════════════════════════════════
-     CUSTOM MODAL — vanilla JS
-     Dùng position:fixed trực tiếp, KHÔNG phụ thuộc Bootstrap Modal JS
-════════════════════════════════════════ -->
+<!-- ════════ CUSTOM MODAL ════════ -->
 <div class="cm-backdrop" id="cmBackdrop"></div>
-<div class="cm-modal" id="cmModal" role="dialog" aria-modal="true" aria-labelledby="cmTitle">
+<div class="cm-modal" id="cmModal" role="dialog" aria-modal="true" aria-labelledby="cmTitleText">
     <div class="cm-box">
-        <div class="cm-header">
-            <div class="cm-title" id="cmTitle">
-                <i class="fas fa-calendar-day"></i>
-                Chi tiết buổi học
+        <div class="cm-head">
+            <div class="cm-icon-wrap"><i class="fas fa-calendar-day"></i></div>
+            <div class="cm-head-text">
+                <h6 id="cmTitleText">Chi tiết buổi học</h6>
+                <p id="cmSubtitle">—</p>
             </div>
-            <button class="cm-close" id="cmClose" aria-label="Đóng">
-                <i class="fas fa-times"></i>
-            </button>
+            <button class="cm-close" id="cmClose" aria-label="Đóng"><i class="fas fa-times"></i></button>
         </div>
         <div class="cm-body">
             <div class="cm-row">
@@ -918,6 +1032,24 @@
                     <div class="cm-row-val" id="cm-room">—</div>
                 </div>
             </div>
+            <div class="cm-row">
+                <div class="cm-row-icon" style="background:rgba(139,92,246,.1);color:#8b5cf6">
+                    <i class="fas fa-chalkboard-teacher"></i>
+                </div>
+                <div>
+                    <div class="cm-row-label">Giáo viên</div>
+                    <div class="cm-row-val" id="cm-teacher">—</div>
+                </div>
+            </div>
+            <div class="cm-row">
+                <div class="cm-row-icon" style="background:#f4f6fc;color:var(--text-2)">
+                    <i class="fas fa-circle-info"></i>
+                </div>
+                <div>
+                    <div class="cm-row-label">Trạng thái</div>
+                    <div class="cm-row-val" id="cm-status">—</div>
+                </div>
+            </div>
         </div>
         <div class="cm-footer">
             <button class="btn-outline" id="cmClose2" style="font-size:.82rem;padding:7px 16px">
@@ -938,11 +1070,11 @@
     <script>
         document.addEventListener('DOMContentLoaded', function () {
 
-            /* ── Đưa modal ra thẳng body để thoát khỏi mọi overflow container ── */
-            var backdrop = document.getElementById('cmBackdrop');
-            var modal    = document.getElementById('cmModal');
-            if (backdrop && backdrop.parentNode !== document.body) document.body.appendChild(backdrop);
-            if (modal    && modal.parentNode    !== document.body) document.body.appendChild(modal);
+            /* ── Portal: đưa modal ra thẳng body ── */
+            ['cmBackdrop', 'cmModal'].forEach(function (id) {
+                var el = document.getElementById(id);
+                if (el && el.parentNode !== document.body) document.body.appendChild(el);
+            });
 
             /* ── Today label ── */
             var now  = new Date();
@@ -955,32 +1087,69 @@
                     now.getFullYear();
             }
 
-            /* ── Custom modal open/close ── */
-            function openModal(cls, shift, room, sessionId) {
-                document.getElementById('cm-class').textContent = cls   || '—';
-                document.getElementById('cm-shift').textContent = shift || '—';
-                document.getElementById('cm-room').textContent  = room  || '—';
+            /* ── Status labels & badge HTML ── */
+            var statusBadges = {
+                'scheduled': '<span class="sess-badge scheduled"><i class="fas fa-calendar-check"></i> Đã lên lịch</span>',
+                'ongoing':   '<span class="sess-badge ongoing"><i class="fas fa-circle-dot"></i> Đang diễn ra</span>',
+                'completed': '<span class="sess-badge completed"><i class="fas fa-check-circle"></i> Hoàn thành</span>',
+                'cancelled': '<span class="sess-badge cancelled"><i class="fas fa-ban"></i> Đã hủy</span>'
+            };
+
+            /* ── Custom modal ── */
+            function openModal(sessionId, cls, shift, shiftTime, room, teacher, statusCls, statusLabel, hasAttendance) {
+                document.getElementById('cmTitleText').textContent = 'Buổi học — ' + cls;
+                document.getElementById('cmSubtitle').textContent  = shift + ' · ' + shiftTime;
+                document.getElementById('cm-class').textContent    = cls     || '—';
+                document.getElementById('cm-shift').textContent    = shift   ? shift + ' (' + shiftTime + ')' : '—';
+                document.getElementById('cm-room').textContent     = room    || '—';
+                document.getElementById('cm-teacher').textContent  = teacher || '—';
+                document.getElementById('cm-status').innerHTML     = statusBadges[statusCls] || statusLabel || '—';
+
                 var link = document.getElementById('cm-attend-link');
-                if (link) link.href = sessionId ? '/Admin/Attendance?sessionId=' + sessionId : '/Admin/Attendance';
-                backdrop.classList.add('cm-open');
-                modal.classList.add('cm-open');
+                if (link) {
+                    link.href = hasAttendance
+                        ? '/Admin/Attendance/Edit?sessionId='   + sessionId
+                        : '/Admin/Attendance/Create?sessionId=' + sessionId;
+                    link.innerHTML = hasAttendance
+                        ? '<i class="fas fa-pen-to-square"></i> Sửa điểm danh'
+                        : '<i class="fas fa-clipboard-check"></i> Điểm danh';
+                }
+
+                document.getElementById('cmBackdrop').classList.add('cm-open');
+                document.getElementById('cmModal').classList.add('cm-open');
             }
 
             function closeModal() {
-                backdrop.classList.remove('cm-open');
-                modal.classList.remove('cm-open');
+                document.getElementById('cmBackdrop').classList.remove('cm-open');
+                document.getElementById('cmModal').classList.remove('cm-open');
             }
 
             document.getElementById('cmClose').addEventListener('click',  closeModal);
             document.getElementById('cmClose2').addEventListener('click', closeModal);
-            backdrop.addEventListener('click', closeModal);
+            document.getElementById('cmBackdrop').addEventListener('click', closeModal);
             document.addEventListener('keydown', function(e) {
                 if (e.key === 'Escape') closeModal();
             });
 
+            /* expose cho inline onclick trên session-item */
+            window.openModal = openModal;
+
             /* ── FullCalendar ── */
             var calendarEl = document.getElementById('calendar');
             if (calendarEl) {
+
+                /* Bảng màu gradient khớp với Sessions/Index */
+                var gradients = {
+                    'scheduled': 'linear-gradient(90deg,#38bdf8,#bae6fd)',
+                    'ongoing':   'linear-gradient(90deg,#10b981,#34d399)',
+                    'completed': 'linear-gradient(90deg,#d97706,#fbbf24)'
+                };
+                var textColors = {
+                    'scheduled': '#0f172a',
+                    'ongoing':   '#ffffff',
+                    'completed': '#ffffff'
+                };
+
                 var calendar = new FullCalendar.Calendar(calendarEl, {
                     initialView: 'dayGridMonth',
                     locale: 'vi',
@@ -989,20 +1158,84 @@
                         center: 'title',
                         right:  'dayGridMonth,timeGridWeek,timeGridDay'
                     },
-                    events:    '/Admin/Dashboard?handler=GetEvents',
+                    events: function (fetchInfo, successCb, failureCb) {
+                        fetch('/Admin/Dashboard?handler=GetEvents&start=' + fetchInfo.startStr + '&end=' + fetchInfo.endStr)
+                            .then(function (r) { return r.json(); })
+                            .then(function (data) {
+                                data.forEach(function (ev) {
+                                    var cls = ev.extendedProps && ev.extendedProps.statusCls;
+                                    if (cls && gradients[cls]) {
+                                        ev.backgroundColor = gradients[cls].match(/#[0-9a-f]{6}/i)[0];
+                                        ev.borderColor     = 'transparent';
+                                        ev.textColor       = textColors[cls];
+                                        ev.classNames      = ev.classNames || [];
+                                        if (ev.classNames.indexOf('fc-event-' + cls) === -1) {
+                                            ev.classNames.push('fc-event-' + cls);
+                                        }
+                                    }
+                                });
+                                successCb(data);
+                            })
+                            .catch(failureCb);
+                    },
                     eventClick: function (info) {
+                        var p = info.event.extendedProps;
                         openModal(
+                            p.sessionId,
                             info.event.title,
-                            info.event.extendedProps.shift,
-                            info.event.extendedProps.room,
-                            info.event.extendedProps.sessionId
+                            p.shift,
+                            p.shiftTime,
+                            p.room,
+                            p.teacher,
+                            p.statusCls,
+                            '',
+                            p.hasAttendance
                         );
                     },
-                    eventColor:   '#e8590c',
+                    eventClassNames: function (arg) {
+                        var cls = arg.event.extendedProps.statusCls;
+                        return cls ? ['fc-event-' + cls] : [];
+                    },
+                    eventDidMount: function (info) {
+                        var cls = info.event.extendedProps.statusCls;
+                        if (gradients[cls]) {
+                            info.el.style.background = gradients[cls];
+                            info.el.style.border     = 'none';
+                        }
+                    },
+                    moreLinkClick: 'popover',
                     dayMaxEvents: 3,
-                    height:       'auto'
+                    height: 'auto'
                 });
+
                 calendar.render();
+
+                /* MutationObserver: colorize popover events sau khi FC insert vào DOM */
+                new MutationObserver(function (mutations) {
+                    mutations.forEach(function (m) {
+                        m.addedNodes.forEach(function (node) {
+                            if (node.nodeType !== 1) return;
+                            var targets = node.classList.contains('fc-popover')
+                                ? [node]
+                                : Array.from(node.querySelectorAll('.fc-popover'));
+                            targets.forEach(function (pop) {
+                                pop.querySelectorAll('.fc-event').forEach(function (el) {
+                                    for (var k in gradients) {
+                                        if (el.classList.contains('fc-event-' + k)) {
+                                            el.style.setProperty('background', gradients[k], 'important');
+                                            el.style.setProperty('color', textColors[k], 'important');
+                                            el.style.setProperty('border', 'none', 'important');
+                                            el.style.setProperty('border-radius', '5px', 'important');
+                                            var dot = el.querySelector('.fc-daygrid-event-dot');
+                                            if (dot) dot.style.display = 'none';
+                                            break;
+                                        }
+                                    }
+                                });
+                            });
+                        });
+                    });
+                }).observe(calendarEl, { childList: true, subtree: true });
             }
 
             /* ── Chart defaults ── */
@@ -1055,7 +1288,7 @@
                         labels: @Html.Raw(Model.ClassNames),
                         datasets: [{
                             data: @Html.Raw(Model.ClassStudentCounts),
-                            backgroundColor: ['#e8590c','#f59f00','#10b981','#3b82f6','#8b5cf6','#f43f5e'],
+                            backgroundColor: ['#38bdf8','#10b981','#d97706','#3b82f6','#8b5cf6','#f43f5e','#e8590c','#f59f00'],
                             borderWidth: 0, hoverOffset: 8
                         }]
                     },

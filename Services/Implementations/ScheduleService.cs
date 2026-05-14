@@ -1,4 +1,22 @@
-﻿using Microsoft.EntityFrameworkCore;
+﻿// ============================================================
+// FILE GỐC : Services/Implementations/ScheduleService.cs
+// FILE SỬA : Services/Implementations/ScheduleService_Fixed.cs
+//
+// THAY ĐỔI SO VỚI BẢN GỐC:
+//
+// [FIX-1] Check PHÒNG: bổ sung query Sessions để phát hiện session lẻ
+//         cùng phòng + ca + thứ đã tồn tại trong range ngày.
+//         Bản gốc chỉ check WeeklyScheduleTemplates → bỏ sót session lẻ.
+//
+// [FIX-2] Check GV CHÍNH: đổi từ query WeeklyScheduleTemplates sang Sessions.
+//         Bản gốc bỏ sót session lẻ (TemplateId=null) của GV.
+//         EF Core không translate (int)s.SessionDate.DayOfWeek sang SQL
+//         → load candidates về C# trước, lọc DayOfWeek + holiday phía C#.
+//
+// [FIX-3] Check GV TRỢ GIẢNG: tương tự FIX-2.
+// ============================================================
+
+using Microsoft.EntityFrameworkCore;
 using TutoringCenterManagement.Data;
 using TutoringCenterManagement.Data.Entities;
 using TutoringCenterManagement.Data.Enums;
@@ -29,35 +47,62 @@ namespace TutoringCenterManagement.Services.Implementations
             int? primaryTeacherId = null,
             int? assistantTeacherId = null)
         {
-            // ── 1. Kiểm tra trùng phòng + ca + thứ ───────────────────────────
-            var conflictRoom = await _context.WeeklyScheduleTemplates
-                .Where(t => t.RoomId == roomId
-                         && t.ShiftId == shiftId
-                         && t.DayOfWeek == dayOfWeek
-                         && t.TemplateId != (excludeTemplateId ?? 0)
-                         && !(t.EndDate < startDate || t.StartDate > endDate))
-                .Include(t => t.Class)
-                .FirstOrDefaultAsync();
+            // Chuyển DayOfTheWeek enum (Mon=0) → System.DayOfWeek (.NET, Sun=0, Mon=1)
+            // Dùng chung cho tất cả các check bên dưới
+            int targetDotNetDow = ((int)dayOfWeek + 1) % 7;
 
-            if (conflictRoom != null)
+            // Load holidays trong range — dùng chung cho tất cả các check
+            var holidays = await _context.Holidays
+                .Where(h => !(h.EndDate < startDate || h.StartDate > endDate))
+                .ToListAsync();
+
+            // ── 1. Kiểm tra trùng PHÒNG ──────────────────────────────────────
+            // [FIX-1] Query Sessions thay vì (chỉ) WeeklyScheduleTemplates.
+            // Lý do: template đã sinh sessions rồi → sessions là source of truth.
+            // Session lẻ cùng phòng + ca + ngày cũng phải bị chặn.
+            //
+            // Bước 1: SQL lọc RoomId + ShiftId + date range + Status (EF dịch được)
+            // Bước 2: C# lọc DayOfWeek + holiday (EF không dịch được DayOfWeek cast)
+            var roomCandidates = await _context.Sessions
+                .Where(s => s.RoomId == roomId
+                         && s.ShiftId == shiftId
+                         && s.SessionDate >= startDate
+                         && s.SessionDate <= endDate
+                         && s.Status != SessionStatus.Cancelled
+                         && (excludeTemplateId == null || s.TemplateId != excludeTemplateId))
+                .Include(s => s.Class)
+                .ToListAsync();
+
+            var conflictRoomSession = roomCandidates.FirstOrDefault(s =>
+                (int)s.SessionDate.DayOfWeek == targetDotNetDow &&
+                !holidays.Any(h => s.SessionDate >= h.StartDate && s.SessionDate <= h.EndDate));
+
+            if (conflictRoomSession != null)
             {
                 return (false,
-                    $"Trùng lịch phòng với lớp {conflictRoom.Class.ClassCode} " +
-                    $"(Thứ {(int)dayOfWeek + 2}, Ca {(int)shiftId})");
+                    $"Trùng lịch phòng với lớp {conflictRoomSession.Class.ClassCode} " +
+                    $"(Thứ {(int)dayOfWeek + 2}, Ca {(int)shiftId}) " +
+                    $"— Ngày trùng đầu tiên: {conflictRoomSession.SessionDate:dd/MM/yyyy}");
             }
 
-            // ── 2. Kiểm tra trùng giáo viên chính ────────────────────────────
+            // ── 2. Kiểm tra trùng GV CHÍNH ───────────────────────────────────
+            // [FIX-2] Query Sessions (bao gồm session lẻ TemplateId=null).
+            // Không lọc DayOfWeek trong SQL → load về C# rồi lọc.
             if (primaryTeacherId.HasValue)
             {
-                var conflictPrimary = await _context.WeeklyScheduleTemplates
-                    .Where(t => (t.TeacherId == primaryTeacherId.Value
-                              || t.TeacherAssistantId == primaryTeacherId.Value)
-                             && t.ShiftId == shiftId
-                             && t.DayOfWeek == dayOfWeek
-                             && t.TemplateId != (excludeTemplateId ?? 0)
-                             && !(t.EndDate < startDate || t.StartDate > endDate))
-                    .Include(t => t.Teacher)
-                    .FirstOrDefaultAsync();
+                var primaryCandidates = await _context.Sessions
+                    .Where(s => (s.TeacherId == primaryTeacherId.Value
+                              || s.TeacherAssistantId == primaryTeacherId.Value)
+                             && s.ShiftId == shiftId
+                             && s.SessionDate >= startDate
+                             && s.SessionDate <= endDate
+                             && s.Status != SessionStatus.Cancelled
+                             && (excludeTemplateId == null || s.TemplateId != excludeTemplateId))
+                    .ToListAsync();
+
+                var conflictPrimary = primaryCandidates.FirstOrDefault(s =>
+                    (int)s.SessionDate.DayOfWeek == targetDotNetDow &&
+                    !holidays.Any(h => s.SessionDate >= h.StartDate && s.SessionDate <= h.EndDate));
 
                 if (conflictPrimary != null)
                 {
@@ -69,22 +114,28 @@ namespace TutoringCenterManagement.Services.Implementations
                     return (false,
                         $"Giáo viên {teacherName} đã có lịch dạy " +
                         $"(Thứ {(int)dayOfWeek + 2}, Ca {(int)shiftId}) " +
-                        $"trong khoảng thời gian này!");
+                        $"trong khoảng thời gian này! " +
+                        $"(Ngày trùng đầu tiên: {conflictPrimary.SessionDate:dd/MM/yyyy})");
                 }
             }
 
-            // ── 3. Kiểm tra trùng giáo viên trợ giảng ────────────────────────
+            // ── 3. Kiểm tra trùng GV TRỢ GIẢNG ──────────────────────────────
+            // [FIX-3] Tương tự FIX-2.
             if (assistantTeacherId.HasValue)
             {
-                var conflictAssistant = await _context.WeeklyScheduleTemplates
-                    .Where(t => (t.TeacherId == assistantTeacherId.Value
-                              || t.TeacherAssistantId == assistantTeacherId.Value)
-                             && t.ShiftId == shiftId
-                             && t.DayOfWeek == dayOfWeek
-                             && t.TemplateId != (excludeTemplateId ?? 0)
-                             && !(t.EndDate < startDate || t.StartDate > endDate))
-                    .Include(t => t.Teacher)
-                    .FirstOrDefaultAsync();
+                var assistantCandidates = await _context.Sessions
+                    .Where(s => (s.TeacherId == assistantTeacherId.Value
+                              || s.TeacherAssistantId == assistantTeacherId.Value)
+                             && s.ShiftId == shiftId
+                             && s.SessionDate >= startDate
+                             && s.SessionDate <= endDate
+                             && s.Status != SessionStatus.Cancelled
+                             && (excludeTemplateId == null || s.TemplateId != excludeTemplateId))
+                    .ToListAsync();
+
+                var conflictAssistant = assistantCandidates.FirstOrDefault(s =>
+                    (int)s.SessionDate.DayOfWeek == targetDotNetDow &&
+                    !holidays.Any(h => s.SessionDate >= h.StartDate && s.SessionDate <= h.EndDate));
 
                 if (conflictAssistant != null)
                 {
@@ -96,7 +147,8 @@ namespace TutoringCenterManagement.Services.Implementations
                     return (false,
                         $"Giáo viên trợ giảng {assistantName} đã có lịch dạy " +
                         $"(Thứ {(int)dayOfWeek + 2}, Ca {(int)shiftId}) " +
-                        $"trong khoảng thời gian này!");
+                        $"trong khoảng thời gian này! " +
+                        $"(Ngày trùng đầu tiên: {conflictAssistant.SessionDate:dd/MM/yyyy})");
                 }
             }
 
@@ -109,7 +161,7 @@ namespace TutoringCenterManagement.Services.Implementations
         }
 
         // ─────────────────────────────────────────────────────────────────────
-        // GenerateSessionsFromTemplate
+        // GenerateSessionsFromTemplate — KHÔNG thay đổi
         // ─────────────────────────────────────────────────────────────────────
         public async Task<List<Session>> GenerateSessionsFromTemplate(
             WeeklyScheduleTemplate template,
@@ -128,7 +180,8 @@ namespace TutoringCenterManagement.Services.Implementations
             {
                 if ((int)currentDate.DayOfWeek == ((int)template.DayOfWeek + 1) % 7)
                 {
-                    bool isHoliday = holidays.Any(h => currentDate >= h.StartDate && currentDate <= h.EndDate);
+                    bool isHoliday = holidays.Any(h =>
+                        currentDate >= h.StartDate && currentDate <= h.EndDate);
 
                     if (!isHoliday)
                     {
@@ -156,7 +209,7 @@ namespace TutoringCenterManagement.Services.Implementations
         }
 
         // ─────────────────────────────────────────────────────────────────────
-        // CheckTeacherSubjectMatch
+        // CheckTeacherSubjectMatch — KHÔNG thay đổi
         // ─────────────────────────────────────────────────────────────────────
         public async Task<(bool hasWarning, string warningMessage)> CheckTeacherSubjectMatch(
             int teacherId, int classId)

@@ -1,4 +1,5 @@
 <Solution>
-  <Project Path="../TutoringCenterManagement.Tests/TutoringCenterManagement.Tests.csproj" Id="722c6f0a-1921-4c41-9e21-dce863527bc0" />
-  <Project Path="TutoringCenterManagement.csproj" />
+  <Project Path="../TamTriVH.Tests/TutoringCenterManagement.Tests.csproj" Id="ee62990e-d059-493b-8689-9dea133fa3de" />
+  <Project Path="D:/2026_NEU_SEM6/KLTN_2/TutoringCenterManagement.Tests/TutoringCenterManagement.Tests.Ver0.csproj" Id="722c6f0a-1921-4c41-9e21-dce863527bc0" />
+  <Project Path="D:/2026_NEU_SEM6/KLTN_2/TutoringCenterManagement/TutoringCenterManagement.csproj" />
 </Solution>

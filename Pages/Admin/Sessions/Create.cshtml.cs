@@ -1,4 +1,22 @@
-﻿using Microsoft.AspNetCore.Mvc;
+﻿// ============================================================
+// FILE GỐC : Pages/Admin/Sessions/Create.cshtml.cs
+// FILE SỬA : Pages/Admin/Sessions/Create_Fixed.cshtml.cs
+//
+// THAY ĐỔI SO VỚI BẢN GỐC — thêm 3 block validate trước khi tạo session:
+//
+// [FIX-1] Check PHÒNG trùng: cùng RoomId + ShiftId + SessionDate, Status != Cancelled
+//         Bản gốc không có check này → 2 session cùng phòng + ca + ngày được tạo tự do.
+//
+// [FIX-2] Check GV CHÍNH trùng lịch: cùng ShiftId + SessionDate, Status != Cancelled
+//         Bản gốc không có check này → 1 GV dạy 2 chỗ cùng lúc.
+//
+// [FIX-3] Check GV TRỢ GIẢNG trùng lịch: tương tự FIX-2.
+//
+// Tất cả check đều query thẳng bảng Sessions (source of truth duy nhất),
+// bao gồm cả session lẻ (TemplateId=null) lẫn session từ template.
+// ============================================================
+
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using Microsoft.EntityFrameworkCore;
 using System.ComponentModel.DataAnnotations;
@@ -29,11 +47,9 @@ namespace TutoringCenterManagement.Pages.Admin.Sessions
         {
             [Required] public int ClassId { get; set; }
 
-            // Giáo viên chính (bắt buộc)
             [Required(ErrorMessage = "Vui lòng chọn giáo viên chính")]
             public int PrimaryTeacherId { get; set; }
 
-            // Giáo viên trợ giảng (tùy chọn)
             public int? AssistantTeacherId { get; set; }
 
             [Required] public DateOnly SessionDate { get; set; }
@@ -59,7 +75,7 @@ namespace TutoringCenterManagement.Pages.Admin.Sessions
                 return Page();
             }
 
-            // Validate giáo viên chính và trợ giảng không trùng nhau
+            // Validate GV chính và trợ giảng không trùng nhau
             if (Input.AssistantTeacherId.HasValue
                 && Input.AssistantTeacherId.Value == Input.PrimaryTeacherId)
             {
@@ -69,7 +85,80 @@ namespace TutoringCenterManagement.Pages.Admin.Sessions
                 return Page();
             }
 
-            // Tạo session — gán TeacherId trực tiếp
+            // ── [FIX-1] Kiểm tra trùng PHÒNG ─────────────────────────────────
+            // Query Sessions: cùng phòng + ca + ngày, chưa bị cancel.
+            // Bao gồm cả session lẻ lẫn session sinh từ template.
+            var conflictRoom = await _context.Sessions
+                .Where(s => s.RoomId == Input.RoomId
+                         && s.ShiftId == Input.ShiftId
+                         && s.SessionDate == Input.SessionDate
+                         && s.Status != SessionStatus.Cancelled)
+                .Include(s => s.Class)
+                .Include(s => s.Room)
+                .FirstOrDefaultAsync();
+
+            if (conflictRoom != null)
+            {
+                var roomName = conflictRoom.Room?.RoomCode ?? $"ID {Input.RoomId}";
+                ModelState.AddModelError("Input.RoomId",
+                    $"Phòng {roomName} đã có buổi học ca này vào ngày " +
+                    $"{Input.SessionDate:dd/MM/yyyy} (Lớp {conflictRoom.Class.ClassCode})!");
+                await LoadData();
+                return Page();
+            }
+
+            // ── [FIX-2] Kiểm tra trùng lịch GV CHÍNH ────────────────────────
+            var conflictPrimary = await _context.Sessions
+                .Where(s => (s.TeacherId == Input.PrimaryTeacherId
+                          || s.TeacherAssistantId == Input.PrimaryTeacherId)
+                         && s.ShiftId == Input.ShiftId
+                         && s.SessionDate == Input.SessionDate
+                         && s.Status != SessionStatus.Cancelled)
+                .Include(s => s.Class)
+                .FirstOrDefaultAsync();
+
+            if (conflictPrimary != null)
+            {
+                var primaryName = await _context.Teachers
+                    .Where(t => t.AccountId == Input.PrimaryTeacherId)
+                    .Select(t => t.Fullname)
+                    .FirstOrDefaultAsync() ?? $"ID {Input.PrimaryTeacherId}";
+
+                ModelState.AddModelError("Input.PrimaryTeacherId",
+                    $"Giáo viên {primaryName} đã có lịch dạy ca này vào ngày " +
+                    $"{Input.SessionDate:dd/MM/yyyy} (Lớp {conflictPrimary.Class.ClassCode})!");
+                await LoadData();
+                return Page();
+            }
+
+            // ── [FIX-3] Kiểm tra trùng lịch GV TRỢ GIẢNG ────────────────────
+            if (Input.AssistantTeacherId.HasValue)
+            {
+                var conflictAssistant = await _context.Sessions
+                    .Where(s => (s.TeacherId == Input.AssistantTeacherId.Value
+                              || s.TeacherAssistantId == Input.AssistantTeacherId.Value)
+                             && s.ShiftId == Input.ShiftId
+                             && s.SessionDate == Input.SessionDate
+                             && s.Status != SessionStatus.Cancelled)
+                    .Include(s => s.Class)
+                    .FirstOrDefaultAsync();
+
+                if (conflictAssistant != null)
+                {
+                    var assistantName = await _context.Teachers
+                        .Where(t => t.AccountId == Input.AssistantTeacherId.Value)
+                        .Select(t => t.Fullname)
+                        .FirstOrDefaultAsync() ?? $"ID {Input.AssistantTeacherId.Value}";
+
+                    ModelState.AddModelError("Input.AssistantTeacherId",
+                        $"Giáo viên trợ giảng {assistantName} đã có lịch dạy ca này vào ngày " +
+                        $"{Input.SessionDate:dd/MM/yyyy} (Lớp {conflictAssistant.Class.ClassCode})!");
+                    await LoadData();
+                    return Page();
+                }
+            }
+            // ── [END FIX] ─────────────────────────────────────────────────────
+
             var session = new Session
             {
                 ClassId = Input.ClassId,

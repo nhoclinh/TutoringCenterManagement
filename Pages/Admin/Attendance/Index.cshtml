@@ -212,7 +212,16 @@
             width: 100%;
             border-collapse: separate;
             border-spacing: 0;
+            table-layout: fixed;
         }
+
+        .session-table col.col-date    { width: 15%; }
+        .session-table col.col-class   { width: 13%; }
+        .session-table col.col-shift   { width: 15%; }
+        .session-table col.col-room    { width: 8%;  }
+        .session-table col.col-teacher { width: auto; }
+        .session-table col.col-attend  { width: 18%; }
+        .session-table col.col-actions { width: 6%;  }
 
             .session-table thead th {
                 padding: 11px 16px;
@@ -240,6 +249,7 @@
                 color: var(--text-1);
                 border-bottom: 1px solid #f0f2f8;
                 vertical-align: middle;
+                overflow: hidden;
             }
 
                 .session-table tbody td:first-child {
@@ -685,7 +695,7 @@
             <!-- Lớp học (optional) -->
             <div class="filter-group grow">
                 <span class="filter-label">Lớp học</span>
-                <select name="classId" class="filter-select" onchange="document.getElementById('filterForm').submit()">
+                <select name="classId" id="attClassFilter" class="filter-select">
                     <option value="">— Tất cả lớp —</option>
                     @foreach (var c in Model.Classes)
                     {
@@ -697,21 +707,40 @@
             <!-- Từ ngày -->
             <div class="filter-group">
                 <span class="filter-label">Từ ngày</span>
-                <input type="date" name="fromDate" class="filter-date" value="@Model.FromDate" />
+                <div class="filter-date-wrap @(!string.IsNullOrEmpty(Model.FromDate) ? "has-value" : "")">
+                    <i class="fas fa-calendar-alt date-icon"></i>
+                    <input type="text" name="fromDate" id="attFromDate" class="filter-date" value="@Model.FromDate" placeholder="Từ ngày" autocomplete="off" />
+                    <button type="button" class="clear-date" onclick="clearDate('attFromDate',this)"><i class="fas fa-times"></i></button>
+                </div>
             </div>
 
             <!-- Đến ngày -->
             <div class="filter-group">
                 <span class="filter-label">Đến ngày</span>
-                <input type="date" name="toDate" class="filter-date" value="@Model.ToDate" />
+                <div class="filter-date-wrap @(!string.IsNullOrEmpty(Model.ToDate) ? "has-value" : "")">
+                    <i class="fas fa-calendar-alt date-icon"></i>
+                    <input type="text" name="toDate" id="attToDate" class="filter-date" value="@Model.ToDate" placeholder="Đến ngày" autocomplete="off" />
+                    <button type="button" class="clear-date" onclick="clearDate('attToDate',this)"><i class="fas fa-times"></i></button>
+                </div>
+            </div>
+
+            <!-- Toàn thời gian -->
+            <div class="filter-group" style="justify-content:flex-end">
+                <span class="filter-label">&nbsp;</span>
+                <a href="/Admin/Attendance?showAll=true@(Model.ClassId.HasValue ? "&classId=" + Model.ClassId : "")"
+                   class="btn-outline" style="padding:8px 14px;font-size:.83rem;white-space:nowrap" title="Xem tất cả thời gian">
+                    <i class="fas fa-calendar-days"></i> Toàn TG
+                </a>
             </div>
 
             <!-- Buttons -->
-            <div class="filter-group" style="flex-direction:row;gap:8px">
+            <div class="filter-group" style="flex-direction:row;gap:8px;flex-wrap:wrap">
+                <input type="hidden" name="showAll" value="false" />
                 <button type="submit" class="btn-brand" style="padding:8px 18px;font-size:.83rem">
                     <i class="fas fa-search"></i> Lọc
                 </button>
-                <a href="/Admin/Attendance" class="btn-outline" style="padding:8px 14px;font-size:.83rem" title="Đặt lại bộ lọc">
+                <a href="/Admin/Attendance?fromDate=@DateTime.Today.ToString("yyyy-MM-dd")&toDate=@DateTime.Today.ToString("yyyy-MM-dd")"
+                   class="btn-outline" style="padding:8px 14px;font-size:.83rem" title="Về hôm nay">
                     <i class="fas fa-rotate-right"></i>
                 </a>
             </div>
@@ -758,8 +787,17 @@
         <span class="result-count" id="resultCount">@Model.Sessions.Count buổi</span>
     </div>
 
-    <div style="overflow-x:auto">
+    <div>
         <table class="session-table">
+            <colgroup>
+                <col class="col-date" />
+                <col class="col-class" />
+                <col class="col-shift" />
+                <col class="col-room" />
+                <col class="col-teacher" />
+                <col class="col-attend" />
+                <col class="col-actions" />
+            </colgroup>
             <thead>
                 <tr>
                     <th>Buổi học</th>
@@ -898,6 +936,322 @@
 </div>
 
 @section Scripts {
+    @* Tom Select — searchable dropdown *@
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/tom-select@2.3.1/dist/css/tom-select.min.css" />
+    <script src="https://cdn.jsdelivr.net/npm/tom-select@2.3.1/dist/js/tom-select.complete.min.js"></script>
+    @* Flatpickr — date picker *@
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css" />
+    <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+    <script src="https://cdn.jsdelivr.net/npm/flatpickr/dist/l10n/vn.js"></script>
+    <style>
+        /* ══ Tom Select — reset hoàn toàn, build lại theo design system ══ */
+
+        /* Wrapper: không có border/bg riêng, chỉ là container */
+        .ts-wrapper {
+            width: 100% !important;
+            padding: 0 !important;
+            border: none !important;
+            background: none !important;
+            height: auto !important;
+            box-sizing: border-box !important;
+        }
+
+        /* Control: đây là ô hiển thị chính */
+        .ts-wrapper .ts-control {
+            width: 100% !important;
+            min-height: 36px !important;
+            height: 36px !important;
+            padding: 0 32px 0 10px !important;
+            border: 1.5px solid var(--border) !important;
+            border-radius: var(--r-sm) !important;
+            background: #f8f9fc !important;
+            color: var(--text-1) !important;
+            font-size: .83rem !important;
+            font-family: 'Plus Jakarta Sans', system-ui, sans-serif !important;
+            box-shadow: none !important;
+            cursor: pointer !important;
+            display: flex !important;
+            align-items: center !important;
+            flex-wrap: nowrap !important;
+            transition: border-color .15s, box-shadow .15s !important;
+        }
+
+        .ts-wrapper.focus .ts-control,
+        .ts-wrapper .ts-control:focus-within {
+            border-color: var(--c-primary) !important;
+            background: #fff !important;
+            box-shadow: inset 0 0 0 2px rgba(232,89,12,.12) !important;
+        }
+
+        /* Search input bên trong control */
+        .ts-wrapper .ts-control input {
+            font-size: .83rem !important;
+            font-family: 'Plus Jakarta Sans', system-ui, sans-serif !important;
+            color: var(--text-1) !important;
+            margin: 0 !important;
+            padding: 0 !important;
+            line-height: 36px !important;
+        }
+
+        /* Khi người dùng đang gõ tìm kiếm, ẩn item đang chọn để tránh lỗi:
+           "Tất cả lớp" + input người dùng => "Tất cả lớpa" */
+        .ts-wrapper.ts-searching .ts-control > .item {
+            display: none !important;
+        }
+
+        .ts-wrapper.ts-searching .ts-control input {
+            min-width: 100% !important;
+        }
+
+        /* Arrow dropdown */
+        .ts-wrapper.single .ts-control::after {
+            content: '' !important;
+            display: block !important;
+            width: 10px !important;
+            height: 10px !important;
+            position: absolute !important;
+            right: 10px !important;
+            top: 50% !important;
+            transform: translateY(-50%) !important;
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='10' viewBox='0 0 24 24' fill='none' stroke='%239aa0b4' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E") !important;
+            background-repeat: no-repeat !important;
+            background-position: center !important;
+            border: none !important;
+        }
+
+        /* Dropdown list */
+        .ts-dropdown {
+            border: 1.5px solid var(--border) !important;
+            border-radius: var(--r-sm) !important;
+            box-shadow: 0 8px 24px rgba(0,0,0,.10) !important;
+            font-size: .83rem !important;
+            font-family: 'Plus Jakarta Sans', system-ui, sans-serif !important;
+            margin-top: 3px !important;
+            z-index: 9999 !important;
+        }
+
+        .ts-dropdown .ts-dropdown-content {
+            max-height: 220px !important;
+        }
+
+        .ts-dropdown .option {
+            padding: 8px 12px !important;
+            color: var(--text-1) !important;
+            font-size: .83rem !important;
+            cursor: pointer !important;
+        }
+
+        .ts-dropdown .option:hover {
+            background: rgba(232,89,12,.07) !important;
+            color: var(--c-primary) !important;
+        }
+
+        .ts-dropdown .option.active {
+            background: rgba(232,89,12,.07) !important;
+            color: var(--c-primary) !important;
+        }
+
+        .ts-dropdown .option.selected,
+        .ts-dropdown .option.selected.active {
+            background: rgba(232,89,12,.12) !important;
+            color: var(--c-primary) !important;
+            font-weight: 700 !important;
+        }
+
+        /* Input tìm kiếm trong dropdown */
+        .ts-dropdown .ts-dropdown-header-search input,
+        .ts-wrapper .ts-control input[type="text"] {
+            outline: none !important;
+            border: none !important;
+            background: transparent !important;
+        }
+
+        /* ══ Flatpickr — date picker đồng bộ design system ══ */
+        .flatpickr-calendar {
+            font-family: 'Plus Jakarta Sans', system-ui, sans-serif !important;
+            font-size: .82rem !important;
+            border: 1.5px solid var(--border) !important;
+            border-radius: var(--r-md) !important;
+            box-shadow: 0 8px 24px rgba(0,0,0,.12) !important;
+        }
+
+        .flatpickr-day.selected,
+        .flatpickr-day.selected:hover {
+            background: var(--c-primary) !important;
+            border-color: var(--c-primary) !important;
+        }
+
+        .flatpickr-day:hover {
+            background: rgba(232,89,12,.10) !important;
+        }
+
+        .flatpickr-day.today {
+            border-color: var(--c-primary) !important;
+            color: var(--c-primary) !important;
+            font-weight: 700 !important;
+        }
+
+        .flatpickr-day.today.selected {
+            color: #fff !important;
+        }
+
+        .flatpickr-months .flatpickr-month {
+            background: #f4f6fc !important;
+            height: 44px !important;
+        }
+
+        .flatpickr-weekdays {
+            background: #f4f6fc !important;
+        }
+
+        /* ── Month dropdown select ── */
+        .flatpickr-current-month .flatpickr-monthDropdown-months {
+            appearance: none !important;
+            -webkit-appearance: none !important;
+            background: #fff url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='9' height='9' viewBox='0 0 24 24' fill='none' stroke='%239aa0b4' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E") no-repeat right 5px center !important;
+            border: 1.5px solid var(--border) !important;
+            border-radius: 6px !important;
+            padding: 3px 20px 3px 7px !important;
+            font-family: 'Plus Jakarta Sans', system-ui, sans-serif !important;
+            font-weight: 700 !important;
+            font-size: .78rem !important;
+            color: var(--text-1) !important;
+            cursor: pointer !important;
+            outline: none !important;
+            margin: 0 2px 0 0 !important;
+            transition: border-color .15s !important;
+            height: 28px !important;
+        }
+
+        .flatpickr-current-month .flatpickr-monthDropdown-months:hover,
+        .flatpickr-current-month .flatpickr-monthDropdown-months:focus {
+            border-color: var(--c-primary) !important;
+        }
+
+        /* ── Year input ── */
+        .flatpickr-current-month .numInputWrapper {
+            width: 62px !important;
+        }
+
+        .flatpickr-current-month input.cur-year {
+            background: #fff !important;
+            border: 1.5px solid var(--border) !important;
+            border-radius: 6px !important;
+            padding: 3px 6px !important;
+            font-family: 'Plus Jakarta Sans', system-ui, sans-serif !important;
+            font-weight: 700 !important;
+            font-size: .78rem !important;
+            color: var(--text-1) !important;
+            outline: none !important;
+            width: 100% !important;
+            height: 28px !important;
+            transition: border-color .15s !important;
+        }
+
+        .flatpickr-current-month input.cur-year:focus {
+            border-color: var(--c-primary) !important;
+        }
+
+        /* Ẩn mũi tên up/down của numInput cho gọn */
+        .flatpickr-current-month .numInputWrapper span {
+            display: none !important;
+        }
+
+        /* ── Navigation arrows ── */
+        .flatpickr-months .flatpickr-prev-month,
+        .flatpickr-months .flatpickr-next-month {
+            padding: 6px 9px !important;
+            border-radius: 6px !important;
+            top: 7px !important;
+            transition: background .15s !important;
+        }
+
+        .flatpickr-months .flatpickr-prev-month:hover,
+        .flatpickr-months .flatpickr-next-month:hover {
+            background: rgba(232,89,12,.08) !important;
+        }
+
+        .flatpickr-months .flatpickr-prev-month:hover svg,
+        .flatpickr-months .flatpickr-next-month:hover svg {
+            fill: var(--c-primary) !important;
+        }
+
+        span.flatpickr-weekday {
+            font-weight: 700 !important;
+            color: var(--text-2) !important;
+            font-size: .72rem !important;
+        }
+
+        /* Filter date input có icon calendar */
+        .filter-date-wrap {
+            position: relative;
+            width: 100%;
+        }
+
+        .filter-date-wrap .filter-date {
+            padding-left: 28px !important;
+            padding-right: 22px !important;
+        }
+
+        .filter-date-wrap .date-icon {
+            position: absolute;
+            left: 9px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: #9aa0b4;
+            font-size: 11px;
+            pointer-events: none;
+        }
+
+        .filter-date-wrap .clear-date {
+            position: absolute;
+            right: 6px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: #9aa0b4;
+            font-size: 10px;
+            background: none;
+            border: none;
+            cursor: pointer;
+            padding: 2px;
+            display: none;
+            line-height: 1;
+        }
+
+        .filter-date-wrap .clear-date:hover { color: var(--text-1); }
+        .filter-date-wrap.has-value .clear-date { display: block; }
+    </style>
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            /* ── TomSelect ── */
+            if (typeof TomSelect !== 'undefined') {
+                function fixTomSelectSearchDisplay(ts) {
+                    function syncSearchState() { var val = ts.control_input ? ts.control_input.value.trim() : ''; ts.wrapper.classList.toggle('ts-searching', val.length > 0); }
+                    ts.on('type', syncSearchState); ts.on('focus', syncSearchState);
+                    ts.on('blur', function() { ts.wrapper.classList.remove('ts-searching'); });
+                    ts.on('dropdown_close', function() { ts.wrapper.classList.remove('ts-searching'); });
+                    if (ts.control_input) { ts.control_input.addEventListener('input', syncSearchState); ts.control_input.addEventListener('keydown', function() { setTimeout(syncSearchState, 0); }); }
+                    var origOpen = ts.open; ts.open = function() { origOpen.call(this); var self = this; setTimeout(function() { if (self.control_input) self.control_input.value = ''; self.lastValue = ''; self.wrapper.classList.remove('ts-searching'); self.refreshOptions(false); }, 0); };
+                }
+                if (document.getElementById('attClassFilter')) {
+                    var tsClass = new TomSelect('#attClassFilter', { allowEmptyOption: true, searchField: ['text'], create: false, onChange: function() { document.getElementById('filterForm').submit(); } });
+                    fixTomSelectSearchDisplay(tsClass);
+                }
+            }
+            /* ── Flatpickr ── */
+            if (typeof flatpickr !== 'undefined') {
+                var fpBase = { dateFormat: 'Y-m-d', altInput: true, altFormat: 'd/m/Y', altInputClass: 'filter-date', locale: 'vn', allowInput: true, disableMobile: true };
+                function fpChange(dates, dateStr, instance) { var w = instance.input.closest('.filter-date-wrap'); if (w) w.classList.toggle('has-value', !!dateStr); }
+                if (document.getElementById('attFromDate')) flatpickr('#attFromDate', Object.assign({}, fpBase, { onChange: fpChange }));
+                if (document.getElementById('attToDate'))   flatpickr('#attToDate',   Object.assign({}, fpBase, { onChange: fpChange }));
+            }
+            window.clearDate = function(inputId, btn) {
+                var input = document.getElementById(inputId);
+                if (input && input._flatpickr) input._flatpickr.clear(); else if (input) input.value = '';
+                var wrap = btn.closest('.filter-date-wrap'); if (wrap) wrap.classList.remove('has-value');
+            };
+        });
+    </script>
     <script>
         document.addEventListener('DOMContentLoaded', function () {
 

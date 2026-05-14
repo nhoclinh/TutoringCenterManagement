@@ -1180,17 +1180,25 @@
             @* ── Từ ngày ── *@
             <div class="fc-zone-col">
                 <span class="fc-lbl">Từ ngày</span>
-                <input type="date" name="FromDate" id="inpFrom"
-                       class="fc-date @(!string.IsNullOrEmpty(Model.FromDate) ? "has-val" : "")"
-                       value="@Model.FromDate" onchange="onDateChange()" />
+                <div class="filter-date-wrap @(!string.IsNullOrEmpty(Model.FromDate) ? "has-value" : "")">
+                    <i class="fas fa-calendar-alt date-icon"></i>
+                    <input type="text" name="FromDate" id="inpFrom"
+                           class="fc-date @(!string.IsNullOrEmpty(Model.FromDate) ? "has-val" : "")"
+                           value="@Model.FromDate" autocomplete="off" placeholder="dd/mm/yyyy" />
+                    <button type="button" class="clear-date" onclick="clearDate('inpFrom', this)" title="Xóa ngày"><i class="fas fa-times"></i></button>
+                </div>
             </div>
             <div class="fc-arrow">→</div>
             @* ── Đến ngày ── *@
             <div class="fc-zone-col">
                 <span class="fc-lbl">Đến ngày</span>
-                <input type="date" name="ToDate" id="inpTo"
-                       class="fc-date @(!string.IsNullOrEmpty(Model.ToDate) ? "has-val" : "")"
-                       value="@Model.ToDate" onchange="onDateChange()" />
+                <div class="filter-date-wrap @(!string.IsNullOrEmpty(Model.ToDate) ? "has-value" : "")">
+                    <i class="fas fa-calendar-alt date-icon"></i>
+                    <input type="text" name="ToDate" id="inpTo"
+                           class="fc-date @(!string.IsNullOrEmpty(Model.ToDate) ? "has-val" : "")"
+                           value="@Model.ToDate" autocomplete="off" placeholder="dd/mm/yyyy" />
+                    <button type="button" class="clear-date" onclick="clearDate('inpTo', this)" title="Xóa ngày"><i class="fas fa-times"></i></button>
+                </div>
             </div>
 
             @* ── Separator ── *@
@@ -1199,7 +1207,7 @@
             @* ── Lớp học ── *@
             <div class="fc-zone-col">
                 <span class="fc-lbl">Lớp học</span>
-                <select name="ClassFilter" class="fc-sel @(!string.IsNullOrEmpty(Model.ClassFilter) ? "has-val" : "")"
+                <select name="ClassFilter" id="attClassFilter" class="fc-sel @(!string.IsNullOrEmpty(Model.ClassFilter) ? "has-val" : "")"
                         onchange="document.getElementById('ff').submit()">
                     <option value="">— Tất cả lớp —</option>
                     @foreach (var c in Model.Classes)
@@ -1219,7 +1227,7 @@
             @* ── Trạng thái ── *@
             <div class="fc-zone-col">
                 <span class="fc-lbl">Trạng thái</span>
-                <select name="StatusFilter" class="fc-sel @(!string.IsNullOrEmpty(Model.StatusFilter) ? "has-val" : "")"
+                <select name="StatusFilter" id="attStatusFilter" class="fc-sel @(!string.IsNullOrEmpty(Model.StatusFilter) ? "has-val" : "")"
                         onchange="document.getElementById('ff').submit()">
                     <option value="">— Tất cả —</option>
                     @if (Model.StatusFilter == "present")
@@ -1247,6 +1255,23 @@
                    title="Đặt lại tất cả bộ lọc">
                     <i class="fas fa-rotate-left"></i> Đặt lại
                 </a>
+            </div>
+
+            @* ── Xuất Excel ── *@
+            <div style="align-self:flex-end">
+                <button type="submit" name="Export" value="true"
+                        style="height:34px;padding:0 13px;display:inline-flex;align-items:center;gap:6px;font-size:.8rem;font-weight:700;cursor:pointer;border:1.5px solid #059669;background:#f0fdf4;color:#059669;border-radius:var(--r-sm)"
+                        title="@(Model.IsParent && !(Model.StudentIdFilter.HasValue && Model.StudentIdFilter > 0) ? "Xuất báo cáo tổng hợp tất cả con em ra Excel" : "Xuất báo cáo điểm danh theo bộ lọc hiện tại ra Excel")">
+                    <i class="fas fa-file-excel"></i>
+                    @if (Model.IsParent && !(Model.StudentIdFilter.HasValue && Model.StudentIdFilter > 0))
+                    {
+                        <text>Xuất tổng hợp</text>
+                    }
+                    else
+                    {
+                        <text>Xuất Excel</text>
+                    }
+                </button>
             </div>
         </div>
 
@@ -1565,6 +1590,53 @@
 </div>
 
 @section Scripts {
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/tom-select@2.3.1/dist/css/tom-select.min.css" />
+    <script src="https://cdn.jsdelivr.net/npm/tom-select@2.3.1/dist/js/tom-select.complete.min.js"></script>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css" />
+    <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+    <script src="https://cdn.jsdelivr.net/npm/flatpickr/dist/l10n/vn.js"></script>
+    <style>
+        /* ══ Tom Select — reset hoàn toàn, build lại theo design system ══ */
+        .ts-wrapper { width: 100% !important; padding: 0 !important; border: none !important; background: none !important; height: auto !important; box-sizing: border-box !important; }
+        .ts-wrapper .ts-control { width: 100% !important; min-height: 34px !important; height: 34px !important; padding: 0 32px 0 9px !important; border: 1.5px solid var(--border) !important; border-radius: var(--r-sm) !important; background: #f8f9fc !important; color: var(--text-1) !important; font-size: .8rem !important; font-family: 'Plus Jakarta Sans', system-ui, sans-serif !important; box-shadow: none !important; cursor: pointer !important; display: flex !important; align-items: center !important; flex-wrap: nowrap !important; transition: border-color .15s, box-shadow .15s !important; font-weight: 600 !important; }
+        .ts-wrapper.focus .ts-control, .ts-wrapper .ts-control:focus-within { border-color: var(--c-primary) !important; background: #fff !important; box-shadow: inset 0 0 0 2px rgba(232,89,12,.12) !important; }
+        .ts-wrapper .ts-control input { font-size: .8rem !important; font-family: 'Plus Jakarta Sans', system-ui, sans-serif !important; color: var(--text-1) !important; margin: 0 !important; padding: 0 !important; line-height: 34px !important; }
+        .ts-wrapper.ts-searching .ts-control > .item { display: none !important; }
+        .ts-wrapper.ts-searching .ts-control input { min-width: 100% !important; }
+        .ts-wrapper.single .ts-control::after { content: '' !important; display: block !important; width: 10px !important; height: 10px !important; position: absolute !important; right: 10px !important; top: 50% !important; transform: translateY(-50%) !important; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='9' height='9' viewBox='0 0 24 24' fill='none' stroke='%239aa0b4' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E") !important; background-repeat: no-repeat !important; background-position: center !important; border: none !important; }
+        .ts-dropdown { border: 1.5px solid var(--border) !important; border-radius: var(--r-sm) !important; box-shadow: 0 8px 24px rgba(0,0,0,.10) !important; font-size: .8rem !important; font-family: 'Plus Jakarta Sans', system-ui, sans-serif !important; margin-top: 3px !important; z-index: 9999 !important; }
+        .ts-dropdown .ts-dropdown-content { max-height: 220px !important; }
+        .ts-dropdown .option { padding: 8px 12px !important; color: var(--text-1) !important; font-size: .8rem !important; cursor: pointer !important; }
+        .ts-dropdown .option:hover { background: rgba(232,89,12,.07) !important; color: var(--c-primary) !important; }
+        .ts-dropdown .option.active { background: rgba(232,89,12,.07) !important; color: var(--c-primary) !important; }
+        .ts-dropdown .option.selected, .ts-dropdown .option.selected.active { background: rgba(232,89,12,.12) !important; color: var(--c-primary) !important; font-weight: 700 !important; }
+        .ts-dropdown .ts-dropdown-header-search input, .ts-wrapper .ts-control input[type="text"] { outline: none !important; border: none !important; background: transparent !important; }
+        /* ══ Flatpickr ══ */
+        .flatpickr-calendar { font-family: 'Plus Jakarta Sans', system-ui, sans-serif !important; font-size: .82rem !important; border: 1.5px solid var(--border) !important; border-radius: var(--r-md) !important; box-shadow: 0 8px 24px rgba(0,0,0,.12) !important; }
+        .flatpickr-day.selected, .flatpickr-day.selected:hover { background: var(--c-primary) !important; border-color: var(--c-primary) !important; }
+        .flatpickr-day:hover { background: rgba(232,89,12,.10) !important; }
+        .flatpickr-day.today { border-color: var(--c-primary) !important; color: var(--c-primary) !important; font-weight: 700 !important; }
+        .flatpickr-day.today.selected { color: #fff !important; }
+        .flatpickr-months .flatpickr-month { background: #f4f6fc !important; height: 44px !important; }
+        .flatpickr-weekdays { background: #f4f6fc !important; }
+        .flatpickr-current-month .flatpickr-monthDropdown-months { appearance: none !important; -webkit-appearance: none !important; background: #fff url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='9' height='9' viewBox='0 0 24 24' fill='none' stroke='%239aa0b4' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E") no-repeat right 5px center !important; border: 1.5px solid var(--border) !important; border-radius: 6px !important; padding: 3px 20px 3px 7px !important; font-family: 'Plus Jakarta Sans', system-ui, sans-serif !important; font-weight: 700 !important; font-size: .78rem !important; color: var(--text-1) !important; cursor: pointer !important; outline: none !important; margin: 0 2px 0 0 !important; transition: border-color .15s !important; height: 28px !important; }
+        .flatpickr-current-month .flatpickr-monthDropdown-months:hover, .flatpickr-current-month .flatpickr-monthDropdown-months:focus { border-color: var(--c-primary) !important; }
+        .flatpickr-current-month .numInputWrapper { width: 62px !important; }
+        .flatpickr-current-month input.cur-year { background: #fff !important; border: 1.5px solid var(--border) !important; border-radius: 6px !important; padding: 3px 6px !important; font-family: 'Plus Jakarta Sans', system-ui, sans-serif !important; font-weight: 700 !important; font-size: .78rem !important; color: var(--text-1) !important; outline: none !important; width: 100% !important; height: 28px !important; transition: border-color .15s !important; }
+        .flatpickr-current-month input.cur-year:focus { border-color: var(--c-primary) !important; }
+        .flatpickr-current-month .numInputWrapper span { display: none !important; }
+        .flatpickr-months .flatpickr-prev-month, .flatpickr-months .flatpickr-next-month { padding: 6px 9px !important; border-radius: 6px !important; top: 7px !important; transition: background .15s !important; }
+        .flatpickr-months .flatpickr-prev-month:hover, .flatpickr-months .flatpickr-next-month:hover { background: rgba(232,89,12,.08) !important; }
+        .flatpickr-months .flatpickr-prev-month:hover svg, .flatpickr-months .flatpickr-next-month:hover svg { fill: var(--c-primary) !important; }
+        span.flatpickr-weekday { font-weight: 700 !important; color: var(--text-2) !important; font-size: .72rem !important; }
+        /* filter-date-wrap */
+        .filter-date-wrap { position: relative; width: 100%; }
+        .filter-date-wrap .fc-date { padding-left: 28px !important; padding-right: 22px !important; }
+        .filter-date-wrap .date-icon { position: absolute; left: 9px; top: 50%; transform: translateY(-50%); color: #9aa0b4; font-size: 11px; pointer-events: none; }
+        .filter-date-wrap .clear-date { position: absolute; right: 6px; top: 50%; transform: translateY(-50%); color: #9aa0b4; font-size: 10px; background: none; border: none; cursor: pointer; padding: 2px; display: none; line-height: 1; }
+        .filter-date-wrap .clear-date:hover { color: var(--text-1); }
+        .filter-date-wrap.has-value .clear-date { display: block; }
+    </style>
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
     <script>
         // ── Chart ───────────────────────────────────────────────────
@@ -1628,5 +1700,98 @@
             document.getElementById('inpTo').value   = '';
             document.getElementById('ff').submit();
         }
+
+        document.addEventListener('DOMContentLoaded', function () {
+            // ── TomSelect for filter selects ──
+            if (typeof TomSelect !== 'undefined') {
+                function fixTomSelectSearchDisplay(ts) {
+                    function syncSearchState() {
+                        var val = ts.control_input ? ts.control_input.value.trim() : '';
+                        ts.wrapper.classList.toggle('ts-searching', val.length > 0);
+                    }
+                    ts.on('type', syncSearchState);
+                    ts.on('focus', syncSearchState);
+                    ts.on('blur', function () { ts.wrapper.classList.remove('ts-searching'); });
+                    ts.on('dropdown_close', function () { ts.wrapper.classList.remove('ts-searching'); });
+                    if (ts.control_input) {
+                        ts.control_input.addEventListener('input', syncSearchState);
+                        ts.control_input.addEventListener('keydown', function () { setTimeout(syncSearchState, 0); });
+                    }
+                    var origOpen = ts.open;
+                    ts.open = function () {
+                        origOpen.call(this);
+                        var self = this;
+                        setTimeout(function () {
+                            if (self.control_input) self.control_input.value = '';
+                            self.lastValue = '';
+                            self.wrapper.classList.remove('ts-searching');
+                            self.refreshOptions(false);
+                        }, 0);
+                    };
+                }
+                if (document.getElementById('attClassFilter')) {
+                    var tsClass = new TomSelect('#attClassFilter', {
+                        allowEmptyOption: true,
+                        create: false,
+                        searchField: ['text'],
+                        onChange: function () { document.getElementById('ff').submit(); }
+                    });
+                    fixTomSelectSearchDisplay(tsClass);
+                }
+                if (document.getElementById('attStatusFilter')) {
+                    var tsStatus = new TomSelect('#attStatusFilter', {
+                        allowEmptyOption: true,
+                        create: false,
+                        searchField: ['text'],
+                        onChange: function () { document.getElementById('ff').submit(); }
+                    });
+                    fixTomSelectSearchDisplay(tsStatus);
+                }
+            }
+
+            // ── Flatpickr for FromDate / ToDate ──
+            if (typeof flatpickr !== 'undefined') {
+                var fpConfig = {
+                    dateFormat: 'Y-m-d',
+                    altInput: true,
+                    altFormat: 'd/m/Y',
+                    altInputClass: 'fc-date',
+                    locale: 'vn',
+                    allowInput: true,
+                    disableMobile: true,
+                    onChange: function (selectedDates, dateStr, instance) {
+                        var wrap = instance.input.closest('.filter-date-wrap');
+                        if (wrap) wrap.classList.toggle('has-value', !!dateStr);
+                        onDateChange();
+                    }
+                };
+                var fpTo;
+                var fpFrom = flatpickr('#inpFrom', Object.assign({}, fpConfig, {
+                    onChange: function (selectedDates, dateStr, instance) {
+                        var wrap = instance.input.closest('.filter-date-wrap');
+                        if (wrap) wrap.classList.toggle('has-value', !!dateStr);
+                        if (fpTo) fpTo.set('minDate', dateStr || null);
+                        onDateChange();
+                    }
+                }));
+                fpTo = flatpickr('#inpTo', Object.assign({}, fpConfig, {
+                    onChange: function (selectedDates, dateStr, instance) {
+                        var wrap = instance.input.closest('.filter-date-wrap');
+                        if (wrap) wrap.classList.toggle('has-value', !!dateStr);
+                        if (fpFrom) fpFrom.set('maxDate', dateStr || null);
+                        onDateChange();
+                    }
+                }));
+            }
+
+            window.clearDate = function (inputId, btn) {
+                var input = document.getElementById(inputId);
+                if (input && input._flatpickr) input._flatpickr.clear();
+                else if (input) input.value = '';
+                var wrap = btn.closest('.filter-date-wrap');
+                if (wrap) wrap.classList.remove('has-value');
+                onDateChange();
+            };
+        });
     </script>
 }

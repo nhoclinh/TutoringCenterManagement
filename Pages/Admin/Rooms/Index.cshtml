@@ -269,6 +269,15 @@
 .table-foot { display: flex; align-items: center; justify-content: space-between; padding: 13px 20px; border-top: 1px solid var(--border); background: #f9fafd; flex-wrap: wrap; gap: 10px; }
 .foot-info  { font-size: .78rem; color: var(--text-2); font-weight: 500; }
 
+/* ── Pagesize bar ── */
+.pagesize-wrap { display:flex; align-items:center; gap:7px; font-size:.78rem; font-weight:600; color:var(--text-2); }
+.pagesize-select { height:30px; padding:0 22px 0 8px; border:1.5px solid var(--border); border-radius:var(--r-sm); background:#f8f9fc; color:var(--text-1); font-size:.78rem; font-family:'Plus Jakarta Sans',system-ui,sans-serif; outline:none; cursor:pointer; -webkit-appearance:none; appearance:none; background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='9' height='9' viewBox='0 0 24 24' fill='none' stroke='%239aa0b4' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E"); background-repeat:no-repeat; background-position:right 7px center; transition:border-color .15s; }
+.pagesize-select:focus { border-color:var(--c-primary); }
+.pg-btn { min-width:30px; height:30px; padding:0 7px; border-radius:var(--r-sm); border:1.5px solid var(--border); background:#fff; color:var(--text-2); font-size:.78rem; font-weight:600; cursor:pointer; display:flex; align-items:center; justify-content:center; transition:all .15s; }
+.pg-btn:hover { border-color:var(--c-primary); color:var(--c-primary); }
+.pg-btn.active { background:var(--c-primary); border-color:var(--c-primary); color:#fff !important; }
+.pg-btn:disabled { opacity:.4; cursor:not-allowed; }
+
 /* ── Toast ── */
 .toast-wrap { position: fixed; top: 20px; right: 20px; z-index: 9999; display: flex; flex-direction: column; gap: 8px; }
 
@@ -457,6 +466,23 @@
 </div>
 
 <!-- ════════════════════════════════════════
+     PAGESIZE BAR
+════════════════════════════════════════ -->
+<div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;margin-bottom:14px">
+    <div class="pagesize-wrap">
+        <span>Hiển thị</span>
+        <select class="pagesize-select" id="pagesizeSelect">
+            <option value="10">10</option>
+            <option value="20" selected>20</option>
+            <option value="50">50</option>
+            <option value="0">Tất cả</option>
+        </select>
+        <span>bản ghi</span>
+    </div>
+    <span style="font-size:.78rem;color:var(--text-3);font-weight:500" id="showingLabel"></span>
+</div>
+
+<!-- ════════════════════════════════════════
      ROOM TABLE
 ════════════════════════════════════════ -->
 <div class="table-card">
@@ -580,10 +606,9 @@
 
     @if (Model.Rooms.Any())
     {
-        <div class="table-foot">
-            <span class="foot-info" id="footInfo">
-                Hiển thị <strong>@totalRooms</strong> phòng học
-            </span>
+        <div class="table-foot" id="roomsFooter" style="display:flex;align-items:center;justify-content:space-between;padding:12px 20px;border-top:1px solid var(--border);background:#f9fafd">
+            <span class="foot-info" id="footInfo">Hiển thị <strong id="footShowing">0</strong> / <strong id="footTotal">0</strong> phòng học</span>
+            <div id="pager" style="display:flex;align-items:center;gap:4px"></div>
         </div>
     }
 
@@ -697,24 +722,66 @@
     document.getElementById('cmBackdrop').addEventListener('click', closeModal);
     document.addEventListener('keydown', function (e) { if (e.key === 'Escape') closeModal(); });
 
-    /* ── Client-side search + sort ── */
+    /* ── Client-side search + sort + pagination ── */
     var searchInput = document.getElementById('roomSearch');
     var sortSelect  = document.getElementById('roomSort');
     var tbody       = document.getElementById('roomTableBody');
     var footInfo    = document.getElementById('footInfo');
     var filterCount = document.getElementById('filterCount');
     var allRows     = Array.from(tbody ? tbody.querySelectorAll('tr[data-name]') : []);
+    var pager       = document.getElementById('pager');
+    var pagesizeSel = document.getElementById('pagesizeSelect');
+    var currentPage = 1;
+    var lastVisible = [];
+
+    function getPageSize() { return pagesizeSel ? parseInt(pagesizeSel.value) : 20; }
+
+    function buildPager(tp) {
+        if (!pager) return; pager.innerHTML = '';
+        var cp = currentPage;
+        var prev = makePgBtn('<i class="fas fa-chevron-left" style="font-size:10px"></i>', cp <= 1);
+        prev.addEventListener('click', function(){ if (cp > 1) { currentPage--; renderPage(); } });
+        pager.appendChild(prev);
+        var pages = []; if (tp <= 7) { for (var i=1;i<=tp;i++) pages.push(i); } else { pages.push(1); var l=Math.max(2,cp-2),r=Math.min(tp-1,cp+2); if(l>2) pages.push('...'); for(var i=l;i<=r;i++) pages.push(i); if(r<tp-1) pages.push('...'); pages.push(tp); }
+        pages.forEach(function(p){ if(p==='...'){var d=document.createElement('span');d.textContent='…';d.style.cssText='font-size:.78rem;color:var(--text-3);padding:0 4px;align-self:center';pager.appendChild(d);}else{var btn=makePgBtn(p,false);if(p===cp)btn.classList.add('active');(function(page){btn.addEventListener('click',function(){currentPage=page;renderPage();});})(p);pager.appendChild(btn);} });
+        var next = makePgBtn('<i class="fas fa-chevron-right" style="font-size:10px"></i>', cp >= tp);
+        next.addEventListener('click', function(){ if (cp < tp) { currentPage++; renderPage(); } });
+        pager.appendChild(next);
+    }
+    function makePgBtn(html, disabled) { var btn=document.createElement('button');btn.className='pg-btn';btn.innerHTML=html;btn.disabled=disabled;btn.type='button';return btn; }
+
+    function renderPage() {
+        var ps = getPageSize();
+        var vis = lastVisible;
+        var tp = ps === 0 ? 1 : Math.max(1, Math.ceil(vis.length / ps));
+        if (currentPage > tp) currentPage = tp;
+        if (currentPage < 1) currentPage = 1;
+        var start = ps === 0 ? 0 : (currentPage-1)*ps, end = ps === 0 ? vis.length : start+ps, shown=0;
+        allRows.forEach(function(r){ r.style.display='none'; });
+        vis.forEach(function(r,idx){ if(idx>=start&&idx<end){ r.style.display=''; tbody.appendChild(r); shown++; } });
+        var cnt = vis.length;
+        if (filterCount) filterCount.textContent = cnt + ' phòng';
+        var fs=document.getElementById('footShowing'); if(fs) fs.textContent=shown;
+        var ft=document.getElementById('footTotal'); if(ft) ft.textContent=cnt;
+        var sl=document.getElementById('showingLabel'); if(sl&&allRows.length>0) sl.textContent=shown+' / '+cnt+' bản ghi';
+        if (footInfo) footInfo.innerHTML = 'Hiển thị <strong id="footShowing">' + shown + '</strong> / <strong id="footTotal">' + cnt + '</strong> phòng học';
+        buildPager(tp);
+        var jsEmpty = tbody.querySelector('.js-empty');
+        if (cnt === 0 && allRows.length > 0) {
+            if (!jsEmpty) { var tr=document.createElement('tr'); tr.className='empty-row js-empty'; tr.innerHTML='<td colspan="5"><div class="empty-icon"><i class="fas fa-magnifying-glass"></i></div><div class="empty-title">Không tìm thấy phòng học</div><div class="empty-desc">Thử thay đổi từ khoá tìm kiếm</div></td>'; tbody.appendChild(tr); }
+        } else { if (jsEmpty) jsEmpty.remove(); }
+    }
 
     function applyFilter() {
         var q    = searchInput ? searchInput.value.trim().toLowerCase() : '';
         var sort = sortSelect  ? sortSelect.value : 'default';
 
-        var visible = allRows.filter(function (row) {
+        lastVisible = allRows.filter(function (row) {
             if (!q) return true;
             return row.dataset.name.includes(q) || row.dataset.code.includes(q);
         });
 
-        visible.sort(function (a, b) {
+        lastVisible.sort(function (a, b) {
             switch (sort) {
                 case 'name-asc':  return a.dataset.name.localeCompare(b.dataset.name, 'vi');
                 case 'name-desc': return b.dataset.name.localeCompare(a.dataset.name, 'vi');
@@ -725,32 +792,16 @@
             }
         });
 
-        allRows.forEach(function (r) { r.style.display = 'none'; });
-        visible.forEach(function (r) { r.style.display = ''; tbody.appendChild(r); });
-
-        var cnt = visible.length;
-        if (filterCount) filterCount.textContent = cnt + ' phòng';
-        if (footInfo) footInfo.innerHTML = 'Hiển thị <strong>' + cnt + '</strong> phòng học';
-
-        var jsEmpty = tbody.querySelector('.js-empty');
-        if (cnt === 0 && allRows.length > 0) {
-            if (!jsEmpty) {
-                var tr = document.createElement('tr');
-                tr.className = 'empty-row js-empty';
-                tr.innerHTML = '<td colspan="5">' +
-                    '<div class="empty-icon"><i class="fas fa-magnifying-glass"></i></div>' +
-                    '<div class="empty-title">Không tìm thấy phòng học</div>' +
-                    '<div class="empty-desc">Thử thay đổi từ khoá tìm kiếm</div>' +
-                    '</td>';
-                tbody.appendChild(tr);
-            }
-        } else {
-            if (jsEmpty) jsEmpty.remove();
-        }
+        currentPage = 1;
+        renderPage();
     }
+
+    lastVisible = allRows.slice();
+    applyFilter();
 
     if (searchInput) searchInput.addEventListener('input', applyFilter);
     if (sortSelect)  sortSelect.addEventListener('change', applyFilter);
+    if (pagesizeSel) pagesizeSel.addEventListener('change', function(){ currentPage=1; renderPage(); });
 
 })();
 </script>

@@ -1,0 +1,753 @@
+@page
+@model TutoringCenterManagement.Pages.Admin.WeeklyOperationReportModel
+@{
+    ViewData["Title"] = "Báo Cáo Vận Hành";
+    var exportUrl = $"?DateFrom={Model.DateFrom:yyyy-MM-dd}&DateTo={Model.DateTo:yyyy-MM-dd}&Export=true";
+    int periodDays = (Model.DateTo.DayNumber - Model.DateFrom.DayNumber) + 1;
+}
+
+@section Styles {
+<style>
+/* ═══════════════════════════════════════════
+   WEEKLY OPERATION REPORT
+═══════════════════════════════════════════ */
+.rpt-bar {
+    background:var(--bg-card); border-radius:var(--r-lg);
+    border:1px solid var(--border); box-shadow:var(--sh-sm);
+    padding:14px 18px; margin-bottom:20px;
+}
+.rpt-filter-grid {
+    display:grid; grid-template-columns:1fr 1fr auto;
+    gap:10px; align-items:flex-end;
+}
+.rpt-filter-grid > div { min-width:0; }
+.rpt-filter-lbl {
+    font-size:.72rem; font-weight:700; color:var(--text-2);
+    text-transform:uppercase; letter-spacing:.5px;
+    display:block; margin-bottom:5px;
+}
+.rpt-filter-actions { display:flex; gap:7px; align-items:center; }
+.rpt-bar-icon { width:32px; height:32px; border-radius:8px; flex-shrink:0; background:rgba(232,89,12,.1); color:var(--c-primary); display:flex; align-items:center; justify-content:center; font-size:13px; }
+.rpt-bar-title { font-size:.83rem; font-weight:800; color:var(--text-1); }
+.rpt-bar-sub   { font-size:.7rem; color:var(--text-3); margin-top:1px; }
+.rpt-sep { width:1px; height:28px; background:var(--border); margin:0 4px; flex-shrink:0; }
+
+.rpt-date-input {
+    width:100%; height:36px; padding:0 10px;
+    border:1.5px solid var(--border); border-radius:var(--r-sm);
+    background:#f8f9fc; color:var(--text-1);
+    font-size:.82rem; font-family:inherit; font-weight:600;
+    outline:none; cursor:pointer; transition:border-color .15s;
+    box-sizing:border-box;
+}
+.rpt-date-input:focus { border-color:var(--c-primary); background:#fff; }
+
+.period-pill {
+    display:inline-flex; align-items:center; gap:6px;
+    padding:5px 12px; border-radius:50px;
+    background:rgba(232,89,12,.08); border:1px solid rgba(232,89,12,.2);
+    font-size:.76rem; font-weight:700; color:var(--c-primary); white-space:nowrap;
+}
+
+.export-btn {
+    display:inline-flex; align-items:center; gap:7px;
+    padding:8px 15px; border-radius:var(--r-sm);
+    background:linear-gradient(135deg,#059669,#10b981);
+    color:#fff; font-size:.79rem; font-weight:700;
+    text-decoration:none; transition:opacity .15s;
+    box-shadow:0 2px 8px rgba(16,185,129,.3);
+}
+.export-btn:hover { opacity:.88; }
+
+/* ── Shortcut week buttons ──────────────── */
+.week-shortcuts { display:flex; gap:6px; flex-wrap:wrap; margin-bottom:14px; }
+.wk-btn {
+    padding:5px 12px; border-radius:var(--r-sm);
+    border:1.5px solid var(--border); background:var(--bg-card);
+    font-size:.76rem; font-weight:700; color:var(--text-2);
+    cursor:pointer; transition:all .15s; text-decoration:none;
+}
+.wk-btn:hover, .wk-btn.active {
+    background:rgba(232,89,12,.08); border-color:var(--c-primary); color:var(--c-primary);
+}
+
+/* ── KPI MEGA strip ─────────────────────── */
+.kpi-mega { display:grid; grid-template-columns:repeat(4,1fr); gap:12px; margin-bottom:16px; }
+.kpi-mega-2 { display:grid; grid-template-columns:repeat(4,1fr); gap:12px; margin-bottom:18px; }
+.kpi-card {
+    background:var(--bg-card); border-radius:var(--r-lg);
+    border:1px solid var(--border); box-shadow:var(--sh-xs);
+    padding:14px 16px 12px; position:relative; overflow:hidden;
+    transition:box-shadow .2s,transform .2s;
+}
+.kpi-card:hover { box-shadow:var(--sh-md); transform:translateY(-2px); }
+.kpi-card::after { content:''; position:absolute; top:0;left:0;right:0;height:3px; }
+.kc-orange::after { background:linear-gradient(90deg,#e8590c,#f59f00); }
+.kc-green::after  { background:linear-gradient(90deg,#10b981,#34d399); }
+.kc-red::after    { background:linear-gradient(90deg,#f43f5e,#fb7185); }
+.kc-blue::after   { background:linear-gradient(90deg,#3b82f6,#60a5fa); }
+.kc-teal::after   { background:linear-gradient(90deg,#06b6d4,#22d3ee); }
+.kc-amber::after  { background:linear-gradient(90deg,#f59f00,#fbbf24); }
+.kc-purple::after { background:linear-gradient(90deg,#8b5cf6,#a78bfa); }
+.kc-indigo::after { background:linear-gradient(90deg,#6366f1,#818cf8); }
+.kpi-row  { display:flex; align-items:flex-start; justify-content:space-between; gap:8px; }
+.kpi-icon { width:36px; height:36px; border-radius:9px; flex-shrink:0; display:flex; align-items:center; justify-content:center; font-size:14px; }
+.kc-orange .kpi-icon { background:rgba(232,89,12,.1);  color:var(--c-primary); }
+.kc-green  .kpi-icon { background:rgba(16,185,129,.1); color:#10b981; }
+.kc-red    .kpi-icon { background:rgba(244,63,94,.1);  color:#f43f5e; }
+.kc-blue   .kpi-icon { background:rgba(59,130,246,.1); color:#3b82f6; }
+.kc-teal   .kpi-icon { background:rgba(6,182,212,.1);  color:#06b6d4; }
+.kc-amber  .kpi-icon { background:rgba(245,159,0,.1);  color:#f59f00; }
+.kc-purple .kpi-icon { background:rgba(139,92,246,.1); color:#8b5cf6; }
+.kc-indigo .kpi-icon { background:rgba(99,102,241,.1); color:#6366f1; }
+.kpi-val { font-size:1.8rem; font-weight:800; color:var(--text-1); line-height:1; letter-spacing:-.5px; margin-top:9px; }
+.kpi-val small { font-size:.9rem; font-weight:600; }
+.kpi-lbl { font-size:.67rem; font-weight:700; color:var(--text-3); text-transform:uppercase; letter-spacing:.5px; }
+.kpi-foot { font-size:.7rem; color:var(--text-3); margin-top:5px; }
+.kpi-foot .up   { color:#10b981; font-weight:700; }
+.kpi-foot .down { color:#f43f5e; font-weight:700; }
+.kpi-foot .warn { color:#f59f00; font-weight:700; }
+
+/* ── Section label ──────────────────────── */
+.section-lbl {
+    font-size:.7rem; font-weight:800; color:var(--text-3);
+    text-transform:uppercase; letter-spacing:.7px;
+    margin:4px 0 10px 2px; display:flex; align-items:center; gap:7px;
+}
+.section-lbl::after { content:''; flex:1; height:1px; background:var(--border); }
+
+/* ── Row grid ───────────────────────────── */
+.rpt-row { display:grid; gap:14px; margin-bottom:14px; }
+.rpt-row.c22 { grid-template-columns:1fr 1fr; }
+.rpt-row.c32 { grid-template-columns:3fr 2fr; }
+.rpt-row.c1  { grid-template-columns:1fr; }
+
+/* ── Chart card ─────────────────────────── */
+.cc { background:var(--bg-card); border-radius:var(--r-lg); border:1px solid var(--border); box-shadow:var(--sh-sm); overflow:hidden; }
+.cc-hd { display:flex; align-items:center; justify-content:space-between; padding:12px 18px; border-bottom:1px solid var(--border); background:linear-gradient(to right,#fafbff,#fff); gap:10px; flex-wrap:wrap; }
+.cc-hd-l { display:flex; align-items:center; gap:9px; }
+.cc-ico  { width:28px; height:28px; border-radius:7px; flex-shrink:0; background:rgba(232,89,12,.1); color:var(--c-primary); display:flex; align-items:center; justify-content:center; font-size:12px; }
+.cc-title    { font-size:.87rem; font-weight:700; color:var(--text-1); }
+.cc-subtitle { font-size:.69rem; color:var(--text-3); margin-top:1px; }
+.cc-body { padding:16px 18px; }
+.cc-body.p0 { padding:0; }
+
+/* ── Stat table ─────────────────────────── */
+.stat-table { width:100%; border-collapse:collapse; font-size:.82rem; }
+.stat-table tbody tr { border-bottom:1px solid var(--border); transition:background .12s; }
+.stat-table tbody tr:last-child { border-bottom:none; }
+.stat-table tbody tr:hover { background:#fafbff; }
+.stat-table td { padding:9px 14px; vertical-align:middle; }
+.stat-table td.num { text-align:right; font-weight:700; }
+
+/* ── Progress bar ───────────────────────── */
+.pbar-wrap { display:flex; align-items:center; gap:8px; }
+.pbar-track { flex:1; height:7px; background:#f1f5f9; border-radius:4px; overflow:hidden; }
+.pbar-fill  { height:100%; border-radius:4px; }
+
+/* ── Teacher leaderboard ────────────────── */
+.t-lb { display:flex; flex-direction:column; gap:5px; }
+.t-lb-row {
+    display:flex; align-items:center; gap:9px; padding:8px 12px;
+    border-radius:var(--r-sm); background:#fafbff; border:1px solid var(--border);
+    transition:background .12s;
+}
+.t-lb-row:hover { background:#f0f4ff; }
+.t-rank  { width:24px; flex-shrink:0; font-size:.72rem; font-weight:800; color:var(--text-3); text-align:center; }
+.t-rank.g1 { color:#d97706; }
+.t-rank.g2 { color:#6b7280; }
+.t-rank.g3 { color:#b45309; }
+.t-av { width:30px; height:30px; border-radius:50%; flex-shrink:0; background:linear-gradient(135deg,#e8590c,#f59f00); color:#fff; font-weight:800; font-size:.72rem; display:flex; align-items:center; justify-content:center; }
+.t-name { flex:1; font-size:.82rem; font-weight:600; color:var(--text-1); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.t-cls  { font-size:.68rem; color:var(--text-3); white-space:nowrap; }
+.t-bar-wrap  { width:70px; flex-shrink:0; }
+.t-bar-track { height:5px; background:var(--bg-page); border-radius:3px; overflow:hidden; }
+.t-bar-fill  { height:100%; background:linear-gradient(90deg,#e8590c,#f59f00); border-radius:3px; }
+.t-val { width:28px; flex-shrink:0; font-size:.78rem; font-weight:800; color:var(--text-1); text-align:right; }
+
+/* ── Absence table ──────────────────────── */
+.abs-table { width:100%; border-collapse:collapse; font-size:.82rem; }
+.abs-table thead th { padding:9px 14px; font-size:.66rem; font-weight:700; text-transform:uppercase; letter-spacing:.7px; color:var(--text-2); background:#f4f6fc; border-bottom:2px solid var(--border); }
+.abs-table tbody td { padding:9px 14px; border-bottom:1px solid #f0f2f8; vertical-align:middle; }
+.abs-table tbody tr:last-child td { border-bottom:none; }
+.abs-table tbody tr:hover td { background:#f8faff; }
+
+.rbadge { display:inline-flex; padding:2px 8px; border-radius:50px; font-size:.68rem; font-weight:800; border:1px solid transparent; }
+.rbadge.rh { background:#fff1f2; color:#e03131; border-color:#fecdd3; }
+.rbadge.rm { background:#fffbeb; color:#d97706; border-color:#fde68a; }
+.rbadge.rl { background:#ecfdf5; color:#059669; border-color:#a7f3d0; }
+
+.rate-inline { display:flex; align-items:center; gap:7px; }
+.rate-track  { flex:1; height:5px; background:var(--bg-page); border-radius:3px; overflow:hidden; }
+.rate-fill   { height:100%; border-radius:3px; }
+.subj-tag    { display:inline-flex; padding:2px 8px; border-radius:50px; font-size:.66rem; font-weight:700; background:rgba(232,89,12,.07); color:var(--c-primary); border:1px solid rgba(232,89,12,.15); }
+
+/* ── Subject attendance ─────────────────── */
+.subj-att { display:flex; flex-direction:column; gap:8px; }
+.subj-att-row { display:flex; align-items:center; gap:9px; }
+.subj-lbl { width:72px; flex-shrink:0; font-size:.73rem; font-weight:700; color:var(--text-2); text-align:right; }
+.subj-track { flex:1; height:20px; border-radius:4px; display:flex; overflow:hidden; background:#f0f2f8; }
+.subj-seg { height:100%; transition:width .5s; }
+.subj-present { background:linear-gradient(90deg,#10b981,#34d399); }
+.subj-absent  { background:linear-gradient(90deg,#f43f5e,#fb7185); }
+.subj-rate { width:44px; flex-shrink:0; font-size:.75rem; font-weight:800; color:var(--text-1); text-align:right; }
+
+/* ── Summary blocks ─────────────────────── */
+.sum-grid { display:grid; grid-template-columns:repeat(2,1fr); gap:10px; }
+.sum-block {
+    padding:13px 14px; border-radius:var(--r-md);
+    border:1px solid var(--border); background:#fafbff;
+}
+.sum-block-title { font-size:.7rem; font-weight:700; color:var(--text-3); text-transform:uppercase; letter-spacing:.4px; margin-bottom:8px; }
+.sum-kv { display:flex; justify-content:space-between; align-items:center; padding:4px 0; border-bottom:1px solid #f0f2f8; font-size:.8rem; }
+.sum-kv:last-child { border-bottom:none; }
+.sum-kv-k { color:var(--text-2); }
+.sum-kv-v { font-weight:800; color:var(--text-1); }
+
+@@media(max-width:1024px) {
+    .kpi-mega, .kpi-mega-2 { grid-template-columns:repeat(2,1fr); }
+    .rpt-row.c32 { grid-template-columns:1fr; }
+}
+@@media(max-width:640px) {
+    .kpi-mega, .kpi-mega-2 { grid-template-columns:1fr 1fr; }
+    .rpt-row.c22 { grid-template-columns:1fr; }
+    .sum-grid { grid-template-columns:1fr; }
+}
+@@media print {
+    .rpt-bar form, .export-btn, .week-shortcuts { display:none !important; }
+    body { background:#fff !important; }
+}
+</style>
+}
+
+<!-- ════════ BACK BUTTON ════════ -->
+<div style="margin-bottom:14px">
+    <a href="/Admin/Reports"
+       style="display:inline-flex;align-items:center;gap:7px;padding:7px 14px;border-radius:var(--r-sm);background:var(--bg-card);border:1.5px solid var(--border);color:var(--text-2);font-size:.8rem;font-weight:700;text-decoration:none;box-shadow:var(--sh-xs);transition:all .15s"
+       onmouseover="this.style.borderColor='var(--c-primary)';this.style.color='var(--c-primary)'"
+       onmouseout="this.style.borderColor='var(--border)';this.style.color='var(--text-2)'">
+        <i class="fas fa-arrow-left" style="font-size:11px"></i> Quay lại Báo cáo
+    </a>
+</div>
+
+<!-- ════════ FILTER BAR ════════ -->
+<form method="get" id="filterForm" class="rpt-bar">
+    <div class="rpt-filter-grid">
+        <div>
+            <label class="rpt-filter-lbl">Từ ngày</label>
+            <input type="text" name="DateFrom" id="weekRptFrom" class="rpt-date-input" value="@(Model.DateFrom.ToString("yyyy-MM-dd"))" placeholder="Từ ngày" autocomplete="off" />
+        </div>
+        <div>
+            <label class="rpt-filter-lbl">Đến ngày</label>
+            <input type="text" name="DateTo" id="weekRptTo" class="rpt-date-input" value="@(Model.DateTo.ToString("yyyy-MM-dd"))" placeholder="Đến ngày" autocomplete="off" />
+        </div>
+        <div class="rpt-filter-actions">
+            <div class="period-pill">
+                <i class="fas fa-calendar-range" style="font-size:10px"></i>
+                @Model.PeriodLabel
+            </div>
+            <a href="javascript:window.print()"
+               style="display:inline-flex;align-items:center;gap:6px;padding:7px 12px;border-radius:var(--r-sm);background:rgba(232,89,12,.1);border:1px solid rgba(232,89,12,.3);color:var(--c-primary);font-size:.77rem;font-weight:700;text-decoration:none">
+                <i class="fas fa-print"></i> In
+            </a>
+            <a href="@exportUrl" class="export-btn">
+                <i class="fas fa-file-excel"></i> Xuất Excel (3 sheet)
+            </a>
+        </div>
+    </div>
+</form>
+
+<!-- ════════ QUICK WEEK SHORTCUTS ════════ -->
+@{
+    var today      = DateOnly.FromDateTime(DateTime.Today);
+    var dow        = (int)today.DayOfWeek;
+    var daysToMon  = dow == 0 ? 6 : dow - 1;
+    var thisMonday = today.AddDays(-daysToMon);
+    var lastMonday = thisMonday.AddDays(-7);
+    var monthStart = new DateOnly(today.Year, today.Month, 1);
+    var lastMStart = monthStart.AddMonths(-1);
+    var lastMEnd   = monthStart.AddDays(-1);
+}
+<div class="week-shortcuts">
+    <span style="font-size:.73rem;font-weight:700;color:var(--text-3);line-height:36px">Truy cập nhanh:</span>
+    <a href="?DateFrom=@(thisMonday.ToString("yyyy-MM-dd"))&DateTo=@(today.ToString("yyyy-MM-dd"))"
+       class="wk-btn @(Model.DateFrom == thisMonday ? "active" : "")">
+        <i class="fas fa-calendar-week" style="font-size:10px"></i> Tuần này
+    </a>
+    <a href="?DateFrom=@(lastMonday.ToString("yyyy-MM-dd"))&DateTo=@(lastMonday.AddDays(6).ToString("yyyy-MM-dd"))"
+       class="wk-btn @(Model.DateFrom == lastMonday ? "active" : "")">
+        Tuần trước
+    </a>
+    <a href="?DateFrom=@(monthStart.ToString("yyyy-MM-dd"))&DateTo=@(today.ToString("yyyy-MM-dd"))"
+       class="wk-btn @(Model.DateFrom == monthStart ? "active" : "")">
+        <i class="fas fa-calendar-alt" style="font-size:10px"></i> Tháng này
+    </a>
+    <a href="?DateFrom=@(lastMStart.ToString("yyyy-MM-dd"))&DateTo=@(lastMEnd.ToString("yyyy-MM-dd"))"
+       class="wk-btn">
+        Tháng trước
+    </a>
+</div>
+
+<!-- ════════ KPI ROW 1: BUỔI HỌC ════════ -->
+<div class="section-lbl"><i class="fas fa-calendar-check"></i> Buổi học</div>
+<div class="kpi-mega">
+    <div class="kpi-card kc-orange">
+        <div class="kpi-row"><div><div class="kpi-lbl">Tổng ca trong kỳ</div><div class="kpi-val">@Model.SessionsTotal</div></div><div class="kpi-icon"><i class="fas fa-calendar-days"></i></div></div>
+        <div class="kpi-foot">@Model.PeriodLabel</div>
+    </div>
+    <div class="kpi-card kc-green">
+        <div class="kpi-row"><div><div class="kpi-lbl">Hoàn thành</div><div class="kpi-val">@Model.SessionsCompleted</div></div><div class="kpi-icon"><i class="fas fa-circle-check"></i></div></div>
+        <div class="kpi-foot"><span class="@(Model.CompletionRate >= 80 ? "up" : "warn")">@Model.CompletionRate%</span> tổng ca</div>
+    </div>
+    <div class="kpi-card kc-red">
+        <div class="kpi-row"><div><div class="kpi-lbl">Đã hủy</div><div class="kpi-val">@Model.SessionsCancelled</div></div><div class="kpi-icon"><i class="fas fa-calendar-xmark"></i></div></div>
+        <div class="kpi-foot"><span class="@(Model.CancelRate > 10 ? "down" : "")">@Model.CancelRate%</span> tổng ca @(Model.CancelRate > 10 ? "⚠" : "")</div>
+    </div>
+    <div class="kpi-card kc-blue">
+        <div class="kpi-row"><div><div class="kpi-lbl">Lịch chưa dạy</div><div class="kpi-val">@Model.SessionsScheduled</div></div><div class="kpi-icon"><i class="fas fa-calendar-plus"></i></div></div>
+        <div class="kpi-foot">Ca chưa diễn ra</div>
+    </div>
+</div>
+
+<!-- ════════ KPI ROW 2: CHUYÊN CẦN + BIẾN ĐỘNG ════════ -->
+<div class="section-lbl"><i class="fas fa-users"></i> Chuyên cần & Biến động</div>
+<div class="kpi-mega-2">
+    <div class="kpi-card kc-teal">
+        <div class="kpi-row"><div><div class="kpi-lbl">Tỉ lệ chuyên cần</div><div class="kpi-val">@Model.AttRate<small>%</small></div></div><div class="kpi-icon"><i class="fas fa-chart-pie"></i></div></div>
+        <div class="kpi-foot">
+            <span class="@(Model.AttRate >= 90 ? "up" : Model.AttRate >= 70 ? "warn" : "down")">
+                @(Model.AttRate >= 90 ? "Tốt" : Model.AttRate >= 70 ? "Trung bình" : "⚠ Cần cải thiện")
+            </span>
+            — @Model.AttPresent/@Model.AttTotal lượt có mặt
+        </div>
+    </div>
+    <div class="kpi-card kc-amber">
+        <div class="kpi-row"><div><div class="kpi-lbl">Học sinh đang học</div><div class="kpi-val">@Model.StudentActiveNow</div></div><div class="kpi-icon"><i class="fas fa-user-graduate"></i></div></div>
+        <div class="kpi-foot">
+            @if (Model.StudentNewEnrolled > 0)
+            { <span class="up">+@Model.StudentNewEnrolled mới trong kỳ</span> }
+            @if (Model.StudentLeft > 0)
+            { <span class="down"> | -@Model.StudentLeft nghỉ</span> }
+            @if (Model.StudentNewEnrolled == 0 && Model.StudentLeft == 0)
+            { <text>Không biến động</text> }
+        </div>
+    </div>
+    <div class="kpi-card kc-purple">
+        <div class="kpi-row"><div><div class="kpi-lbl">Giáo viên</div><div class="kpi-val">@Model.TeacherTotal</div></div><div class="kpi-icon"><i class="fas fa-chalkboard-user"></i></div></div>
+        <div class="kpi-foot">
+            @if (Model.TeacherNewInPeriod > 0)
+            { <span class="up">+@Model.TeacherNewInPeriod GV mới trong kỳ</span> }
+            else { <text>Ổn định</text> }
+        </div>
+    </div>
+    <div class="kpi-card kc-indigo">
+        <div class="kpi-row"><div><div class="kpi-lbl">Lớp đang hoạt động</div><div class="kpi-val">@Model.ClassActive</div></div><div class="kpi-icon"><i class="fas fa-chalkboard"></i></div></div>
+        <div class="kpi-foot">@Model.ClassInactive lớp tạm ngừng · @Model.RoomTotal phòng học</div>
+    </div>
+</div>
+
+<!-- ════════ ROW 3: Giáo viên + Môn học ════════ -->
+<div class="section-lbl"><i class="fas fa-chart-bar"></i> Phân tích chi tiết</div>
+<div class="rpt-row c22">
+
+    <!-- Top Giáo Viên -->
+    <div class="cc">
+        <div class="cc-hd">
+            <div class="cc-hd-l">
+                <div class="cc-ico" style="background:rgba(232,89,12,.1);color:var(--c-primary)"><i class="fas fa-ranking-star"></i></div>
+                <div>
+                    <div class="cc-title">Giáo viên tích cực nhất</div>
+                    <div class="cc-subtitle">@Model.PeriodLabel — buổi hoàn thành</div>
+                </div>
+            </div>
+        </div>
+        <div class="cc-body">
+            @if (Model.TopTeachers.Any())
+            {
+                var maxT = Model.TopTeachers.Max(t => t.Completed);
+                <div class="t-lb">
+                    @for (int i = 0; i < Model.TopTeachers.Count; i++)
+                    {
+                        var t    = Model.TopTeachers[i];
+                        var ri   = i + 1;
+                        var rc   = ri == 1 ? "g1" : ri == 2 ? "g2" : ri == 3 ? "g3" : "";
+                        var ric  = ri == 1 ? "🥇" : ri == 2 ? "🥈" : ri == 3 ? "🥉" : ri.ToString();
+                        var tp   = maxT > 0 ? (double)t.Completed / maxT * 100 : 0;
+                        <div class="t-lb-row">
+                            <span class="t-rank @rc">@ric</span>
+                            <div class="t-av">@t.Initials</div>
+                            <span class="t-name" title="@t.TeacherName">@t.TeacherName</span>
+                            <span class="t-cls">@t.ClassCount lớp</span>
+                            <div class="t-bar-wrap">
+                                <div class="t-bar-track"><div class="t-bar-fill" style="width:@(tp.ToString("F1"))%"></div></div>
+                            </div>
+                            <span class="t-val">@t.Completed</span>
+                        </div>
+                    }
+                </div>
+            }
+            else
+            {
+                <div style="text-align:center;padding:30px;color:var(--text-3);font-size:.83rem">
+                    <i class="fas fa-chalkboard-user" style="font-size:28px;opacity:.2;display:block;margin-bottom:8px"></i>
+                    Không có dữ liệu
+                </div>
+            }
+        </div>
+    </div>
+
+    <!-- Điểm danh theo môn -->
+    <div class="cc">
+        <div class="cc-hd">
+            <div class="cc-hd-l">
+                <div class="cc-ico" style="background:rgba(16,185,129,.1);color:#10b981"><i class="fas fa-clipboard-check"></i></div>
+                <div>
+                    <div class="cc-title">Tỉ lệ chuyên cần theo môn</div>
+                    <div class="cc-subtitle">@Model.PeriodLabel — có mặt / vắng</div>
+                </div>
+            </div>
+        </div>
+        <div class="cc-body">
+            @if (Model.SubjectStats.Any())
+            {
+                <div class="subj-att">
+                    @foreach (var s in Model.SubjectStats)
+                    {
+                        var pP  = s.Total > 0 ? (double)s.Present / s.Total * 100 : 0;
+                        var pAb = s.Total > 0 ? (double)s.Absent  / s.Total * 100 : 0;
+                        <div class="subj-att-row">
+                            <span class="subj-lbl">@s.SubjectLabel</span>
+                            <div class="subj-track">
+                                <div class="subj-seg subj-present" style="width:@(pP.ToString("F1"))%" title="Có mặt: @s.Present"></div>
+                                <div class="subj-seg subj-absent"  style="width:@(pAb.ToString("F1"))%" title="Vắng: @s.Absent"></div>
+                            </div>
+                            <span class="subj-rate" style="color:@(s.Rate>=90?"#059669":s.Rate>=70?"#d97706":"#e11d48")">@s.Rate%</span>
+                        </div>
+                    }
+                </div>
+            }
+            else
+            {
+                <div style="text-align:center;padding:30px;color:var(--text-3);font-size:.83rem">
+                    <i class="fas fa-clipboard" style="font-size:28px;opacity:.2;display:block;margin-bottom:8px"></i>
+                    Chưa có dữ liệu điểm danh
+                </div>
+            }
+        </div>
+    </div>
+
+</div>
+
+<!-- ════════ ROW 4: Lớp vắng cao + Tóm tắt học sinh ════════ -->
+<div class="rpt-row c32">
+
+    <!-- Lớp vắng cao -->
+    <div class="cc">
+        <div class="cc-hd">
+            <div class="cc-hd-l">
+                <div class="cc-ico" style="background:rgba(244,63,94,.1);color:#f43f5e"><i class="fas fa-triangle-exclamation"></i></div>
+                <div>
+                    <div class="cc-title">Lớp có tỉ lệ vắng cao</div>
+                    <div class="cc-subtitle">@Model.PeriodLabel — cần theo dõi và can thiệp</div>
+                </div>
+            </div>
+        </div>
+        <div class="cc-body p0">
+            @if (Model.TopAbsClasses.Any())
+            {
+                <table class="abs-table">
+                    <thead>
+                        <tr>
+                            <th style="padding-left:18px">Lớp</th>
+                            <th>Môn</th>
+                            <th>Tỉ lệ vắng</th>
+                            <th style="text-align:right;padding-right:18px">Vắng / Tổng</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var c in Model.TopAbsClasses)
+                        {
+                            var rcls = c.AbsenceRate >= 30 ? "rh" : c.AbsenceRate >= 15 ? "rm" : "rl";
+                            var rcol = c.AbsenceRate >= 30 ? "#f43f5e" : c.AbsenceRate >= 15 ? "#f59f00" : "#10b981";
+                            <tr>
+                                <td style="padding-left:18px">
+                                    <strong>@c.ClassCode</strong>
+                                    @if (!string.IsNullOrEmpty(c.ClassName))
+                                    { <div style="font-size:.68rem;color:var(--text-3)">@c.ClassName</div> }
+                                </td>
+                                <td><span class="subj-tag">@c.SubjectLabel</span></td>
+                                <td>
+                                    <div class="rate-inline">
+                                        <div class="rate-track"><div class="rate-fill" style="width:@(c.AbsenceRate.ToString("F1"))%;background:@rcol"></div></div>
+                                        <span class="rbadge @rcls">@c.AbsenceRate%</span>
+                                    </div>
+                                </td>
+                                <td style="text-align:right;padding-right:18px;font-size:.76rem;color:var(--text-2)">
+                                    <strong>@c.AbsentCount</strong> / @c.TotalAtt
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            }
+            else
+            {
+                <div style="text-align:center;padding:40px;color:var(--text-3);font-size:.83rem">
+                    <i class="fas fa-circle-check" style="font-size:32px;color:#10b981;opacity:.6;display:block;margin-bottom:10px"></i>
+                    <strong style="color:#059669">Tốt!</strong> Không có lớp vắng bất thường
+                </div>
+            }
+        </div>
+    </div>
+
+    <!-- Tóm tắt biến động học sinh & lớp -->
+    <div class="cc">
+        <div class="cc-hd">
+            <div class="cc-hd-l">
+                <div class="cc-ico" style="background:rgba(245,159,0,.1);color:#f59f00"><i class="fas fa-chart-mixed"></i></div>
+                <div>
+                    <div class="cc-title">Tóm tắt vận hành</div>
+                    <div class="cc-subtitle">Tổng hợp cho cuộc họp định kỳ</div>
+                </div>
+            </div>
+        </div>
+        <div class="cc-body">
+            <div class="sum-grid">
+                <div class="sum-block">
+                    <div class="sum-block-title"><i class="fas fa-calendar-check" style="margin-right:4px"></i> Buổi học</div>
+                    <div class="sum-kv"><span class="sum-kv-k">Hoàn thành</span><span class="sum-kv-v" style="color:#059669">@Model.SessionsCompleted</span></div>
+                    <div class="sum-kv"><span class="sum-kv-k">Tỉ lệ hủy</span><span class="sum-kv-v" style="color:@(Model.CancelRate>10?"#f43f5e":"#059669")">@Model.CancelRate%</span></div>
+                    <div class="sum-kv"><span class="sum-kv-k">Lịch tới</span><span class="sum-kv-v">@Model.SessionsScheduled</span></div>
+                </div>
+                <div class="sum-block">
+                    <div class="sum-block-title"><i class="fas fa-clipboard-check" style="margin-right:4px"></i> Chuyên cần</div>
+                    <div class="sum-kv"><span class="sum-kv-k">Tỉ lệ TB</span>
+                        <span class="sum-kv-v" style="color:@(Model.AttRate>=90?"#059669":Model.AttRate>=70?"#d97706":"#f43f5e")">
+                            @Model.AttRate%
+                        </span>
+                    </div>
+                    <div class="sum-kv"><span class="sum-kv-k">Vắng</span><span class="sum-kv-v">@Model.AttAbsent lượt</span></div>
+                    <div class="sum-kv"><span class="sum-kv-k">Có mặt</span><span class="sum-kv-v">@Model.AttPresent lượt</span></div>
+                </div>
+                <div class="sum-block">
+                    <div class="sum-block-title"><i class="fas fa-user-plus" style="margin-right:4px"></i> Học sinh</div>
+                    <div class="sum-kv"><span class="sum-kv-k">Đang học</span><span class="sum-kv-v">@Model.StudentActiveNow</span></div>
+                    <div class="sum-kv"><span class="sum-kv-k">Nhập học</span><span class="sum-kv-v" style="color:#059669">+@Model.StudentNewEnrolled</span></div>
+                    <div class="sum-kv"><span class="sum-kv-k">Nghỉ học</span><span class="sum-kv-v" style="color:@(Model.StudentLeft>0?"#f43f5e":"var(--text-1)")">-@Model.StudentLeft</span></div>
+                </div>
+                <div class="sum-block">
+                    <div class="sum-block-title"><i class="fas fa-chalkboard" style="margin-right:4px"></i> Hạ tầng</div>
+                    <div class="sum-kv"><span class="sum-kv-k">Lớp học</span><span class="sum-kv-v">@Model.ClassActive hoạt động</span></div>
+                    <div class="sum-kv"><span class="sum-kv-k">Giáo viên</span><span class="sum-kv-v">@Model.TeacherTotal</span></div>
+                    <div class="sum-kv"><span class="sum-kv-k">Phòng học</span><span class="sum-kv-v">@Model.RoomTotal phòng</span></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+</div>
+
+<!-- ════════ ROW 5: Buổi học theo lớp ════════ -->
+@if (Model.ClassSessions.Any())
+{
+    <div class="rpt-row c1" style="margin-bottom:0">
+        <div class="cc">
+            <div class="cc-hd">
+                <div class="cc-hd-l">
+                    <div class="cc-ico" style="background:rgba(59,130,246,.1);color:#3b82f6"><i class="fas fa-chalkboard"></i></div>
+                    <div>
+                        <div class="cc-title">Buổi học theo từng lớp</div>
+                        <div class="cc-subtitle">@Model.PeriodLabel — Top @Model.ClassSessions.Count lớp có ca học</div>
+                    </div>
+                </div>
+            </div>
+            <div class="cc-body p0">
+                <table class="stat-table">
+                    <thead style="background:#f8f9fc;border-bottom:1px solid var(--border)">
+                        <tr>
+                            <th style="padding:9px 14px;font-size:.67rem;font-weight:700;color:var(--text-3);text-transform:uppercase;letter-spacing:.5px">#</th>
+                            <th style="padding:9px 14px;font-size:.67rem;font-weight:700;color:var(--text-3);text-transform:uppercase;letter-spacing:.5px">Lớp</th>
+                            <th style="padding:9px 14px;font-size:.67rem;font-weight:700;color:var(--text-3);text-transform:uppercase;letter-spacing:.5px">Môn</th>
+                            <th style="padding:9px 14px;font-size:.67rem;font-weight:700;color:var(--text-3);text-transform:uppercase;letter-spacing:.5px;text-align:right">Hoàn thành</th>
+                            <th style="padding:9px 14px;font-size:.67rem;font-weight:700;color:var(--text-3);text-transform:uppercase;letter-spacing:.5px;text-align:right">Đã hủy</th>
+                            <th style="padding:9px 14px;font-size:.67rem;font-weight:700;color:var(--text-3);text-transform:uppercase;letter-spacing:.5px">Tỉ lệ hoàn thành</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @{ int stt = 1; }
+                        @foreach (var c in Model.ClassSessions)
+                        {
+                            double comRate = c.Total > 0 ? Math.Round((double)c.Completed / c.Total * 100, 0) : 0;
+                            string barCol  = comRate >= 80 ? "#10b981" : comRate >= 60 ? "#f59f00" : "#f43f5e";
+                            <tr>
+                                <td style="font-size:.77rem;font-weight:700;color:var(--text-3)">@stt</td>
+                                <td>
+                                    <div style="font-weight:700;font-size:.82rem">@c.ClassCode</div>
+                                    @if (!string.IsNullOrEmpty(c.ClassName))
+                                    { <div style="font-size:.68rem;color:var(--text-3)">@c.ClassName</div> }
+                                </td>
+                                <td><span class="subj-tag">@c.SubjectLabel</span></td>
+                                <td class="num" style="padding:9px 14px">
+                                    <span style="background:rgba(16,185,129,.1);color:#059669;padding:2px 8px;border-radius:5px;font-size:.75rem;font-weight:700">@c.Completed</span>
+                                </td>
+                                <td class="num" style="padding:9px 14px">
+                                    @if (c.Cancelled > 0)
+                                    { <span style="background:rgba(244,63,94,.1);color:#e11d48;padding:2px 8px;border-radius:5px;font-size:.75rem;font-weight:700">@c.Cancelled</span> }
+                                    else { <span style="font-size:.72rem;color:#94a3b8;font-style:italic">—</span> }
+                                </td>
+                                <td style="padding:9px 14px">
+                                    <div class="pbar-wrap">
+                                        <div class="pbar-track">
+                                            <div class="pbar-fill" style="width:@(comRate.ToString("F0"))%;background:@barCol"></div>
+                                        </div>
+                                        <span style="font-size:.74rem;font-weight:700;color:@barCol;min-width:36px">@comRate%</span>
+                                    </div>
+                                </td>
+                            </tr>
+                            stt++;
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+@section Scripts {
+    @* Flatpickr — date picker *@
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css" />
+    <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+    <script src="https://cdn.jsdelivr.net/npm/flatpickr/dist/l10n/vn.js"></script>
+
+    <style>
+        /* ══ Flatpickr — date picker đồng bộ design system ══ */
+        .flatpickr-calendar {
+            font-family: 'Plus Jakarta Sans', system-ui, sans-serif !important;
+            font-size: .82rem !important;
+            border: 1.5px solid var(--border) !important;
+            border-radius: var(--r-md) !important;
+            box-shadow: 0 8px 24px rgba(0,0,0,.12) !important;
+        }
+
+        .flatpickr-day.selected,
+        .flatpickr-day.selected:hover {
+            background: var(--c-primary) !important;
+            border-color: var(--c-primary) !important;
+        }
+
+        .flatpickr-day:hover {
+            background: rgba(232,89,12,.10) !important;
+        }
+
+        .flatpickr-day.today {
+            border-color: var(--c-primary) !important;
+            color: var(--c-primary) !important;
+            font-weight: 700 !important;
+        }
+
+        .flatpickr-day.today.selected {
+            color: #fff !important;
+        }
+
+        .flatpickr-months .flatpickr-month {
+            background: #f4f6fc !important;
+            height: 44px !important;
+        }
+
+        .flatpickr-weekdays {
+            background: #f4f6fc !important;
+        }
+
+        /* ── Month dropdown select ── */
+        .flatpickr-current-month .flatpickr-monthDropdown-months {
+            appearance: none !important;
+            -webkit-appearance: none !important;
+            background: #fff url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='9' height='9' viewBox='0 0 24 24' fill='none' stroke='%239aa0b4' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E") no-repeat right 5px center !important;
+            border: 1.5px solid var(--border) !important;
+            border-radius: 6px !important;
+            padding: 3px 20px 3px 7px !important;
+            font-family: 'Plus Jakarta Sans', system-ui, sans-serif !important;
+            font-weight: 700 !important;
+            font-size: .78rem !important;
+            color: var(--text-1) !important;
+            cursor: pointer !important;
+            outline: none !important;
+            margin: 0 2px 0 0 !important;
+            transition: border-color .15s !important;
+            height: 28px !important;
+        }
+
+        .flatpickr-current-month .flatpickr-monthDropdown-months:hover,
+        .flatpickr-current-month .flatpickr-monthDropdown-months:focus {
+            border-color: var(--c-primary) !important;
+        }
+
+        /* ── Year input ── */
+        .flatpickr-current-month .numInputWrapper {
+            width: 62px !important;
+        }
+
+        .flatpickr-current-month input.cur-year {
+            background: #fff !important;
+            border: 1.5px solid var(--border) !important;
+            border-radius: 6px !important;
+            padding: 3px 6px !important;
+            font-family: 'Plus Jakarta Sans', system-ui, sans-serif !important;
+            font-weight: 700 !important;
+            font-size: .78rem !important;
+            color: var(--text-1) !important;
+            outline: none !important;
+            width: 100% !important;
+            height: 28px !important;
+            transition: border-color .15s !important;
+        }
+
+        .flatpickr-current-month input.cur-year:focus {
+            border-color: var(--c-primary) !important;
+        }
+
+        /* Ẩn mũi tên up/down của numInput cho gọn */
+        .flatpickr-current-month .numInputWrapper span {
+            display: none !important;
+        }
+
+        /* ── Navigation arrows ── */
+        .flatpickr-months .flatpickr-prev-month,
+        .flatpickr-months .flatpickr-next-month {
+            padding: 6px 9px !important;
+            border-radius: 6px !important;
+            top: 7px !important;
+            transition: background .15s !important;
+        }
+
+        .flatpickr-months .flatpickr-prev-month:hover,
+        .flatpickr-months .flatpickr-next-month:hover {
+            background: rgba(232,89,12,.08) !important;
+        }
+
+        .flatpickr-months .flatpickr-prev-month:hover svg,
+        .flatpickr-months .flatpickr-next-month:hover svg {
+            fill: var(--c-primary) !important;
+        }
+
+        span.flatpickr-weekday {
+            font-weight: 700 !important;
+            color: var(--text-2) !important;
+            font-size: .72rem !important;
+        }
+    </style>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            if (typeof flatpickr !== 'undefined') {
+                var fpCfg = {
+                    dateFormat: 'Y-m-d', altInput: true, altFormat: 'd/m/Y',
+                    altInputClass: 'rpt-date-input', locale: 'vn', allowInput: true, disableMobile: true,
+                    onChange: function (d, s, inst) { if (inst.input.form) inst.input.form.submit(); }
+                };
+                if (document.getElementById('weekRptFrom')) flatpickr('#weekRptFrom', fpCfg);
+                if (document.getElementById('weekRptTo'))   flatpickr('#weekRptTo',   fpCfg);
+            }
+        });
+    </script>
+}
+}

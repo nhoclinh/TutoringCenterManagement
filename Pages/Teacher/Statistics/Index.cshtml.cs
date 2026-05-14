@@ -1,8 +1,10 @@
-﻿using Microsoft.AspNetCore.Mvc;
+﻿using ClosedXML.Excel;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using Microsoft.EntityFrameworkCore;
 using System.Text.Json;
 using TutoringCenterManagement.Data;
+using TutoringCenterManagement.Data.Entities;
 using TutoringCenterManagement.Data.Enums;
 
 namespace TutoringCenterManagement.Pages.Teacher.Statistics
@@ -20,6 +22,9 @@ namespace TutoringCenterManagement.Pages.Teacher.Statistics
         [BindProperty(SupportsGet = true)] public string? ClassFilter { get; set; }
         [BindProperty(SupportsGet = true)] public string? SessionStatusFilter { get; set; }
         // "completed" | "scheduled" | "cancelled" | ""
+        [BindProperty(SupportsGet = true)] public bool Export { get; set; } = false;
+
+        public string TeacherName { get; set; } = string.Empty;
 
         // ── Resolved filter state ────────────────────────────────────────
         public bool HasDateRange { get; set; }
@@ -97,6 +102,9 @@ namespace TutoringCenterManagement.Pages.Teacher.Statistics
             var teacherId = HttpContext.Session.GetInt32("AccountId");
             if (role != "Teacher" || !teacherId.HasValue)
                 return RedirectToPage("/Account/Login");
+
+            var teacherEntity = await _context.Teachers.FindAsync(teacherId.Value);
+            TeacherName = teacherEntity?.Fullname ?? string.Empty;
 
             // ── Resolve filter ───────────────────────────────────────────
             HasDateRange = !string.IsNullOrEmpty(FromDate) || !string.IsNullOrEmpty(ToDate);
@@ -385,6 +393,13 @@ namespace TutoringCenterManagement.Pages.Teacher.Statistics
                 })
                 .ToList();
 
+            if (Export)
+            {
+                var bytes = BuildExcel(fl);
+                var fn = $"BC_GiangDay_{SanitizeStr(TeacherName)}_{SanitizeStr(PeriodLabel)}.xlsx";
+                return File(bytes, "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", fn);
+            }
+
             return Page();
         }
 
@@ -424,6 +439,194 @@ namespace TutoringCenterManagement.Pages.Teacher.Statistics
             public string RoomCode { get; set; } = "";
             public SessionStatus Status { get; set; }
             public bool HasAttendance { get; set; }
+        }
+
+        // ── Export helpers ────────────────────────────────────────────────────
+        private static string SanitizeStr(string s) =>
+            new string(s.Select(c => char.IsLetterOrDigit(c) || c == '_' ? c : '_').ToArray());
+
+        private static readonly string[] DayNamesArr = { "", "CN", "Hai", "Ba", "Tư", "Năm", "Sáu", "Bảy" };
+
+        private byte[] BuildExcel(List<Session> sessions)
+        {
+            using var wb = new XLWorkbook();
+            var ws = wb.AddWorksheet("Thống Kê Giảng Dạy");
+            const int cols = 8;
+
+            XlMergeTitle(ws, 1, cols, $"BÁO CÁO THỐNG KÊ GIẢNG DẠY — {TeacherName.ToUpper()}");
+            XlMergeSubtitle(ws, 2, cols, PeriodLabel);
+            XlMergeInfo(ws, 3, cols,
+                $"Xuất ngày: {DateTime.Now:dd/MM/yyyy HH:mm}   |   " +
+                $"Tổng buổi: {TotalSessions}   Hoàn thành: {CompletedSessions}   " +
+                $"Đã hủy: {CancelledSessions}   Tỉ lệ điểm danh: {AttendanceRate}%");
+
+            // ── Bảng thống kê theo lớp ────────────────────────────────────────
+            int row = 5;
+            var sc = ws.Cell(row, 1);
+            sc.Value = "THỐNG KÊ THEO LỚP";
+            ws.Range(row, 1, row, cols).Merge();
+            sc.Style.Font.Bold = true; sc.Style.Font.FontSize = 11;
+            sc.Style.Fill.BackgroundColor = XLColor.FromHtml("#f59f00");
+            sc.Style.Font.FontColor = XLColor.White;
+            sc.Style.Alignment.Horizontal = XLAlignmentHorizontalValues.Center;
+            ws.Row(row).Height = 20;
+            row++;
+
+            XlWriteHeaders(ws, row, new[] { "STT", "Lớp", "Môn học", "Học sinh", "Tổng buổi", "Hoàn thành", "Đã hủy", "Tỉ lệ ĐD" });
+            row++;
+
+            int stt = 1;
+            foreach (var c in ClassDetails)
+            {
+                bool alt = row % 2 == 0;
+                ws.Cell(row, 1).Value = stt++;
+                ws.Cell(row, 2).Value = c.ClassCode;
+                ws.Cell(row, 3).Value = c.SubjectName;
+                ws.Cell(row, 4).Value = c.StudentCount;
+                ws.Cell(row, 5).Value = c.TotalSessions;
+                ws.Cell(row, 6).Value = c.CompletedCount;
+                ws.Cell(row, 7).Value = c.CancelledCount;
+                ws.Cell(row, 8).Value = $"{c.AttendanceRate}%";
+                XlStyleDataRow(ws, row, cols, alt);
+                row++;
+            }
+            row++; // khoảng cách
+
+            // ── Danh sách buổi dạy ────────────────────────────────────────────
+            var sc2 = ws.Cell(row, 1);
+            sc2.Value = "DANH SÁCH BUỔI DẠY";
+            ws.Range(row, 1, row, cols).Merge();
+            sc2.Style.Font.Bold = true; sc2.Style.Font.FontSize = 11;
+            sc2.Style.Fill.BackgroundColor = XLColor.FromHtml("#e8590c");
+            sc2.Style.Font.FontColor = XLColor.White;
+            sc2.Style.Alignment.Horizontal = XLAlignmentHorizontalValues.Center;
+            ws.Row(row).Height = 20;
+            row++;
+
+            XlWriteHeaders(ws, row, new[] { "STT", "Ngày dạy", "Thứ", "Ca học", "Phòng", "Lớp", "Môn học", "Trạng thái" });
+            row++;
+
+            stt = 1;
+            foreach (var s in sessions.OrderBy(s => s.SessionDate).ThenBy(s => s.Shift!.StartTime))
+            {
+                bool alt = row % 2 == 0;
+                string statusLbl = s.Status switch
+                {
+                    SessionStatus.Completed => "Hoàn thành",
+                    SessionStatus.Cancelled => "Đã hủy",
+                    SessionStatus.Ongoing   => "Đang dạy",
+                    _                       => "Lịch dạy"
+                };
+                ws.Cell(row, 1).Value = stt++;
+                ws.Cell(row, 2).Value = s.SessionDate.ToString("dd/MM/yyyy");
+                ws.Cell(row, 3).Value = DayNamesArr[(int)s.SessionDate.DayOfWeek];
+                ws.Cell(row, 4).Value = s.Shift != null
+                    ? $"{s.Shift.ShiftName} ({s.Shift.StartTime:HH\\:mm}–{s.Shift.EndTime:HH\\:mm})" : "—";
+                ws.Cell(row, 5).Value = s.Room?.RoomCode ?? "—";
+                ws.Cell(row, 6).Value = s.Class?.ClassCode ?? "—";
+                ws.Cell(row, 7).Value = GetSubjectName(s.Class?.Subject ?? Subject.Other);
+                ws.Cell(row, 8).Value = statusLbl;
+                XlStyleDataRow(ws, row, cols, alt);
+
+                ws.Cell(row, 8).Style.Font.Bold = true;
+                ws.Cell(row, 8).Style.Font.FontColor = s.Status switch
+                {
+                    SessionStatus.Completed => XLColor.FromHtml("#059669"),
+                    SessionStatus.Cancelled => XLColor.FromHtml("#e11d48"),
+                    SessionStatus.Ongoing   => XLColor.FromHtml("#d97706"),
+                    _                       => XLColor.FromHtml("#2563eb")
+                };
+                row++;
+            }
+
+            ws.Cell(row, 1).Value = "TỔNG CỘNG";
+            ws.Range(row, 1, row, 7).Merge();
+            ws.Cell(row, 8).Value = $"{sessions.Count} buổi";
+            XlStyleSummary(ws, row, cols);
+
+            ws.Columns().AdjustToContents();
+            if (ws.Column(6).Width < 16) ws.Column(6).Width = 16;
+
+            using var ms = new MemoryStream();
+            wb.SaveAs(ms);
+            return ms.ToArray();
+        }
+
+        private static void XlMergeTitle(IXLWorksheet ws, int row, int cols, string text)
+        {
+            var cell = ws.Cell(row, 1); cell.Value = text;
+            ws.Range(row, 1, row, cols).Merge();
+            cell.Style.Font.Bold = true; cell.Style.Font.FontSize = 14;
+            cell.Style.Fill.BackgroundColor = XLColor.FromHtml("#e8590c");
+            cell.Style.Font.FontColor = XLColor.White;
+            cell.Style.Alignment.Horizontal = XLAlignmentHorizontalValues.Center;
+            cell.Style.Alignment.Vertical   = XLAlignmentVerticalValues.Center;
+            ws.Row(row).Height = 24;
+        }
+
+        private static void XlMergeSubtitle(IXLWorksheet ws, int row, int cols, string text)
+        {
+            var cell = ws.Cell(row, 1); cell.Value = text;
+            ws.Range(row, 1, row, cols).Merge();
+            cell.Style.Font.Bold = true; cell.Style.Font.FontSize = 11;
+            cell.Style.Fill.BackgroundColor = XLColor.FromHtml("#fff3ec");
+            cell.Style.Font.FontColor = XLColor.FromHtml("#c04a00");
+            cell.Style.Alignment.Horizontal = XLAlignmentHorizontalValues.Center;
+            ws.Row(row).Height = 18;
+        }
+
+        private static void XlMergeInfo(IXLWorksheet ws, int row, int cols, string text)
+        {
+            var cell = ws.Cell(row, 1); cell.Value = text;
+            ws.Range(row, 1, row, cols).Merge();
+            cell.Style.Font.Italic = true; cell.Style.Font.FontSize = 9;
+            cell.Style.Font.FontColor = XLColor.FromHtml("#6b7280");
+            cell.Style.Alignment.Horizontal = XLAlignmentHorizontalValues.Right;
+            ws.Row(row).Height = 14;
+        }
+
+        private static void XlWriteHeaders(IXLWorksheet ws, int row, string[] headers)
+        {
+            for (int i = 0; i < headers.Length; i++)
+            {
+                var c = ws.Cell(row, i + 1);
+                c.Value = headers[i];
+                c.Style.Font.Bold = true;
+                c.Style.Fill.BackgroundColor = XLColor.FromHtml("#1e2433");
+                c.Style.Font.FontColor = XLColor.White;
+                c.Style.Alignment.Horizontal = XLAlignmentHorizontalValues.Center;
+                c.Style.Alignment.Vertical   = XLAlignmentVerticalValues.Center;
+                c.Style.Border.OutsideBorder      = XLBorderStyleValues.Thin;
+                c.Style.Border.OutsideBorderColor = XLColor.FromHtml("#374151");
+            }
+            ws.Row(row).Height = 20;
+        }
+
+        private static void XlStyleDataRow(IXLWorksheet ws, int row, int cols, bool alt)
+        {
+            var rng = ws.Range(row, 1, row, cols);
+            rng.Style.Fill.BackgroundColor = alt ? XLColor.FromHtml("#f0f4ff") : XLColor.White;
+            rng.Style.Border.OutsideBorder      = XLBorderStyleValues.Thin;
+            rng.Style.Border.OutsideBorderColor = XLColor.FromHtml("#e5e7eb");
+            rng.Style.Border.InsideBorder       = XLBorderStyleValues.Thin;
+            rng.Style.Border.InsideBorderColor  = XLColor.FromHtml("#e5e7eb");
+            for (int c = 3; c <= cols; c++)
+                ws.Cell(row, c).Style.Alignment.Horizontal = XLAlignmentHorizontalValues.Center;
+            ws.Row(row).Height = 16;
+        }
+
+        private static void XlStyleSummary(IXLWorksheet ws, int row, int cols)
+        {
+            var rng = ws.Range(row, 1, row, cols);
+            rng.Style.Font.Bold = true;
+            rng.Style.Fill.BackgroundColor = XLColor.FromHtml("#1e2433");
+            rng.Style.Font.FontColor = XLColor.White;
+            rng.Style.Border.OutsideBorder = XLBorderStyleValues.Medium;
+            rng.Style.Border.InsideBorder  = XLBorderStyleValues.Thin;
+            rng.Style.Border.InsideBorderColor = XLColor.FromHtml("#374151");
+            for (int c = 3; c <= cols; c++)
+                ws.Cell(row, c).Style.Alignment.Horizontal = XLAlignmentHorizontalValues.Center;
+            ws.Row(row).Height = 18;
         }
     }
 }
